@@ -153,7 +153,10 @@ const APP = {
     const bounds = leafletLayer.getBounds();
     this.state.selectedPath.push({ level: currentLevel, feature, name, bounds });
 
-    /* Dim non-selected features at current level instead of removing */
+    /* Advance currentLevel BEFORE _showLevel so its click guard is correct */
+    this.state.currentLevel = nextLevel;
+
+    /* Dim non-selected features at the level we just left */
     this._dimLevel(currentLevel, feature);
 
     /* Hide CAR boundary (level 0) when drilling past provinces */
@@ -168,8 +171,6 @@ const APP = {
     /* Load next level filtered to this parent */
     await this._showLevel(nextLevel, feature, currentLevel);
 
-    this.state.currentLevel = nextLevel;
-
     /* Zoom to clicked feature */
     this.state.map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
 
@@ -179,7 +180,10 @@ const APP = {
   /* ── Drill UP ──────────────────────────────── */
   async drillUp(targetLevel) {
     if (typeof targetLevel === 'string' && targetLevel === 'region') targetLevel = 1;
-    if (targetLevel < 1) targetLevel = 1;
+    if (typeof targetLevel !== 'number' || targetLevel < 1) targetLevel = 1;
+
+    /* Already at target — no-op */
+    if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel - 1) return;
 
     /* Remove layers deeper than target */
     for (let lvl = 3; lvl > targetLevel; lvl--) {
@@ -190,19 +194,17 @@ const APP = {
     }
 
     /* Reset style of target level — un-dim all features */
-    if (targetLevel > 0) {
-      this._resetLevelStyle(targetLevel);
-    }
+    this._resetLevelStyle(targetLevel);
 
     /* Trim path and update state */
-    this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
+    this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel - 1);
     this.state.currentLevel = targetLevel;
 
     this._updateBreadcrumb();
     this.closePanel();
 
-    /* Re-show level 0 if coming back to base (CAR boundary for reference) */
-    if (targetLevel <= 1 && !this.state.layers[0]) {
+    /* Re-show level 0 CAR boundary if coming back to province view */
+    if (targetLevel === 1 && !this.state.layers[0]) {
       await this._showLevel(0, null, null);
     }
 
@@ -212,7 +214,7 @@ const APP = {
         this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [60, 60] });
       }
     } else {
-      const parentEntry = this.state.selectedPath[targetLevel - 1];
+      const parentEntry = this.state.selectedPath[targetLevel - 2];
       if (parentEntry && parentEntry.bounds) {
         this.state.map.fitBounds(parentEntry.bounds, { padding: [60, 60] });
       }
@@ -420,16 +422,17 @@ const APP = {
     if (!bc) return;
 
     let html = '';
-    /* Root */
-    const isAtRoot = this.state.currentLevel === 0;
-    html += `<button class="breadcrumb-item ${isAtRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(1)">
+
+    /* Root: active when at province level (no path items), clickable when drilled deeper */
+    const atRoot = this.state.selectedPath.length === 0;
+    html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(1)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       CAR Region</button>`;
 
     this.state.selectedPath.forEach((item, idx) => {
       const isLast = idx === this.state.selectedPath.length - 1;
       html += `<span class="breadcrumb-sep">›</span>`;
-      html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.drillUp(${idx + 1})">${this._escHtml(item.name)}</button>`;
+      html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.drillUp(${item.level})">${this._escHtml(item.name)}</button>`;
     });
 
     bc.innerHTML = html;
