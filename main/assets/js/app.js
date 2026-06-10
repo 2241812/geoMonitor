@@ -9,7 +9,12 @@ const APP = {
   config: {
     mapCenter: [17.3, 121.0],
     mapZoom: 8,
+    minZoom: 7,
     maxZoom: 18,
+    maxBounds: [
+      [4.0, 116.0],
+      [21.5, 128.0],
+    ],
 
     geoJSON: {
       boundary: 'geoJSON/CAR NAMRIA Boundary.geojson',

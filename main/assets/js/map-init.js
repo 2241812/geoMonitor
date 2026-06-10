@@ -2,6 +2,9 @@ function initMap() {
   const map = L.map('map', {
     center: APP.config.mapCenter,
     zoom: APP.config.mapZoom,
+    minZoom: APP.config.minZoom,
+    maxZoom: APP.config.maxZoom,
+    maxBounds: APP.config.maxBounds,
     zoomControl: true,
     fadeAnimation: true,
   });
