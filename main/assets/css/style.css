@@ -229,8 +229,58 @@ html, body {
 }
 
 /* ============================== */
-/* Landing Page — Info Section    */
+/* Landing Page — Hero Animations */
 /* ============================== */
+
+.animate-slide-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  animation: slide-in-left 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+.animate-slide-right {
+  opacity: 0;
+  transform: translateX(40px);
+  animation: slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+.animate-fade-scale {
+  opacity: 0;
+  transform: scale(0.92);
+  animation: fade-scale-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+}
+
+.animate-fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fade-up-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
+}
+
+.animate-fade-up-delay {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fade-up-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 1.0s forwards;
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fade-up-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .info-section {
   background: #ffffff;
@@ -288,20 +338,22 @@ html, body {
 }
 
 /* ============================== */
-/* Landing Page — Watersheds Grid */
+/* Landing Page — Watersheds Gallery */
 /* ============================== */
 
-.watersheds-section {
+.gallery-section {
   background: #f3f6f4;
-  padding: 100px 24px;
+  padding: 100px 0 80px;
+  overflow: hidden;
 }
 
-.watersheds-container {
+.gallery-header {
   max-width: 1120px;
   margin: 0 auto;
+  padding: 0 24px 48px;
 }
 
-.watersheds-container h2 {
+.gallery-header h2 {
   font-size: clamp(1.6rem, 3vw, 2.2rem);
   font-weight: 800;
   color: #111827;
@@ -310,54 +362,74 @@ html, body {
   margin-bottom: 12px;
 }
 
-.watersheds-subtitle {
+.gallery-subtitle {
   text-align: center;
   font-size: 1rem;
   line-height: 1.7;
   color: #6b7280;
-  max-width: 700px;
-  margin: 0 auto 48px;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
-.watersheds-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+.gallery-wrapper {
+  overflow: hidden;
+  cursor: grab;
+}
+
+.gallery-track {
+  display: flex;
   gap: 20px;
+  width: max-content;
+  animation: gallery-scroll 50s linear infinite;
+  padding: 0 10px;
 }
 
-.watershed-card {
-  background: #ffffff;
-  border-radius: 14px;
+.gallery-wrapper:hover .gallery-track {
+  animation-play-state: paused;
+}
+
+.gallery-slide {
+  position: relative;
+  width: 380px;
+  height: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+}
+
+.gallery-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.gallery-content {
+  position: relative;
+  z-index: 2;
   padding: 28px 24px;
-  text-align: center;
-  border: 1px solid #e5e7eb;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  color: #fff;
 }
 
-.watershed-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
-  border-color: #d1d5db;
-}
-
-.watershed-icon {
-  font-size: 36px;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.watershed-card h3 {
-  font-size: 15px;
+.gallery-content h3 {
+  font-size: 17px;
   font-weight: 700;
-  color: #111827;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: -0.01em;
 }
 
-.watershed-card p {
+.gallery-content p {
   font-size: 13px;
-  line-height: 1.65;
-  color: #6b7280;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+@keyframes gallery-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ============================== */
@@ -472,14 +544,20 @@ html, body {
     gap: 32px;
   }
 
-  .watersheds-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .gallery-slide {
+    width: 300px;
+    height: 280px;
   }
 }
 
 @media (max-width: 480px) {
-  .watersheds-grid {
-    grid-template-columns: 1fr;
+  .gallery-slide {
+    width: 260px;
+    height: 260px;
+  }
+
+  .gallery-section {
+    padding: 72px 0 60px;
   }
 
   .cta-section {
@@ -531,30 +609,21 @@ html, body {
   transform: translateY(0);
 }
 
-/* Stagger children */
-.watersheds-grid .fade-in-up {
-  transition-delay: 0s;
-}
-
-.watersheds-grid .fade-in-up:nth-child(1) { transition-delay: 0.00s; }
-.watersheds-grid .fade-in-up:nth-child(2) { transition-delay: 0.04s; }
-.watersheds-grid .fade-in-up:nth-child(3) { transition-delay: 0.08s; }
-.watersheds-grid .fade-in-up:nth-child(4) { transition-delay: 0.12s; }
-.watersheds-grid .fade-in-up:nth-child(5) { transition-delay: 0.16s; }
-.watersheds-grid .fade-in-up:nth-child(6) { transition-delay: 0.20s; }
-.watersheds-grid .fade-in-up:nth-child(7) { transition-delay: 0.24s; }
-.watersheds-grid .fade-in-up:nth-child(8) { transition-delay: 0.28s; }
-.watersheds-grid .fade-in-up:nth-child(9) { transition-delay: 0.32s; }
-.watersheds-grid .fade-in-up:nth-child(10) { transition-delay: 0.36s; }
-.watersheds-grid .fade-in-up:nth-child(11) { transition-delay: 0.40s; }
-.watersheds-grid .fade-in-up:nth-child(12) { transition-delay: 0.44s; }
-.watersheds-grid .fade-in-up:nth-child(13) { transition-delay: 0.48s; }
-
 @media (prefers-reduced-motion: reduce) {
   .fade-in-up {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  .animate-slide-left,
+  .animate-slide-right,
+  .animate-fade-scale,
+  .animate-fade-up,
+  .animate-fade-up-delay {
+    opacity: 1;
+    transform: none;
+    animation: none;
   }
 
   html {
