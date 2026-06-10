@@ -268,6 +268,9 @@ const APP = {
       }),
 
       onEachFeature(feature, leafletLayer) {
+        /* Level 0 is visual reference only — no interaction */
+        if (level === 0) return;
+
         const name = self._featureName(feature, level);
 
         /* Hover effects */
@@ -280,7 +283,7 @@ const APP = {
           leafletLayer.on('mouseout', function (e) {
             e.target.setStyle({
               fillColor: styleConfig.fill,
-              fillOpacity: level === 0 ? 0.1 : 0.25,
+              fillOpacity: 0.25,
               color: styleConfig.stroke,
               weight: styleConfig.weight,
               opacity: 0.9,
@@ -308,27 +311,26 @@ const APP = {
   /* ── Filter GeoJSON to parent boundary ─────── */
   _filterToParent(data, childLevel, parentFeature) {
     const pProps = parentFeature.properties;
-
-    /* Build a set of candidate parent identifiers */
     const parentName = this._featureName(parentFeature, childLevel - 1);
 
     const filtered = data.features.filter(feat => {
       const cProps = feat.properties;
 
-      /* Try every reasonable match key */
-      const checks = [
-        cProps.Province === pProps.PROVINCE,
-        cProps.Province === pProps.Province,
-        cProps.PROVINCE === pProps.PROVINCE,
-        cProps.Province === parentName,
-        cProps.NAME_1 === pProps.PROVINCE,
-        cProps.NAME_1 === pProps.Province,
-        cProps.NAME_1 === parentName,
-        cProps.NAME_2 === pProps.Municipali,
-        cProps.NAME_2 === pProps.NAME_2,
-      ];
+      /* Level 2 (municipalities): only match by province name */
+      if (childLevel === 2) {
+        const provinceName = pProps.PROVINCE || pProps.Province || parentName;
+        const childProvince = cProps.PROVINCE || cProps.Province || cProps.NAME_1;
+        return childProvince === provinceName;
+      }
 
-      return checks.some(Boolean);
+      /* Level 3 (barangays): only match by municipality name */
+      if (childLevel === 3) {
+        const munName = pProps.Municipali || pProps.NAME_2 || parentName;
+        const childMun = cProps.NAME_2 || cProps.Municipali;
+        return childMun === munName;
+      }
+
+      return true;
     });
 
     return { ...data, features: filtered };
