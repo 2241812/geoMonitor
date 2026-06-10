@@ -156,8 +156,11 @@ const APP = {
     /* Advance currentLevel BEFORE _showLevel so its click guard is correct */
     this.state.currentLevel = nextLevel;
 
-    /* Dim non-selected features at the level we just left */
-    this._dimLevel(currentLevel, feature);
+    /* Hide parent level completely — remove from map */
+    if (currentLevel > 0 && this.state.layers[currentLevel]) {
+      this.state.map.removeLayer(this.state.layers[currentLevel]);
+      this.state.layers[currentLevel]._hiddenByDrill = true;
+    }
 
     /* Hide CAR boundary (level 0) when drilling past provinces */
     if (nextLevel >= 2 && this.state.layers[0]) {
@@ -193,7 +196,13 @@ const APP = {
       }
     }
 
-    /* Reset style of target level — un-dim all features */
+    /* Re-add target level layer if it was hidden during drill-down */
+    if (targetLevel > 0 && this.state.layers[targetLevel] && this.state.layers[targetLevel]._hiddenByDrill) {
+      this.state.map.addLayer(this.state.layers[targetLevel]);
+      this.state.layers[targetLevel]._hiddenByDrill = false;
+    }
+
+    /* Reset style of target level — restore all features to default */
     this._resetLevelStyle(targetLevel);
 
     /* Trim path and update state */
@@ -251,6 +260,7 @@ const APP = {
     const useHover = featureCount <= 300;
 
     const layer = L.geoJSON(data, {
+      interactive: level !== 0,
       style: () => ({
         fillColor: styleConfig.fill,
         fillOpacity: level === 0 ? 0.1 : 0.25,
@@ -287,16 +297,16 @@ const APP = {
           });
         }
 
-        /* Click: open panel + drill down.
-           _dimLevel and currentLevel advance happen inside drillDown — not here. */
+        /* Click: drill down or isolate at deepest level */
         leafletLayer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
           if (level !== self.state.currentLevel) return;
-          /* Open info panel for clicked feature */
           self.openPanel(feature, level);
-          /* Drill down (handles dim + state advance + next level load) */
           if (level < 3) {
             self.drillDown(feature, leafletLayer);
+          } else {
+            /* Level 3: hide other barangays, highlight this one */
+            self._dimLevel(level, feature);
           }
         });
       },
@@ -348,7 +358,7 @@ const APP = {
     if (level === 3) return p.NAME_3 || p.Municipali || candidates[0] || 'Unknown';
     if (level === 2) return p.Municipali || p.NAME_2 || candidates[0] || 'Unknown';
     if (level === 1) return p.PROVINCE || p.Province || p.NAME_1 || candidates[0] || 'Unknown';
-    return p.Region || p.NAME_1 || candidates[0] || 'CAR Region';
+    return 'Cordillera Administrative Region';
   },
 
   /* ── Highlight selected layer ─────────────── */
@@ -363,19 +373,17 @@ const APP = {
     leafletLayer.bringToFront();
   },
 
-  /* ── Dim non-selected features at a level; highlight the selected one ── */
+  /* ── Isolate selected feature: highlight it, hide all others at this level ── */
   _dimLevel(level, selectedFeature) {
     const layer = this.state.layers[level];
     if (!layer) return;
-    const styleConfig = this.config.colors[level];
+    const cfg = this.config.colors[level];
     layer.eachLayer(function(leafletLayer) {
       if (leafletLayer.feature !== selectedFeature) {
         leafletLayer.setStyle({
-          fillColor: '#9ca3af',
-          fillOpacity: 0.05,
-          color: '#d1d5db',
-          weight: styleConfig.weight * 0.5,
-          opacity: 0.3,
+          fillOpacity: 0,
+          opacity: 0,
+          weight: 0,
         });
       } else {
         leafletLayer.setStyle({
