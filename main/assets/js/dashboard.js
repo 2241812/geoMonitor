@@ -11,7 +11,7 @@ function initDashboard() {
 function updateDashboard(feature) {
   /* Delegate to APP */
   if (feature && APP) {
-    APP.openPanel(feature, 'namria-province');
+    APP.openPanel(feature, APP.state.currentLevel);
   }
 }
 
