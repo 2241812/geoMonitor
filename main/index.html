@@ -10,42 +10,93 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-  <div class="landing-page">
-    <div class="landing-hero">
-      <div style="margin-bottom: 12px; font-size: 14px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.8;">Department of Environment and Natural Resources</div>
-      <h1>CAR Watershed<br>Monitoring Project</h1>
-      <p>An interactive web map for monitoring the 14 major watersheds of the Cordillera Administrative Region — exploring administrative boundaries, geological data, and environmental metrics.</p>
-      <a href="map.html" class="cta-button">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="10" r="3"/>
-          <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
-        </svg>
-        Explore the Map
-      </a>
 
-      <div class="feature-cards">
-        <div class="feature-card">
-          <div class="icon">🗺️</div>
-          <h3>Interactive Map</h3>
-          <p>Leaflet-powered with OSM, Topo, and Satellite basemaps</p>
+  <!-- Section 1: Hero -->
+  <section class="hero">
+    <div class="hero-bg" style="background-image: url('assets/images/20220506_111217.jpg');"></div>
+    <div class="hero-overlay"></div>
+
+    <header class="hero-header">
+      <div class="header-left">
+        <img src="assets/img/denr-logo.svg" alt="DENR Logo" class="header-logo">
+        <div class="header-text">
+          <span class="header-republic">Republic of the Philippines</span>
+          <span class="header-agency">Department of Environment and Natural Resources</span>
         </div>
-        <div class="feature-card">
-          <div class="icon">📊</div>
-          <h3>Reactive Dashboard</h3>
-          <p>Charts update dynamically when you click a region</p>
+      </div>
+      <div class="header-right">
+        <div class="header-text header-text-right">
+          <span class="header-republic">In collaboration with</span>
+          <span class="header-agency">Saint Louis University</span>
         </div>
-        <div class="feature-card">
-          <div class="icon">🏞️</div>
-          <h3>4 Admin Levels</h3>
-          <p>Region, Province, Municipality, and Barangay boundaries</p>
+        <img src="assets/img/slu-logo.png" alt="SLU Logo" class="header-logo slu-logo">
+      </div>
+    </header>
+
+    <div class="hero-content">
+      <h1>CAR Watershed Monitoring</h1>
+      <p class="hero-subtitle">Tracking administrative boundaries, geological data, and environmental metrics across the Cordilleras.</p>
+    </div>
+
+    <div class="scroll-indicator">
+      <span class="scroll-text">Scroll</span>
+      <span class="scroll-arrow">↓</span>
+    </div>
+  </section>
+
+  <!-- Section 2: Info -->
+  <section class="info-section">
+    <div class="info-container">
+      <div class="info-text">
+        <h2>Protecting Our Lifelines</h2>
+        <p>The Cordillera Administrative Region serves as the watershed cradle of Northern Philippines, supplying vital water resources to the lowlands. The Department of Environment and Natural Resources' mandate is to monitor, protect, and sustain these ecological boundaries that support millions of Filipinos.</p>
+        <p>A watershed is an area of land where all water drains to a common outlet. Healthy watersheds mean clean water, productive fisheries, and resilient communities. Through systematic monitoring, we track changes in land use, water quality, and biodiversity across CAR's 14 major watersheds.</p>
+      </div>
+      <div class="info-image">
+        <img src="assets/images/Ambuklao_Dam.jpg" alt="Ambuklao Dam — a vital watershed infrastructure in Benguet">
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Watersheds Grid -->
+  <section class="watersheds-section">
+    <div class="watersheds-container">
+      <h2>14 Major Watersheds of CAR</h2>
+      <div class="watersheds-grid">
+        <div class="watershed-card">
+          <div class="watershed-icon">🏔️</div>
+          <h3>Agno River Basin</h3>
+          <p>One of the largest river systems in the Philippines, spanning Benguet, Ifugao, and Pangasinan.</p>
         </div>
-        <div class="feature-card">
-          <div class="icon">📱</div>
-          <h3>Fully Responsive</h3>
-          <p>Works on desktop, tablet, and mobile devices</p>
+        <div class="watershed-card">
+          <div class="watershed-icon">🌊</div>
+          <h3>Chico River Basin</h3>
+          <p>A major tributary of the Cagayan River, flowing through Kalinga and Mountain Province.</p>
+        </div>
+        <div class="watershed-card">
+          <div class="watershed-icon">⛰️</div>
+          <h3>Abra River Basin</h3>
+          <p>The largest river system in the Abra province, draining the western slopes of the Central Cordillera.</p>
+        </div>
+        <div class="watershed-card">
+          <div class="watershed-icon">🌿</div>
+          <h3>Amburayan River Basin</h3>
+          <p>Drains the southern slopes of the Cordillera, flowing through Benguet and La Union.</p>
         </div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Section 4: CTA -->
+  <section class="cta-section">
+    <div class="cta-bg" style="background-image: url('assets/images/Outcrop_along_the_riverside_of_the_Dalupirip_section_of_the_Agno_River,_Lower_Agno_Watershed_Forest_Reserve,_Itogon,_Benguet,_Philippines.jpg');"></div>
+    <div class="cta-overlay"></div>
+    <div class="cta-content">
+      <h2>Interactive Geographic Dashboard</h2>
+      <p>Dive into the data. Explore sub-watersheds, major river networks, contour lines, and geological profiles across the Cordillera Administrative Region.</p>
+      <a href="map.html" class="cta-button">Explore the Map</a>
+    </div>
+  </section>
+
 </body>
 </html>
