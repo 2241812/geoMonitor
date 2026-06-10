@@ -73,7 +73,8 @@
   <script>
     document.addEventListener('DOMContentLoaded', async function () {
       var loading = document.getElementById('loading-overlay');
-      APP.init();
+      initMap();
+      initDashboard();
 
       try {
         await initLayers();
