@@ -337,11 +337,14 @@ const APP = {
         return childProvince === provinceName;
       }
 
-      /* Level 3 (barangays): match by municipality name (case-insensitive) */
+      /* Level 3 (barangays): match by municipality name + province (case-insensitive) */
       if (childLevel === 3) {
         const munName = (pProps.Municipali || pProps.NAME_2 || '').toUpperCase();
         const childMun = (cProps.NAME_2 || cProps.Municipali || '').toUpperCase();
-        return childMun === munName;
+        const provName = (pProps.PROVINCE || pProps.Province || pProps.NAME_1 || '').toUpperCase();
+        const childProv = (cProps.NAME_1 || cProps.PROVINCE || cProps.Province || '').toUpperCase();
+        if (childProv !== provName) return false;
+        return childMun.includes(munName) || munName.includes(childMun);
       }
 
       return true;
