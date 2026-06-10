@@ -311,22 +311,21 @@ const APP = {
   /* ── Filter GeoJSON to parent boundary ─────── */
   _filterToParent(data, childLevel, parentFeature) {
     const pProps = parentFeature.properties;
-    const parentName = this._featureName(parentFeature, childLevel - 1);
 
     const filtered = data.features.filter(feat => {
       const cProps = feat.properties;
 
-      /* Level 2 (municipalities): only match by province name */
+      /* Level 2 (municipalities): match by province name (case-insensitive) */
       if (childLevel === 2) {
-        const provinceName = pProps.PROVINCE || pProps.Province || parentName;
-        const childProvince = cProps.PROVINCE || cProps.Province || cProps.NAME_1;
+        const provinceName = (pProps.PROVINCE || pProps.Province || '').toUpperCase();
+        const childProvince = (cProps.Province || cProps.PROVINCE || cProps.NAME_1 || '').toUpperCase();
         return childProvince === provinceName;
       }
 
-      /* Level 3 (barangays): only match by municipality name */
+      /* Level 3 (barangays): match by municipality name (case-insensitive) */
       if (childLevel === 3) {
-        const munName = pProps.Municipali || pProps.NAME_2 || parentName;
-        const childMun = cProps.NAME_2 || cProps.Municipali;
+        const munName = (pProps.Municipali || pProps.NAME_2 || '').toUpperCase();
+        const childMun = (cProps.NAME_2 || cProps.Municipali || '').toUpperCase();
         return childMun === munName;
       }
 
