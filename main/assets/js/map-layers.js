@@ -11,6 +11,9 @@ async function initLayers() {
   /* Then auto-show provinces as the default "clickable" level */
   await APP._showLevel(1, null, null);
 
+  /* Set initial active level to provinces */
+  APP.state.currentLevel = 1;
+
   /* Update breadcrumb to reflect initial state */
   APP._updateBreadcrumb();
 }

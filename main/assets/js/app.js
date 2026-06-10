@@ -116,9 +116,9 @@ const APP = {
       }
     });
 
-    /* Click empty space → drill back up one level */
+    /* Click empty space → drill back up one level (level 1 is base — no drill-up) */
     map.on('click', () => {
-      if (this.state.currentLevel > 0) {
+      if (this.state.currentLevel > 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
     });
@@ -153,10 +153,13 @@ const APP = {
     const bounds = leafletLayer.getBounds();
     this.state.selectedPath.push({ level: currentLevel, feature, name, bounds });
 
-    /* Remove current level from map — only the new level + level 0 will show */
-    if (currentLevel > 0 && this.state.layers[currentLevel]) {
-      this.state.map.removeLayer(this.state.layers[currentLevel]);
-      this.state.layers[currentLevel] = null;
+    /* Dim non-selected features at current level instead of removing */
+    this._dimLevel(currentLevel, feature);
+
+    /* Hide CAR boundary (level 0) when drilling past provinces */
+    if (nextLevel >= 2 && this.state.layers[0]) {
+      this.state.map.removeLayer(this.state.layers[0]);
+      this.state.layers[0] = null;
     }
 
     /* Update breadcrumb */
@@ -175,9 +178,8 @@ const APP = {
 
   /* ── Drill UP ──────────────────────────────── */
   async drillUp(targetLevel) {
-    if (typeof targetLevel === 'string' && targetLevel === 'region') targetLevel = 0;
-
-    if (this.state.currentLevel === 0 && targetLevel === 0) return;
+    if (typeof targetLevel === 'string' && targetLevel === 'region') targetLevel = 1;
+    if (targetLevel < 1) targetLevel = 1;
 
     /* Remove layers deeper than target */
     for (let lvl = 3; lvl > targetLevel; lvl--) {
@@ -187,34 +189,29 @@ const APP = {
       }
     }
 
-    /* Remove target level too — will re-show unfiltered */
-    if (targetLevel > 0 && this.state.layers[targetLevel]) {
-      this.state.map.removeLayer(this.state.layers[targetLevel]);
-      this.state.layers[targetLevel] = null;
+    /* Reset style of target level — un-dim all features */
+    if (targetLevel > 0) {
+      this._resetLevelStyle(targetLevel);
     }
 
     /* Trim path and update state */
     this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
     this.state.currentLevel = targetLevel;
 
-    /* Show target level WITHOUT parent filter (all features at that level) */
-    if (targetLevel > 0) {
-      await this._showLevel(targetLevel, null, null);
-    }
-
     this._updateBreadcrumb();
     this.closePanel();
 
+    /* Re-show level 0 if coming back to base (CAR boundary for reference) */
+    if (targetLevel <= 1 && !this.state.layers[0]) {
+      await this._showLevel(0, null, null);
+    }
+
     /* Zoom to show the full parent context */
-    if (targetLevel === 0) {
-      this.state.map.setView(this.config.mapCenter, this.config.mapZoom);
-    } else if (targetLevel === 1) {
-      /* Back to all provinces — zoom to full CAR boundary */
+    if (targetLevel === 1) {
       if (this.state.layers[0]) {
         this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [60, 60] });
       }
     } else {
-      /* Back to municipalities — zoom to the selected parent */
       const parentEntry = this.state.selectedPath[targetLevel - 1];
       if (parentEntry && parentEntry.bounds) {
         this.state.map.fitBounds(parentEntry.bounds, { padding: [60, 60] });
@@ -228,14 +225,6 @@ const APP = {
     if (this.state.layers[level]) {
       this.state.map.removeLayer(this.state.layers[level]);
       this.state.layers[level] = null;
-    }
-
-    /* Remove deeper levels too */
-    for (let l = level + 1; l <= 3; l++) {
-      if (this.state.layers[l]) {
-        this.state.map.removeLayer(this.state.layers[l]);
-        this.state.layers[l] = null;
-      }
     }
 
     /* Load GeoJSON (cache) */
@@ -273,14 +262,16 @@ const APP = {
 
         const name = self._featureName(feature, level);
 
-        /* Hover effects */
+        /* Hover effects (only on the active level) */
         if (useHover) {
           leafletLayer.on('mouseover', function (e) {
+            if (level !== self.state.currentLevel) return;
             e.target.setStyle({ fillOpacity: 0.55, weight: styleConfig.weight + 1 });
             e.target.bringToFront();
             self._showHoverLabel(name, level);
           });
           leafletLayer.on('mouseout', function (e) {
+            if (level !== self.state.currentLevel) return;
             e.target.setStyle({
               fillColor: styleConfig.fill,
               fillOpacity: 0.25,
@@ -292,10 +283,11 @@ const APP = {
           });
         }
 
-        /* Click: drill down and open panel */
+        /* Click: dim non-selected, drill down, open panel */
         leafletLayer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
-          self._highlightLayer(leafletLayer, styleConfig, level);
+          if (level !== self.state.currentLevel) return;
+          self._dimLevel(level, feature);
           self.openPanel(feature, level);
           if (level < 3) {
             self.drillDown(feature, leafletLayer);
@@ -365,6 +357,50 @@ const APP = {
     leafletLayer.bringToFront();
   },
 
+  /* ── Dim non-selected features at a level; highlight the selected one ── */
+  _dimLevel(level, selectedFeature) {
+    const layer = this.state.layers[level];
+    if (!layer) return;
+    const styleConfig = this.config.colors[level];
+    layer.eachLayer(function(leafletLayer) {
+      if (leafletLayer.feature !== selectedFeature) {
+        leafletLayer.setStyle({
+          fillColor: '#9ca3af',
+          fillOpacity: 0.05,
+          color: '#d1d5db',
+          weight: styleConfig.weight * 0.5,
+          opacity: 0.3,
+        });
+      } else {
+        leafletLayer.setStyle({
+          fillColor: '#ffdd57',
+          fillOpacity: 0.5,
+          color: '#e60000',
+          weight: 3,
+          opacity: 1,
+        });
+        leafletLayer.bringToFront();
+      }
+    });
+  },
+
+  /* ── Restore default styles for all features at a level ── */
+  _resetLevelStyle(level) {
+    const layer = this.state.layers[level];
+    if (!layer) return;
+    const cfg = this.config.colors[level];
+    const fillOpacity = level === 0 ? 0.1 : 0.25;
+    layer.eachLayer(function(leafletLayer) {
+      leafletLayer.setStyle({
+        fillColor: cfg.fill,
+        fillOpacity: fillOpacity,
+        color: cfg.stroke,
+        weight: cfg.weight,
+        opacity: 0.9,
+      });
+    });
+  },
+
   /* ── Hover label ──────────────────────────── */
   _showHoverLabel(name, level) {
     const lbl = document.getElementById('map-hover-label');
@@ -386,7 +422,7 @@ const APP = {
     let html = '';
     /* Root */
     const isAtRoot = this.state.currentLevel === 0;
-    html += `<button class="breadcrumb-item ${isAtRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(0)">
+    html += `<button class="breadcrumb-item ${isAtRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(1)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       CAR Region</button>`;
 
