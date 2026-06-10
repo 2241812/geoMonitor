@@ -89,6 +89,7 @@ const APP = {
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
       zoomControl: true,
+      preferCanvas: true,
     });
 
     /* Position zoom control bottom-right */
@@ -115,9 +116,11 @@ const APP = {
       }
     });
 
-    /* Click on map background → clear selection */
+    /* Click empty space → drill back up one level */
     map.on('click', () => {
-      // only clear if clicking empty space (handled by layers stopping propagation)
+      if (this.state.currentLevel > 0) {
+        this.drillUp(this.state.currentLevel - 1);
+      }
     });
   },
 
@@ -141,13 +144,20 @@ const APP = {
   /* ── Drill DOWN ────────────────────────────── */
   async drillDown(feature, leafletLayer) {
     const currentLevel = this.state.currentLevel;
-    if (currentLevel >= 3) return; // barangay — no deeper
+    if (currentLevel >= 3) return;
 
     const nextLevel = currentLevel + 1;
     const name = this._featureName(feature, currentLevel);
 
-    /* Record in path */
-    this.state.selectedPath.push({ level: currentLevel, feature, name, layer: leafletLayer });
+    /* Record in path with bounds for drill-up zoom */
+    const bounds = leafletLayer.getBounds();
+    this.state.selectedPath.push({ level: currentLevel, feature, name, bounds });
+
+    /* Remove current level from map — only the new level + level 0 will show */
+    if (currentLevel > 0 && this.state.layers[currentLevel]) {
+      this.state.map.removeLayer(this.state.layers[currentLevel]);
+      this.state.layers[currentLevel] = null;
+    }
 
     /* Update breadcrumb */
     this._updateBreadcrumb();
@@ -158,7 +168,6 @@ const APP = {
     this.state.currentLevel = nextLevel;
 
     /* Zoom to clicked feature */
-    const bounds = leafletLayer.getBounds();
     this.state.map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
 
     this._showToast(`Click a ${this.config.levelNames[nextLevel]} to drill in`);
@@ -168,12 +177,7 @@ const APP = {
   async drillUp(targetLevel) {
     if (typeof targetLevel === 'string' && targetLevel === 'region') targetLevel = 0;
 
-    /* Already at region */
     if (this.state.currentLevel === 0 && targetLevel === 0) return;
-
-    /* Trim path to target */
-    this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
-    this.state.currentLevel = targetLevel;
 
     /* Remove layers deeper than target */
     for (let lvl = 3; lvl > targetLevel; lvl--) {
@@ -183,24 +187,37 @@ const APP = {
       }
     }
 
-    /* Re-show the target level (un-filtered or filtered to parent) */
-    const parentFeature = targetLevel > 0
-      ? this.state.selectedPath[targetLevel - 1]?.feature
-      : null;
-    const parentLevel = targetLevel > 0 ? targetLevel - 1 : null;
+    /* Remove target level too — will re-show unfiltered */
+    if (targetLevel > 0 && this.state.layers[targetLevel]) {
+      this.state.map.removeLayer(this.state.layers[targetLevel]);
+      this.state.layers[targetLevel] = null;
+    }
 
-    await this._showLevel(targetLevel, parentFeature, parentLevel);
+    /* Trim path and update state */
+    this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
+    this.state.currentLevel = targetLevel;
+
+    /* Show target level WITHOUT parent filter (all features at that level) */
+    if (targetLevel > 0) {
+      await this._showLevel(targetLevel, null, null);
+    }
 
     this._updateBreadcrumb();
     this.closePanel();
 
-    /* Zoom out appropriately */
+    /* Zoom to show the full parent context */
     if (targetLevel === 0) {
       this.state.map.setView(this.config.mapCenter, this.config.mapZoom);
+    } else if (targetLevel === 1) {
+      /* Back to all provinces — zoom to full CAR boundary */
+      if (this.state.layers[0]) {
+        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [60, 60] });
+      }
     } else {
-      const parentLayer = this.state.selectedPath[targetLevel - 1]?.layer;
-      if (parentLayer) {
-        this.state.map.fitBounds(parentLayer.getBounds(), { padding: [60, 60] });
+      /* Back to municipalities — zoom to the selected parent */
+      const parentEntry = this.state.selectedPath[targetLevel - 1];
+      if (parentEntry && parentEntry.bounds) {
+        this.state.map.fitBounds(parentEntry.bounds, { padding: [60, 60] });
       }
     }
   },
