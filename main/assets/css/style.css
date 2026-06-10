@@ -372,20 +372,21 @@ html, body {
 }
 
 .gallery-wrapper {
-  overflow: hidden;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   cursor: grab;
+}
+
+.gallery-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .gallery-track {
   display: flex;
   gap: 20px;
   width: max-content;
-  animation: gallery-scroll 50s linear infinite;
   padding: 0 10px;
-}
-
-.gallery-wrapper:hover .gallery-track {
-  animation-play-state: paused;
 }
 
 .gallery-slide {
@@ -405,6 +406,7 @@ html, body {
   position: absolute;
   inset: 0;
   z-index: 1;
+  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0) 100%);
 }
 
 .gallery-content {
@@ -427,10 +429,7 @@ html, body {
   opacity: 0.9;
 }
 
-@keyframes gallery-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
+
 
 /* ============================== */
 /* Landing Page — CTA Section     */
