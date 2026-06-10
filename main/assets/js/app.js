@@ -18,7 +18,7 @@ const APP = {
     layers: {},                // keyed by level: { 0: L.GeoJSON, 1: L.GeoJSON, … }
     rawData: {},               // cached GeoJSON data by level key
     hoverLayer: null,
-    activeBasemap: 'osm',
+    activeBasemap: 'topo',
     basemapLayers: {},
     panelOpen: false,
   },
@@ -102,8 +102,8 @@ const APP = {
         attribution: cfg.attr,
       });
     });
-    this.state.basemapLayers.osm.addTo(map);
-    this.state.activeBasemap = 'osm';
+    this.state.basemapLayers.topo.addTo(map);
+    this.state.activeBasemap = 'topo';
 
     this.state.map = map;
 
@@ -187,12 +187,6 @@ const APP = {
 
     /* Already at target — no-op */
     if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel - 1) return;
-
-    /* Remove focus overlay if present */
-    if (this.state.focusOverlay) {
-      this.state.map.removeLayer(this.state.focusOverlay);
-      this.state.focusOverlay = null;
-    }
 
     /* Remove layers deeper than target */
     for (let lvl = 3; lvl > targetLevel; lvl--) {
@@ -388,7 +382,6 @@ const APP = {
 
   /* ── Isolate selected feature: highlight it, hide all others at this level ── */
   _dimLevel(level, selectedFeature) {
-    const self = this;
     const layer = this.state.layers[level];
     if (!layer) return;
     const cfg = this.config.colors[level];
@@ -413,21 +406,13 @@ const APP = {
       }
     });
 
-    /* Dim overlay around selected focus area */
-    if (self && self.state) {
-      if (self.state.focusOverlay) {
-        self.state.map.removeLayer(self.state.focusOverlay);
-        self.state.focusOverlay = null;
-      }
-      const map = self.state.map;
-      const bounds = map.getBounds().pad(2);
-      self.state.focusOverlay = L.rectangle(bounds, {
-        color: 'none',
-        fillColor: '#000',
-        fillOpacity: 0.35,
-        interactive: false,
-        pane: 'overlayPane',
-      }).addTo(map);
+    /* Bring selected feature to front */
+    if (selectedFeature) {
+      layer.eachLayer(function(leafletLayer) {
+        if (leafletLayer.feature === selectedFeature) {
+          leafletLayer.bringToFront();
+        }
+      });
     }
   },
 

@@ -499,18 +499,61 @@
   .info-panel {
     width: 100vw;
     top: auto;
-    height: 60vh;
+    bottom: 0;
+    height: 55vh;
     transform: translateY(100%);
     box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .info-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+    z-index: 3;
   }
 
   .info-panel.open {
     transform: translateY(0);
   }
 
+  .info-panel-content {
+    padding-top: 10px;
+  }
+
   .basemap-switcher {
-    bottom: 24px;
+    bottom: auto;
+    top: 56px;
     left: 12px;
+    padding: 6px 8px;
+    min-width: auto;
+    border-radius: 8px;
+  }
+
+  .basemap-label {
+    display: none;
+  }
+
+  .basemap-buttons {
+    gap: 3px;
+  }
+
+  .basemap-btn {
+    padding: 4px 6px;
+    font-size: 10px;
+    border-radius: 5px;
+    gap: 3px;
+  }
+
+  .basemap-thumb {
+    width: 18px;
+    height: 12px;
   }
 
   .map-breadcrumb {
