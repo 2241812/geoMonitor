@@ -4,9 +4,15 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html, body {
   height: 100%;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Map + Dashboard layout */
@@ -228,7 +234,7 @@ html, body {
 
 .info-section {
   background: #ffffff;
-  padding: 80px 24px;
+  padding: 100px 24px;
 }
 
 .info-container {
@@ -249,8 +255,8 @@ html, body {
 }
 
 .info-text p {
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: 1.025rem;
+  line-height: 1.75;
   color: #4b5563;
   margin-bottom: 16px;
 }
@@ -259,11 +265,26 @@ html, body {
   margin-bottom: 0;
 }
 
+.info-image {
+  position: relative;
+}
+
+.info-image::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #05966920, #065f4630);
+  z-index: 0;
+}
+
 .info-image img {
+  position: relative;
   width: 100%;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
   display: block;
+  z-index: 1;
 }
 
 /* ============================== */
@@ -271,8 +292,8 @@ html, body {
 /* ============================== */
 
 .watersheds-section {
-  background: #eef2f0;
-  padding: 80px 24px;
+  background: #f3f6f4;
+  padding: 100px 24px;
 }
 
 .watersheds-container {
@@ -286,7 +307,16 @@ html, body {
   color: #111827;
   text-align: center;
   letter-spacing: -0.02em;
-  margin-bottom: 48px;
+  margin-bottom: 12px;
+}
+
+.watersheds-subtitle {
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #6b7280;
+  max-width: 700px;
+  margin: 0 auto 48px;
 }
 
 .watersheds-grid {
@@ -300,30 +330,33 @@ html, body {
   border-radius: 14px;
   padding: 28px 24px;
   text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
   border: 1px solid #e5e7eb;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 }
 
 .watershed-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
 }
 
 .watershed-icon {
   font-size: 36px;
   margin-bottom: 12px;
+  display: block;
 }
 
 .watershed-card h3 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #111827;
   margin-bottom: 8px;
+  letter-spacing: -0.01em;
 }
 
 .watershed-card p {
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: #6b7280;
 }
 
@@ -480,6 +513,52 @@ html, body {
 
   .dashboard-panel {
     height: 50vh;
+  }
+}
+
+/* ============================== */
+/* Scroll-triggered Animations    */
+/* ============================== */
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(36px);
+  transition: opacity 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.watersheds-grid .fade-in-up {
+  transition-delay: 0s;
+}
+
+.watersheds-grid .fade-in-up:nth-child(1) { transition-delay: 0.00s; }
+.watersheds-grid .fade-in-up:nth-child(2) { transition-delay: 0.04s; }
+.watersheds-grid .fade-in-up:nth-child(3) { transition-delay: 0.08s; }
+.watersheds-grid .fade-in-up:nth-child(4) { transition-delay: 0.12s; }
+.watersheds-grid .fade-in-up:nth-child(5) { transition-delay: 0.16s; }
+.watersheds-grid .fade-in-up:nth-child(6) { transition-delay: 0.20s; }
+.watersheds-grid .fade-in-up:nth-child(7) { transition-delay: 0.24s; }
+.watersheds-grid .fade-in-up:nth-child(8) { transition-delay: 0.28s; }
+.watersheds-grid .fade-in-up:nth-child(9) { transition-delay: 0.32s; }
+.watersheds-grid .fade-in-up:nth-child(10) { transition-delay: 0.36s; }
+.watersheds-grid .fade-in-up:nth-child(11) { transition-delay: 0.40s; }
+.watersheds-grid .fade-in-up:nth-child(12) { transition-delay: 0.44s; }
+.watersheds-grid .fade-in-up:nth-child(13) { transition-delay: 0.48s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  html {
+    scroll-behavior: auto;
   }
 }
 
