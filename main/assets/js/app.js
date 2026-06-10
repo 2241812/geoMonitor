@@ -279,6 +279,7 @@ const APP = {
         if (useHover) {
           leafletLayer.on('mouseover', function (e) {
             if (level !== self.state.currentLevel) return;
+            if (e.target._hiddenByIsolation) return;
             e.target.setStyle({ fillOpacity: 0.55, weight: styleConfig.weight + 1 });
             e.target.bringToFront();
             self._showHoverLabel(name, level);
@@ -380,12 +381,14 @@ const APP = {
     const cfg = this.config.colors[level];
     layer.eachLayer(function(leafletLayer) {
       if (leafletLayer.feature !== selectedFeature) {
+        leafletLayer._hiddenByIsolation = true;
         leafletLayer.setStyle({
           fillOpacity: 0,
           opacity: 0,
           weight: 0,
         });
       } else {
+        leafletLayer._hiddenByIsolation = false;
         leafletLayer.setStyle({
           fillColor: '#ffdd57',
           fillOpacity: 0.5,
@@ -405,6 +408,7 @@ const APP = {
     const cfg = this.config.colors[level];
     const fillOpacity = level === 0 ? 0.1 : 0.25;
     layer.eachLayer(function(leafletLayer) {
+      delete leafletLayer._hiddenByIsolation;
       leafletLayer.setStyle({
         fillColor: cfg.fill,
         fillOpacity: fillOpacity,
