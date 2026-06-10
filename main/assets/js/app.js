@@ -20,7 +20,7 @@ const APP = {
     hoverLayer: null,
     activeBasemap: 'topo',
     basemapLayers: {},
-    panelOpen: false,
+    panelState: 'closed',     // 'closed' | 'peek' | 'open'
     lastViewed: null,          // {feature, level} for mobile panel toggle
   },
 
@@ -530,9 +530,17 @@ const APP = {
       </div>`;
     }
 
+    const isMobile = window.innerWidth <= 640;
+
     content.innerHTML = html;
-    panel.classList.add('open');
-    this.state.panelOpen = true;
+    panel.classList.remove('peek', 'open');
+    if (isMobile) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
 
     /* Render chart */
     if (chartData.values.length > 0) {
@@ -564,14 +572,19 @@ const APP = {
 
   closePanel() {
     const panel = document.getElementById('info-panel');
-    if (panel) panel.classList.remove('open');
-    this.state.panelOpen = false;
+    if (panel) panel.classList.remove('peek', 'open');
+    this.state.panelState = 'closed';
   },
 
   /* ── Toggle panel (mobile bottom sheet) ────── */
   togglePanel() {
-    if (this.state.panelOpen) {
+    const panel = document.getElementById('info-panel');
+    if (!panel) return;
+    if (this.state.panelState === 'open') {
       this.closePanel();
+    } else if (this.state.panelState === 'peek') {
+      panel.classList.replace('peek', 'open');
+      this.state.panelState = 'open';
     } else if (this.state.lastViewed) {
       this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
     }

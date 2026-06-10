@@ -515,6 +515,10 @@
     transform: translateY(0);
   }
 
+  .info-panel.peek {
+    transform: translateY(calc(100% - 52px));
+  }
+
   .info-panel-handle {
     display: flex;
     justify-content: center;
@@ -535,6 +539,10 @@
   .info-panel-close {
     top: 8px;
     right: 8px;
+  }
+
+  .info-panel.peek .info-panel-close {
+    display: none;
   }
 
   .info-panel-content {
