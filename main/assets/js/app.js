@@ -298,10 +298,15 @@ const APP = {
           });
         }
 
-        /* Click: drill down or isolate at deepest level */
+        /* Click: drill down, isolate at deepest level, or drill up from hidden */
         leafletLayer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
           if (level !== self.state.currentLevel) return;
+          /* Clicked a hidden (isolated) barangay → drill up to municipality */
+          if (e.target._hiddenByIsolation) {
+            self.drillUp(level - 1);
+            return;
+          }
           self.openPanel(feature, level);
           if (level < 3) {
             self.drillDown(feature, leafletLayer);
