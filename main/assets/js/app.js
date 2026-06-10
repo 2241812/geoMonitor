@@ -22,6 +22,7 @@ const APP = {
     basemapLayers: {},
     panelState: 'closed',     // 'closed' | 'peek' | 'open'
     lastViewed: null,          // {feature, level} for mobile panel toggle
+    _suppressMapClick: false,
   },
 
   /* ── Config ───────────────────────────────── */
@@ -119,6 +120,10 @@ const APP = {
 
     /* Click empty space → drill back up one level (level 1 is base — no drill-up) */
     map.on('click', () => {
+      if (this.state._suppressMapClick) {
+        this.state._suppressMapClick = false;
+        return;
+      }
       if (this.state.currentLevel > 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
@@ -304,10 +309,12 @@ const APP = {
           if (level !== self.state.currentLevel) return;
           /* Clicked a hidden (isolated) barangay → drill up to municipality */
           if (e.target._hiddenByIsolation) {
+            self.state._suppressMapClick = true;
             self.drillUp(level - 1);
             return;
           }
           self.openPanel(feature, level);
+          self.state._suppressMapClick = true;
           if (level < 3) {
             self.drillDown(feature, leafletLayer);
           } else {
