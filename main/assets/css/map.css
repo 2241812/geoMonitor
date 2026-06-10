@@ -1,3 +1,7 @@
+/* =============================================
+   MAP APP LAYOUT
+   ============================================= */
+
 .map-app {
   position: relative;
   width: 100vw;
@@ -13,7 +17,10 @@
   z-index: 0;
 }
 
-/* Loading overlay */
+/* =============================================
+   LOADING OVERLAY
+   ============================================= */
+
 .map-loading {
   position: absolute;
   inset: 0;
@@ -40,7 +47,7 @@
   border: 3px solid #e5e7eb;
   border-top-color: #059669;
   border-radius: 50%;
-  animation: map-spin 0.7s linear infinite;
+  animation: spin 0.7s linear infinite;
   margin: 0 auto 12px;
 }
 
@@ -50,9 +57,12 @@
   color: #374151;
 }
 
-@keyframes map-spin { to { transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Breadcrumb nav — top left */
+/* =============================================
+   BREADCRUMB NAV — top left drill-down trail
+   ============================================= */
+
 .map-breadcrumb {
   position: absolute;
   top: 16px;
@@ -60,13 +70,14 @@
   z-index: 500;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0;
   background: rgba(255, 255, 255, 0.97);
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
   padding: 4px 6px;
   max-width: calc(100vw - 160px);
   flex-wrap: wrap;
+  gap: 2px;
 }
 
 .breadcrumb-item {
@@ -84,7 +95,6 @@
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
   position: relative;
-  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .breadcrumb-item:hover {
@@ -114,7 +124,10 @@
   line-height: 1;
 }
 
-/* Back button — top right */
+/* =============================================
+   BACK BUTTON — top right
+   ============================================= */
+
 .map-back-btn {
   position: absolute;
   top: 16px;
@@ -132,7 +145,6 @@
   text-decoration: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
   transition: background 0.15s, color 0.15s;
-  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .map-back-btn:hover {
@@ -140,7 +152,10 @@
   color: #111827;
 }
 
-/* Basemap switcher — bottom left */
+/* =============================================
+   BASEMAP SWITCHER — bottom left
+   ============================================= */
+
 .basemap-switcher {
   position: absolute;
   bottom: 32px;
@@ -217,7 +232,10 @@
   background: linear-gradient(135deg, #2d4a1e 0%, #1a3a12 35%, #3d5a28 65%, #243018 100%);
 }
 
-/* Hover label — follows mouse */
+/* =============================================
+   HOVER LABEL — follows mouse
+   ============================================= */
+
 .map-hover-label {
   position: fixed;
   z-index: 800;
@@ -251,7 +269,10 @@
   margin-bottom: 2px;
 }
 
-/* Info panel — slides in from right */
+/* =============================================
+   INFO PANEL — slides in from right
+   ============================================= */
+
 .info-panel {
   position: absolute;
   top: 0;
@@ -391,8 +412,12 @@
   font-size: 12px;
   color: #065f46;
   font-weight: 500;
-  cursor: default;
+  cursor: pointer;
   transition: background 0.15s;
+}
+
+.panel-drill-hint:hover {
+  background: #d1fae5;
 }
 
 .panel-drill-hint svg {
@@ -406,7 +431,7 @@
   width: 100%;
 }
 
-/* Drill-down hint toast */
+/* Drill-down context hint on map */
 .drill-hint-toast {
   position: absolute;
   bottom: 100px;
@@ -430,7 +455,10 @@
   transform: translateX(-50%) translateY(0);
 }
 
-/* Leaflet overrides */
+/* =============================================
+   LEAFLET OVERRIDES
+   ============================================= */
+
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.14) !important;
@@ -458,11 +486,15 @@
   color: #065f46 !important;
 }
 
+/* Hide default Leaflet layer control */
 .leaflet-control-layers {
   display: none !important;
 }
 
-/* Responsive */
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+
 @media (max-width: 640px) {
   .info-panel {
     width: 100vw;
