@@ -606,27 +606,7 @@ html, body {
   transform: translateY(0);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fade-in-up {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
 
-  .animate-slide-left,
-  .animate-slide-right,
-  .animate-fade-scale,
-  .animate-fade-up,
-  .animate-fade-up-delay {
-    opacity: 1;
-    transform: none;
-    animation: none;
-  }
-
-  html {
-    scroll-behavior: auto;
-  }
-}
 
 /* Leaflet overrides */
 .leaflet-control-layers {

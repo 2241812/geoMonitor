@@ -230,10 +230,7 @@
             wrapper.addEventListener('mouseleave', function () { isPaused = false; });
           }
 
-          var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-          if (!motionQuery.matches) {
-            autoScroll();
-          }
+          autoScroll();
         }
       });
     })();
