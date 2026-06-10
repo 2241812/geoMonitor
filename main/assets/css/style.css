@@ -376,6 +376,7 @@ html, body {
   scrollbar-width: none;
   -ms-overflow-style: none;
   cursor: grab;
+  touch-action: pan-x;
 }
 
 .gallery-wrapper::-webkit-scrollbar {
@@ -506,36 +507,33 @@ html, body {
 
 @media (max-width: 768px) {
   .hero-header {
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
+    padding: 14px 16px;
+    gap: 8px;
   }
 
   .header-left,
   .header-right {
-    width: 100%;
-    justify-content: center;
+    gap: 8px;
   }
 
-  .header-right {
-    flex-direction: row-reverse;
-  }
-
-  .header-text-right {
-    align-items: flex-start;
+  .header-text {
+    max-width: 140px;
   }
 
   .header-logo {
-    height: 44px;
+    height: 36px;
   }
 
   .slu-logo {
-    height: 40px;
+    height: 32px;
+  }
+
+  .header-republic {
+    font-size: 9px;
   }
 
   .header-agency {
-    font-size: 12px;
+    font-size: 10px;
   }
 
   .info-container {
