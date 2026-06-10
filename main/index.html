@@ -221,10 +221,11 @@
             animId = requestAnimationFrame(autoScroll);
           }
 
-          wrapper.addEventListener('mouseenter', function () { isPaused = true; });
-          wrapper.addEventListener('mouseleave', function () { isPaused = false; });
-          wrapper.addEventListener('touchstart', function () { isPaused = true; });
-          wrapper.addEventListener('touchend', function () { isPaused = false; });
+          wrapper.addEventListener('pointerenter', function () { isPaused = true; });
+          wrapper.addEventListener('pointerleave', function () { isPaused = false; });
+          wrapper.addEventListener('touchstart', function () { isPaused = true; }, { passive: true });
+          document.addEventListener('touchend', function () { isPaused = false; }, { passive: true });
+          document.addEventListener('touchcancel', function () { isPaused = false; }, { passive: true });
 
           var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
           if (!motionQuery.matches) {
