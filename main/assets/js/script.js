@@ -48,6 +48,7 @@
       } else {
         extra.classList.remove('expanded');
         toggleBtn.textContent = 'View All 13 River Basins';
+        document.getElementById('basins').scrollIntoView({ behavior: 'smooth' });
       }
     });
   });
