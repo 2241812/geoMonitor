@@ -21,6 +21,7 @@ const APP = {
     activeBasemap: 'topo',
     basemapLayers: {},
     panelOpen: false,
+    lastViewed: null,          // {feature, level} for mobile panel toggle
   },
 
   /* ── Config ───────────────────────────────── */
@@ -186,7 +187,7 @@ const APP = {
     if (typeof targetLevel !== 'number' || targetLevel < 1) targetLevel = 1;
 
     /* Already at target — no-op */
-    if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel - 1) return;
+    if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel) return;
 
     /* Remove layers deeper than target */
     for (let lvl = 3; lvl > targetLevel; lvl--) {
@@ -206,7 +207,7 @@ const APP = {
     this._resetLevelStyle(targetLevel);
 
     /* Trim path and update state */
-    this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel - 1);
+    this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
     this.state.currentLevel = targetLevel;
 
     this._updateBreadcrumb();
@@ -217,16 +218,15 @@ const APP = {
       await this._showLevel(0, null, null);
     }
 
-    /* Zoom to show the full parent context */
+    /* Zoom to the feature at the target level */
     if (targetLevel === 1) {
       if (this.state.layers[0]) {
         this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [60, 60] });
       }
     } else {
-      /* targetLevel > 1: zoom to the parent feature (item at index targetLevel - 2) */
-      const parentEntry = this.state.selectedPath[targetLevel - 2];
-      if (parentEntry && parentEntry.bounds) {
-        this.state.map.fitBounds(parentEntry.bounds, { padding: [60, 60] });
+      const entry = this.state.selectedPath[targetLevel - 1];
+      if (entry && entry.bounds) {
+        this.state.map.fitBounds(entry.bounds, { padding: [60, 60] });
       }
     }
   },
@@ -482,6 +482,7 @@ const APP = {
     const content = document.getElementById('info-panel-content');
     if (!panel || !content) return;
 
+    this.state.lastViewed = { feature, level };
     const name = this._featureName(feature, level);
     const levelLabel = this.config.levelNames[level];
     const props = feature.properties || {};
@@ -565,6 +566,15 @@ const APP = {
     const panel = document.getElementById('info-panel');
     if (panel) panel.classList.remove('open');
     this.state.panelOpen = false;
+  },
+
+  /* ── Toggle panel (mobile bottom sheet) ────── */
+  togglePanel() {
+    if (this.state.panelOpen) {
+      this.closePanel();
+    } else if (this.state.lastViewed) {
+      this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+    }
   },
 
   /* ── Detail resolvers ─────────────────────── */

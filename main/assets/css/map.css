@@ -322,6 +322,11 @@
   overflow-y: auto;
 }
 
+/* Panel toggle handle — hidden on desktop, shown on mobile */
+.info-panel-handle {
+  display: none;
+}
+
 /* Panel internals */
 .panel-hero {
   background: linear-gradient(135deg, #065f46 0%, #047857 100%);
@@ -506,25 +511,34 @@
     border-radius: 16px 16px 0 0;
   }
 
-  .info-panel::before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 36px;
-    height: 4px;
-    background: #d1d5db;
-    border-radius: 2px;
-    z-index: 3;
-  }
-
   .info-panel.open {
     transform: translateY(0);
   }
 
+  .info-panel-handle {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 3;
+  }
+
+  .handle-bar {
+    width: 36px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+  }
+
+  .info-panel-close {
+    top: 8px;
+    right: 8px;
+  }
+
   .info-panel-content {
-    padding-top: 10px;
+    padding-top: 0;
   }
 
   .basemap-switcher {
