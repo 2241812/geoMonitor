@@ -649,13 +649,9 @@ html, body {
     gap: 28px;
   }
 
-  .footer-brand {
-    justify-content: center;
-    text-align: center;
-  }
-
   .footer-contact {
     text-align: left;
+    padding-left: 88px;
   }
 }
 
