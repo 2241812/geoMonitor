@@ -10,6 +10,18 @@ Open `main/index.html` in a browser. No server needed. For GeoJSON `fetch()` to 
 python3 -m http.server 8000 -d main
 ```
 
+## Pair development
+
+Use **VS Code Live Share** (extension). One person hosts the session; the other joins. Both edit the same files in real time — writes go through the host machine.
+
+To preview, the host runs a server:
+
+```sh
+python3 -m http.server 8000 -d main
+```
+
+The pair opens `http://localhost:8000` on their side as well (if using Live Share, both see the same browser preview). For cross-device viewing, share the host's local IP (e.g. `http://192.168.x.x:8000`).
+
 ## Architecture
 
 - **Entrypoints**: `main/index.html` (landing), `main/map.html` (map + dashboard)
