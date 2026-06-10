@@ -286,7 +286,7 @@ const APP = {
           });
           leafletLayer.on('mouseout', function (e) {
             if (level !== self.state.currentLevel) return;
-            /* Don't reset if this feature has been dimmed/highlighted by a selection */
+            if (e.target._hiddenByIsolation) return;
             e.target.setStyle({
               fillColor: styleConfig.fill,
               fillOpacity: 0.25,
