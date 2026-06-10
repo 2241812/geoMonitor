@@ -6,7 +6,7 @@ function initMap() {
     maxZoom: APP.config.maxZoom,
     maxBounds: APP.config.maxBounds,
     zoomControl: true,
-    fadeAnimation: true,
+    preferCanvas: true,
   });
 
   const osm = L.tileLayer(APP.config.baseMaps.osm.url, {

@@ -40,9 +40,17 @@ The pair opens `http://localhost:8000` on their side as well (if using Live Shar
 
 ## Data files
 
-GeoJSON files in `main/geoJSON/` (~3.4 MB total) are single-line JSON (no trailing newline, so `wc -l` reports 0 despite being populated). Two sources:
+GeoJSON files in `main/geoJSON/` (~2.1 MB total after coordinate simplification) are single-line JSON (no trailing newline, so `wc -l` reports 0 despite being populated). Two sources:
 - `NAMRIA` — National Mapping and Resource Information Authority
 - `CAD` — Cadastral
+
+## Performance notes
+
+- **Coordinate precision**: GeoJSON coordinates simplified from 14 → 6 decimal places (~1m accuracy), reducing file size by ~36%
+- **Canvas renderer**: Leaflet configured with `preferCanvas: true` — faster than SVG for many polygons
+- **Lazy loading**: Barangays layer (1,172 features, ~1.2 MB) is not fetched until user enables it in the layer control
+- **Hover threshold**: `mouseover`/`mouseout` events only attached to layers with ≤200 features (skipped for barangays)
+- **Loading overlay**: Shown until all initial layers are ready; hidden after `initLayers` completes
 
 ## Dashboard
 
