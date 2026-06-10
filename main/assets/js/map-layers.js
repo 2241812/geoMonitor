@@ -1,19 +1,11 @@
 /**
  * map-layers.js
- * Layer initialization — starts at level 0 (CAR boundary) and lets
- * the drill-down system in app.js handle the rest.
+ * Layer initialization — loads all GeoJSON files as overlay layers,
+ * then sets up the layer control and lazy loading for barangays.
  */
 
 async function initLayers() {
-  /* Show the region boundary first (level 0) */
-  await APP._showLevel(0, null, null);
+  await APP.loadAllLayers();
 
-  /* Then auto-show provinces as the default "clickable" level */
-  await APP._showLevel(1, null, null);
-
-  /* Set initial active level to provinces */
-  APP.state.currentLevel = 1;
-
-  /* Update breadcrumb to reflect initial state */
   APP._updateBreadcrumb();
 }

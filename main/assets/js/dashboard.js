@@ -1,6 +1,6 @@
 /**
  * dashboard.js
- * The floating info panel is now fully managed by APP.openPanel() in app.js.
+ * The floating info panel is fully managed by APP.openPanel() in app.js.
  * This file is kept for compatibility with any external callers.
  */
 
@@ -11,7 +11,7 @@ function initDashboard() {
 function updateDashboard(feature) {
   /* Delegate to APP */
   if (feature && APP) {
-    APP.openPanel(feature, APP.state.currentLevel);
+    APP.openPanel(feature, 'namria-province');
   }
 }
 
