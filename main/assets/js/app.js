@@ -1,37 +1,26 @@
-/**
- * APP — Central state + controller for CAR Watershed drill-down map
- *
- * Drill levels (in order):
- *   0 = region   (CAR boundary)
- *   1 = province
- *   2 = municipality
- *   3 = barangay
- */
-
 const APP = {
 
-  /* ── State ────────────────────────────────── */
   state: {
     map: null,
-    currentLevel: 0,          // 0=region 1=province 2=municipality 3=barangay
-    selectedPath: [],          // [{level, feature, name}] breadcrumb trail
-    layers: {},                // keyed by level: { 0: L.GeoJSON, 1: L.GeoJSON, … }
-    rawData: {},               // cached GeoJSON data by level key
+    currentLevel: 0,
+    selectedPath: [],
+    layers: {},
+    rawData: {},
     hoverLayer: null,
     activeBasemap: 'topo',
     basemapLayers: {},
-    panelState: 'closed',     // 'closed' | 'peek' | 'open'
-    lastViewed: null,          // {feature, level} for mobile panel toggle
+    panelState: 'closed',
+    lastViewed: null,
     _suppressMapClick: false,
-    _drilling: false,          // guard against re-entrant drill calls
-    _chart: null,              // Chart.js instance (destroy before recreate)
-    outlineLayers: {},         // {1: L.GeoJSON|null, 2: L.GeoJSON|null} — interactive outlines
-    activeOutline: null,       // null | 1 (province) | 2 (municipality) — mutually exclusive
-    _outlineHighlight: null,   // currently highlighted leaflet layer on active outline
-    hierarchy: null,           // preprocessed parent/child lookup from hierarchy.json
+    _drilling: false,
+    _chart: null,
+    outlineLayers: {},
+    activeOutline: null,
+    _outlineHighlight: null,
+    hierarchy: null,
+    activeSource: 'namria',
   },
 
-  /* ── Config ───────────────────────────────── */
   config: {
     mapCenter: [17.3, 121.0],
     mapZoom: 8,
@@ -39,28 +28,34 @@ const APP = {
     maxZoom: 18,
     maxBounds: [[4.0, 116.0], [21.5, 128.0]],
 
-    geoJSON: {
-      0: 'geoJSON/CAR NAMRIA Boundary.geojson',
-      1: 'geoJSON/CAR NAMRIA Provincial Boundary.geojson',
-      2: 'geoJSON/CAR NAMRIA Municipal Boundary.geojson',
-      3: 'geoJSON/CAR NAMRIA Barangay Boundary.geojson',
+    sources: {
+      namria: {
+        label: 'NAMRIA',
+        geoJSON: {
+          0: 'geoJSON/CAR NAMRIA Boundary.geojson',
+          1: 'geoJSON/CAR NAMRIA Provincial Boundary.geojson',
+          2: 'geoJSON/CAR NAMRIA Municipal Boundary.geojson',
+        },
+        hierarchy: 'geoJSON/hierarchy-namria.json',
+        levelNames: ['Region', 'Province', 'Municipality'],
+        maxLevel: 2,
+      },
+      cad: {
+        label: 'CAD',
+        geoJSON: {
+          0: 'geoJSON/CAR CAD Boundary.geojson',
+          1: 'geoJSON/CAR CAD Municipal Boundary.geojson',
+        },
+        hierarchy: 'geoJSON/hierarchy-cad.json',
+        levelNames: ['Region', 'Municipality'],
+        maxLevel: 1,
+      },
     },
-
-    levelNames: ['Region', 'Province', 'Municipality', 'Barangay'],
-
-    /* What property name to use for feature label at each level */
-    nameProp: [
-      ['Region', 'NAME_1'],
-      ['PROVINCE', 'NAME_1'],
-      ['Municipali', 'NAME_2', 'NAME_1'],
-      ['NAME_3', 'NAME_2'],
-    ],
 
     colors: {
       0: { fill: '#ff7f0e', stroke: '#c2570a', weight: 3 },
       1: { fill: '#1f77b4', stroke: '#0a3d6b', weight: 2 },
       2: { fill: '#2ca02c', stroke: '#1a6b1a', weight: 1.5 },
-      3: { fill: '#9467bd', stroke: '#5a3e7a', weight: 0.8 },
       highlight: { fill: '#ffdd57', stroke: '#e60000', weight: 3 },
     },
 
@@ -80,6 +75,10 @@ const APP = {
     },
   },
 
+  _src() {
+    return this.config.sources[this.state.activeSource];
+  },
+
   /* ── Init ────────────────────────────────── */
   init() {
     const map = L.map('map', {
@@ -88,12 +87,8 @@ const APP = {
       minZoom: this.config.minZoom,
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
-      zoomControl: true,
       preferCanvas: true,
     });
-
-    /* Position zoom control bottom-right */
-    map.zoomControl.setPosition('bottomright');
 
     /* Basemaps */
     Object.entries(this.config.baseMaps).forEach(([key, cfg]) => {
@@ -107,11 +102,8 @@ const APP = {
 
     this.state.map = map;
 
-    /* Load precomputed hierarchy (parent/child/name lookup) */
-    fetch('geoJSON/hierarchy.json')
-      .then(r => r.json())
-      .then(h => { this.state.hierarchy = h; })
-      .catch(() => {});
+    /* Load hierarchy for active source */
+    this._loadHierarchy();
 
     /* Mouse move → update hover label position (throttled via RAF) */
     let _hoverX = 0, _hoverY = 0, _hoverPending = false;
@@ -130,17 +122,53 @@ const APP = {
       });
     });
 
-    /* Click empty space → drill back up one level (level 1 is base — no drill-up) */
+    /* Click empty space → drill up one level (to region from province, to province from municipality, etc.) */
     map.on('click', () => {
       if (this.state._suppressMapClick) {
         this.state._suppressMapClick = false;
         return;
       }
       if (this.state._drilling) return;
-      if (this.state.currentLevel > 1) {
+      if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
     });
+  },
+
+  _loadHierarchy() {
+    fetch(this._src().hierarchy)
+      .then(r => r.json())
+      .then(h => { this.state.hierarchy = h; })
+      .catch(() => {});
+  },
+
+  /* ── Source toggle ────────────────────────── */
+  switchSource(name) {
+    if (name === this.state.activeSource) return;
+    if (!this.config.sources[name]) return;
+    if (this.state._drilling) return;
+
+    /* Clear all layers and cached data */
+    Object.values(this.state.layers).forEach(l => {
+      if (l) this.state.map.removeLayer(l);
+    });
+    this.state.layers = {};
+    this.state.rawData = {};
+    this.state.selectedPath = [];
+    this.state.currentLevel = 0;
+    this.state.activeOutline = null;
+    this.state._outlineHighlight = null;
+    Object.values(this.state.outlineLayers).forEach(l => {
+      if (l) this.state.map.removeLayer(l);
+    });
+    this.state.outlineLayers = {};
+    this.closePanel();
+
+    this.state.activeSource = name;
+    this._loadHierarchy();
+    this._updateBreadcrumb();
+
+    window.initLayers();
   },
 
   /* ── Basemap switcher ─────────────────────── */
@@ -149,12 +177,8 @@ const APP = {
     const map = this.state.map;
     map.removeLayer(this.state.basemapLayers[this.state.activeBasemap]);
     this.state.basemapLayers[key].addTo(map);
-    map.eachLayer(layer => { if (layer !== this.state.basemapLayers[key]) { /* keep */ } });
-    /* Re-ensure GeoJSON layers are on top */
     Object.values(this.state.layers).forEach(l => l && l.bringToFront && l.bringToFront());
-
     this.state.activeBasemap = key;
-
     document.querySelectorAll('.basemap-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.layer === key);
     });
@@ -166,43 +190,31 @@ const APP = {
     this.state._drilling = true;
     try {
       const currentLevel = this.state.currentLevel;
-      if (currentLevel >= 3) return;
+      if (currentLevel >= this._src().maxLevel) return;
 
       const nextLevel = currentLevel + 1;
       const name = this._featureName(feature, currentLevel);
 
-      /* Record in path with bounds for drill-up zoom */
-      const bounds = leafletLayer.getBounds();
-      this.state.selectedPath.push({ level: currentLevel, feature, name, bounds });
+      this.state.selectedPath.push({ level: currentLevel, feature, name });
 
-      /* Advance currentLevel BEFORE _showLevel so its click guard is correct */
       this.state.currentLevel = nextLevel;
 
-      /* Hide parent level completely — remove from map */
       if (currentLevel > 0 && this.state.layers[currentLevel]) {
         this.state.map.removeLayer(this.state.layers[currentLevel]);
         this.state.layers[currentLevel]._hiddenByDrill = true;
       }
 
-      /* Hide CAR boundary (level 0) when drilling past provinces */
       if (nextLevel >= 2 && this.state.layers[0]) {
         this.state.map.removeLayer(this.state.layers[0]);
         this.state.layers[0] = null;
       }
 
-      /* Update breadcrumb */
       this._updateBreadcrumb();
 
-      /* Load next level filtered to this parent */
       await this._showLevel(nextLevel, feature, currentLevel);
 
-      /* Zoom to clicked feature — tighter zoom per level */
-      const zoomCaps = { 1: 10, 2: 12, 3: 14 };
-      this.state.map.fitBounds(bounds, { padding: [60, 60], maxZoom: zoomCaps[currentLevel] || 12 });
+      this._showToast(`Click a ${this._src().levelNames[nextLevel]} to drill in`);
 
-      this._showToast(`Click a ${this.config.levelNames[nextLevel]} to drill in`);
-
-      /* Re-filter outline overlays to match new drill context */
       this._updateOutlines();
     } finally {
       this.state._drilling = false;
@@ -214,55 +226,50 @@ const APP = {
     if (this.state._drilling) return;
     this.state._drilling = true;
     try {
-      if (typeof targetLevel === 'string' && targetLevel === 'region') targetLevel = 1;
-      if (typeof targetLevel !== 'number' || targetLevel < 1) targetLevel = 1;
+      if (typeof targetLevel !== 'number' || targetLevel < 0) targetLevel = 0;
 
-      /* Already at target — no-op */
+      if (targetLevel === 0) {
+        for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+          if (this.state.layers[lvl]) {
+            this.state.map.removeLayer(this.state.layers[lvl]);
+            this.state.layers[lvl] = null;
+          }
+        }
+        this.state.selectedPath = [];
+        this.state.currentLevel = 0;
+        this._updateBreadcrumb();
+        this.closePanel();
+        await this._showLevel(0);
+        this._updateOutlines();
+        return;
+      }
+
       if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel) return;
 
-      /* Remove layers deeper than target */
-      for (let lvl = 3; lvl > targetLevel; lvl--) {
+      for (let lvl = this._src().maxLevel; lvl > targetLevel; lvl--) {
         if (this.state.layers[lvl]) {
           this.state.map.removeLayer(this.state.layers[lvl]);
           this.state.layers[lvl] = null;
         }
       }
 
-      /* Re-add target level layer if it was hidden during drill-down */
       if (targetLevel > 0 && this.state.layers[targetLevel] && this.state.layers[targetLevel]._hiddenByDrill) {
         this.state.map.addLayer(this.state.layers[targetLevel]);
         this.state.layers[targetLevel]._hiddenByDrill = false;
       }
 
-      /* Reset style of target level — restore all features to default */
       this._resetLevelStyle(targetLevel);
 
-      /* Trim path and update state */
       this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
       this.state.currentLevel = targetLevel;
 
       this._updateBreadcrumb();
       this.closePanel();
 
-      /* Re-show level 0 CAR boundary if coming back to province view */
       if (targetLevel === 1 && !this.state.layers[0]) {
         await this._showLevel(0, null, null);
       }
 
-      /* Zoom to the feature at the target level */
-      if (targetLevel === 1) {
-        if (this.state.layers[0]) {
-          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [60, 60], maxZoom: 9 });
-        }
-      } else {
-        const entry = this.state.selectedPath[targetLevel - 1];
-        if (entry && entry.bounds) {
-          const zoomCaps = { 1: 10, 2: 12 };
-          this.state.map.fitBounds(entry.bounds, { padding: [60, 60], maxZoom: zoomCaps[targetLevel] || 12 });
-        }
-      }
-
-      /* Re-filter outline overlays to match new drill context */
       this._updateOutlines();
     } finally {
       this.state._drilling = false;
@@ -270,24 +277,23 @@ const APP = {
   },
 
   /* ── Show a level (with optional parent filter) ── */
-  async _showLevel(level, parentFeature, parentLevel) {
-    /* Remove this level's layer if present */
+  async _showLevel(level, parentFeature) {
     if (this.state.layers[level]) {
       this.state.map.removeLayer(this.state.layers[level]);
       this.state.layers[level] = null;
     }
 
-    /* Load GeoJSON (cache) */
     const geoKey = level;
     if (!this.state.rawData[geoKey]) {
-      const resp = await fetch(this.config.geoJSON[level]);
+      const src = this._src();
+      if (!src.geoJSON[level]) return;
+      const resp = await fetch(src.geoJSON[level]);
       if (!resp.ok) throw new Error('Failed to load level ' + level);
       this.state.rawData[geoKey] = await resp.json();
     }
 
     let data = this.state.rawData[geoKey];
 
-    /* Filter features to parent */
     if (parentFeature && level > 0) {
       data = this._filterToParent(data, level, parentFeature);
     }
@@ -308,12 +314,10 @@ const APP = {
       }),
 
       onEachFeature(feature, leafletLayer) {
-        /* Level 0 is visual reference only — no interaction */
         if (level === 0) return;
 
         const name = self._featureName(feature, level);
 
-        /* Hover effects (only when this level is the active one) */
         if (useHover) {
           leafletLayer.on('mouseover', function (e) {
             if (level !== self.state.currentLevel) return;
@@ -336,25 +340,20 @@ const APP = {
           });
         }
 
-          /* Click: drill down, isolate at deepest level, or pass through from hidden */
           leafletLayer.on('click', function (e) {
             L.DomEvent.stopPropagation(e);
             if (level !== self.state.currentLevel) return;
-            /* When boundary overlay is active for this level, only the overlay handles clicks */
             if (self.state.activeOutline === level) return;
-            /* Clicked a hidden (isolated) feature — swallow click entirely */
             if (e.target._hiddenByIsolation) {
               self.state._suppressMapClick = true;
               return;
             }
           self.openPanel(feature, level);
           self.state._suppressMapClick = true;
-          if (level < 3) {
+          if (level < self._src().maxLevel) {
             self.drillDown(feature, leafletLayer);
           } else {
-            /* Level 3: zoom to + isolate selected barangay */
             self._dimLevel(level, feature);
-            self.state.map.fitBounds(e.target.getBounds(), { padding: [60, 60], maxZoom: 15 });
           }
         });
       },
@@ -364,7 +363,7 @@ const APP = {
     this.state.layers[level] = layer;
   },
 
-  /* ── Filter GeoJSON to parent boundary (uses _parentId from preprocessed hierarchy) ── */
+  /* ── Filter GeoJSON to parent boundary ─────── */
   _filterToParent(data, childLevel, parentFeature) {
     const parentId = parentFeature.properties._id;
     if (!parentId) return { ...data, features: [] };
@@ -376,14 +375,17 @@ const APP = {
     const p = feature.properties;
     if (!p) return 'Unknown';
 
+    if (this.state.activeSource === 'cad') {
+      if (level === 1) return p.Muni_City || 'Unknown';
+      return 'Cordillera Administrative Region';
+    }
+
     const candidates = [
       p.NAME_3, p.NAME_2, p.NAME_1,
       p.Municipali, p.PROVINCE, p.Province,
       p.Region,
     ].filter(Boolean);
 
-    /* Level-specific preference */
-    if (level === 3) return p.NAME_3 || p.Municipali || candidates[0] || 'Unknown';
     if (level === 2) return p.Municipali || p.NAME_2 || candidates[0] || 'Unknown';
     if (level === 1) return p.PROVINCE || p.Province || p.NAME_1 || candidates[0] || 'Unknown';
     return 'Cordillera Administrative Region';
@@ -427,7 +429,6 @@ const APP = {
       }
     });
 
-    /* Bring selected feature to front */
     if (selectedFeature) {
       layer.eachLayer(function(leafletLayer) {
         if (leafletLayer.feature === selectedFeature) {
@@ -437,7 +438,6 @@ const APP = {
     }
   },
 
-  /* ── Restore default styles for all features at a level ── */
   _resetLevelStyle(level) {
     const layer = this.state.layers[level];
     if (!layer) return;
@@ -455,7 +455,6 @@ const APP = {
     });
   },
 
-  /* ── Dim / restore drill layer when outline overlay is active ── */
   _dimDrillLayer(level) {
     const layer = this.state.layers[level];
     if (!layer) return;
@@ -481,20 +480,22 @@ const APP = {
     });
   },
 
-  /* ── Background prefetch (cache GeoJSON for faster drill-down) ── */
+  /* ── Background prefetch ── */
   async _prefetchLevel(level) {
     if (this.state.rawData[level]) return;
     try {
-      const resp = await fetch(this.config.geoJSON[level]);
+      const src = this._src();
+      if (!src.geoJSON[level]) return;
+      const resp = await fetch(src.geoJSON[level]);
       if (resp.ok) this.state.rawData[level] = await resp.json();
-    } catch (_) { /* best-effort */ }
+    } catch (_) { }
   },
 
   /* ── Hover label ──────────────────────────── */
   _showHoverLabel(name, level) {
     const lbl = document.getElementById('map-hover-label');
     if (!lbl) return;
-    lbl.innerHTML = `<span class="label-level">${this.config.levelNames[level]}</span>${this._escHtml(name)}`;
+    lbl.innerHTML = `<span class="label-level">${this._src().levelNames[level]}</span>${this._escHtml(name)}`;
     lbl.classList.add('visible');
   },
 
@@ -510,16 +511,22 @@ const APP = {
 
     let html = '';
 
-    /* Root: "CAR Region" always clickable if we're deeper than province level,
-       active when we're at province level (currentLevel === 1) */
+    const src = this._src();
     const atRoot = this.state.selectedPath.length === 0;
-    html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(1)">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      CAR Region</button>`;
 
-    /* Each item in selectedPath is a level the user drilled from.
-       selectedPath[0].level = 1 means user clicked a Province → to return to province view, call drillUp(1).
-       selectedPath[1].level = 2 means user clicked a Municipality → to return there, call drillUp(2). */
+    /* Source toggle button */
+    const otherSource = this.state.activeSource === 'namria' ? 'cad' : 'namria';
+    html += `<button class="source-toggle" onclick="APP.switchSource('${otherSource}')" title="Switch to ${this.config.sources[otherSource].label}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      ${src.label}
+    </button>`;
+
+    /* Root: "CAR Region" */
+    html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(0)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      CAR Region
+    </button>`;
+
     this.state.selectedPath.forEach((item, idx) => {
       const isLast = idx === this.state.selectedPath.length - 1;
       html += `<span class="breadcrumb-sep">›</span>`;
@@ -533,11 +540,16 @@ const APP = {
   _renderOutlineToggles() {
     const container = document.getElementById('outline-toggles');
     if (!container) return;
+    const src = this._src();
     const items = [
-      { mode: null,  label: 'None',        icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
-      { mode: 1,     label: 'Province',    icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' },
-      { mode: 2,     label: 'Municipality',icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' },
+      { mode: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
     ];
+    if (src.maxLevel >= 1) {
+      items.push({ mode: 1, label: src.levelNames[1], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' });
+    }
+    if (src.maxLevel >= 2) {
+      items.push({ mode: 2, label: src.levelNames[2], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' });
+    }
     const active = this.state.activeOutline;
     container.innerHTML =
       '<div class="boundary-controls">' +
@@ -547,9 +559,9 @@ const APP = {
       '</div>';
   },
 
-  /* ── Boundary overlay toggle (mutually exclusive) ── */
   _setBoundaryMode(level) {
-    if (level !== null && level !== 1 && level !== 2) return;
+    const max = this._src().maxLevel;
+    if (level !== null && (level < 1 || level > max)) return;
     if (this.state.activeOutline === level) level = null;
     if (this.state.activeOutline !== null) {
       this._hideOutline(this.state.activeOutline);
@@ -564,7 +576,6 @@ const APP = {
     this._renderOutlineToggles();
   },
 
-  /* ── Render one interactive boundary overlay layer ── */
   _showOutline(level) {
     const map = this.state.map;
     if (!map) return;
@@ -605,7 +616,6 @@ const APP = {
     }
   },
 
-  /* Refresh overlay after drill up/down — reset highlight, re-render, dim drill layer */
   _updateOutlines() {
     this.state._outlineHighlight = null;
     if (this.state.activeOutline !== null) {
@@ -622,31 +632,27 @@ const APP = {
 
     this.state.lastViewed = { feature, level };
     const name = this._featureName(feature, level);
-    const levelLabel = this.config.levelNames[level];
+    const src = this._src();
+    const levelLabel = src.levelNames[level];
     const props = feature.properties || {};
-
-    /* Build details */
     const details = this._resolveDetails(props, level, name);
 
     let html = '';
 
-    /* Hero header */
     html += `<div class="panel-hero">
       <div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
       <h2 class="panel-title">${this._escHtml(name)}</h2>
       <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>
     </div>`;
 
-    /* Drill-down hint if not at barangay */
-    if (level < 3) {
-      const nextName = this.config.levelNames[level + 1];
+    if (level < src.maxLevel) {
+      const nextName = src.levelNames[level + 1];
       html += `<div class="panel-drill-hint" onclick="void(0)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
         Click a ${nextName} on the map to drill in
       </div>`;
     }
 
-    /* Properties section */
     html += `<div class="panel-section">
       <div class="panel-section-title">Details</div>`;
 
@@ -659,7 +665,6 @@ const APP = {
 
     html += `</div>`;
 
-    /* Chart section if numeric data available */
     const chartData = this._resolveChartData(props);
     if (chartData.values.length > 0) {
       html += `<div class="panel-section">
@@ -680,7 +685,6 @@ const APP = {
       this.state.panelState = 'open';
     }
 
-    /* Render chart */
     if (chartData.values.length > 0) {
       const ctx = document.getElementById('panel-chart');
       if (ctx) {
@@ -715,7 +719,6 @@ const APP = {
     this.state.panelState = 'closed';
   },
 
-  /* ── Toggle panel (mobile bottom sheet) ────── */
   togglePanel() {
     const panel = document.getElementById('info-panel');
     if (!panel) return;
@@ -729,24 +732,24 @@ const APP = {
     }
   },
 
-  /* ── Detail resolvers ─────────────────────── */
   _resolveDetails(props, level, name) {
     const d = {};
-    if (level === 3) {
-      d['Barangay'] = props.NAME_3 || name;
-      if (props.NAME_2 || props.Municipali) d['Municipality'] = props.NAME_2 || props.Municipali;
-      if (props.NAME_1 || props.PROVINCE) d['Province'] = props.NAME_1 || props.PROVINCE;
-      if (props.TYPE_3) d['Type'] = props.TYPE_3;
-    } else if (level === 2) {
-      d['Municipality/City'] = props.Municipali || name;
-      if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
-      if (props.PSGC) d['PSGC'] = props.PSGC;
-    } else if (level === 1) {
-      d['Province'] = props.PROVINCE || props.Province || name;
-      if (props.PSGC_P) d['PSGC'] = props.PSGC_P;
+    if (this.state.activeSource === 'cad') {
+      d[this._src().levelNames[level] || 'Feature'] = name;
+      if (props.Province) d['Province'] = props.Province;
+      if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
     } else {
-      d['Region'] = props.Region || 'Cordillera Administrative Region';
-      if (props.PSGC) d['PSGC'] = props.PSGC;
+      if (level === 2) {
+        d['Municipality/City'] = props.Municipali || name;
+        if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
+        if (props.PSGC) d['PSGC'] = props.PSGC;
+      } else if (level === 1) {
+        d['Province'] = props.PROVINCE || props.Province || name;
+        if (props.PSGC_P) d['PSGC'] = props.PSGC_P;
+      } else {
+        d['Region'] = props.Region || 'Cordillera Administrative Region';
+        if (props.PSGC) d['PSGC'] = props.PSGC;
+      }
     }
     const area = this._resolveArea(props);
     if (area) d['Area'] = area;
@@ -774,13 +777,15 @@ const APP = {
   },
 
   _heroSubtitle(props, level) {
-    if (level === 3) return `${props.NAME_2 || props.Municipali || ''}, ${props.NAME_1 || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '');
+    if (this.state.activeSource === 'cad') {
+      if (level === 1) return props.Province || props.REGION || '';
+      return 'Cordillera Administrative Region';
+    }
     if (level === 2) return props.Province || props.PROVINCE || 'Province';
     if (level === 1) return 'Province — Cordillera Administrative Region';
     return 'Watershed Cradle of Northern Luzon';
   },
 
-  /* ── Toast ────────────────────────────────── */
   _showToast(msg) {
     let toast = document.getElementById('drill-toast');
     if (!toast) {
@@ -795,7 +800,6 @@ const APP = {
     this._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
   },
 
-  /* ── Utils ────────────────────────────────── */
   _escHtml(str) {
     if (!str) return '';
     const d = document.createElement('div');
@@ -804,7 +808,6 @@ const APP = {
   },
 };
 
-/* Events namespace (kept for compatibility) */
 const EVENTS = {
   FEATURE_SELECT: 'feature:select',
   FEATURE_CLEAR: 'feature:clear',

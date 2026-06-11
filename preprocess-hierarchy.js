@@ -11,115 +11,120 @@ function slug(s) {
 
 const dir = path.join(__dirname, 'main/geoJSON');
 
-const files = [
-  { level: 0, file: 'CAR NAMRIA Boundary.geojson' },
-  { level: 1, file: 'CAR NAMRIA Provincial Boundary.geojson' },
-  { level: 2, file: 'CAR NAMRIA Municipal Boundary.geojson' },
-  { level: 3, file: 'CAR NAMRIA Barangay Boundary.geojson' },
+const sources = [
+  {
+    name: 'namria',
+    files: [
+      { level: 0, file: 'CAR NAMRIA Boundary.geojson' },
+      { level: 1, file: 'CAR NAMRIA Provincial Boundary.geojson' },
+      { level: 2, file: 'CAR NAMRIA Municipal Boundary.geojson' },
+    ],
+    nameProps: {
+      0: () => 'Cordillera Administrative Region',
+      1: (p) => `${p.PROVINCE || ''}`,
+      2: (p) => `${p.Municipali || ''}`,
+    },
+    parentMatch: {
+      // level → { parentProp: property on this level, parentLevel: the level to match against }
+      1: { id: () => 'CAR' },
+      2: { id: (p) => slug(p.Province || p.PROVINCE || '') },
+    },
+    normalizeNames: {
+      // level-2 municipality name normalization for orphan matching
+    },
+  },
+  {
+    name: 'cad',
+    files: [
+      { level: 0, file: 'CAR CAD Boundary.geojson' },
+      { level: 1, file: 'CAR CAD Municipal Boundary.geojson' },
+    ],
+    nameProps: {
+      0: () => 'Cordillera Administrative Region',
+      1: (p) => `${p.Muni_City || ''}`,
+    },
+    parentMatch: {
+      1: { id: () => 'CAR' },
+    },
+    normalizeNames: {},
+  },
 ];
 
-const hierarchy = { parents: {}, children: {}, names: {} };
-const lookup = []; // [{ id, nameUC, level, feature }]
-const geoFiles = []; // [{ filePath, data }] — written after linking
+sources.forEach((source) => {
+  const hierarchy = { parents: {}, children: {}, names: {} };
+  const lookup = [];
+  const geoDatas = [];
+  const NAME_NORMALIZE = source.normalizeNames || {};
 
-files.forEach(({ level, file }) => {
-  const filePath = path.join(dir, file);
-  const raw = fs.readFileSync(filePath, 'utf8');
-  const data = JSON.parse(raw);
+  // Read + index features
+  source.files.forEach(({ level, file }) => {
+    const filePath = path.join(dir, file);
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const data = JSON.parse(raw);
 
-  data.features.forEach((feature) => {
-    const p = feature.properties;
-    let id, name;
+    data.features.forEach((feature) => {
+      const p = feature.properties;
+      const name = (source.nameProps[level](p) || '').trim();
+      let id;
 
-    if (level === 0) {
-      id = 'CAR';
-      name = 'Cordillera Administrative Region';
-    } else if (level === 1) {
-      name = p.PROVINCE || '';
-      id = slug(name);
-    } else if (level === 2) {
-      name = p.Municipali || '';
-      const prov = p.Province || p.PROVINCE || '';
-      id = slug(prov) + ':' + slug(name);
-    } else {
-      name = p.NAME_3 || p.Municipali || '';
-      const prov = p.NAME_1 || p.Province || '';
-      const mun = p.NAME_2 || p.Municipali || '';
-      id = slug(prov) + ':' + slug(mun) + ':' + slug(name);
-    }
+      if (level === 0) {
+        id = 'CAR';
+      } else if (level === 1) {
+        id = slug(name);
+      } else {
+        const provId = source.parentMatch[level]
+          ? stripDiacritics(source.parentMatch[level].id(p) || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+          : '';
+        id = provId ? provId + ':' + slug(name) : slug(name);
+      }
 
-    p._id = id;
-    p._parentId = null;
-    hierarchy.names[id] = name.trim();
-    lookup.push({ id, nameUC: name.toUpperCase(), level, feature });
+      p._id = id;
+      p._parentId = null;
+      hierarchy.names[id] = name;
+      lookup.push({ id, nameUC: name.toUpperCase(), level, feature });
+    });
+
+    geoDatas.push({ filePath, data });
   });
 
-  geoFiles.push({ filePath, data });
+  // Build parent-child links
+  hierarchy.children['CAR'] = [];
+
+  source.files.forEach(({ level }) => {
+    if (level === 0) return; // CAR is root
+    const match = source.parentMatch[level];
+    if (!match) return;
+
+    lookup.filter((l) => l.level === level).forEach((item) => {
+      let parentId = match.id(item.feature.properties);
+      if (!parentId || parentId === 'CAR') {
+        parentId = 'CAR';
+      }
+
+      item.feature.properties._parentId = parentId;
+      hierarchy.parents[item.id] = parentId;
+      if (!hierarchy.children[parentId]) hierarchy.children[parentId] = [];
+      hierarchy.children[parentId].push(item.id);
+    });
+  });
+
+  // Write updated GeoJSON + hierarchy
+  geoDatas.forEach(({ filePath, data }) => {
+    fs.writeFileSync(filePath, JSON.stringify(data));
+  });
+
+  const outFile = path.join(dir, 'hierarchy-' + source.name + '.json');
+  fs.writeFileSync(outFile, JSON.stringify(hierarchy));
+
+  const featureCount = Object.keys(hierarchy.names).length;
+  const parentCount = Object.keys(hierarchy.parents).length;
+  console.log(`${source.name}: ${featureCount} features, ${parentCount} parent links`);
+
+  // Verify
+  let orphans = 0;
+  lookup.forEach((item) => {
+    if (item.level > 0 && hierarchy.parents[item.id] === undefined) orphans++;
+  });
+  if (orphans > 0) console.log(`  WARNING: ${orphans} orphans`);
+  else console.log(`  All features properly linked`);
 });
-
-/* Build parent-child links */
-hierarchy.children['CAR'] = [];
-
-lookup.forEach(item => {
-  if (item.level === 1) {
-    item.feature.properties._parentId = 'CAR';
-    hierarchy.parents[item.id] = 'CAR';
-    hierarchy.children['CAR'].push(item.id);
-  }
-});
-
-lookup.filter(l => l.level === 2).forEach(item => {
-  const parentName = (item.feature.properties.Province || item.feature.properties.PROVINCE || '').toUpperCase();
-  const parent = lookup.find(l => l.level === 1 && (l.nameUC === parentName || l.nameUC.includes(parentName) || parentName.includes(l.nameUC)));
-  if (parent) {
-    item.feature.properties._parentId = parent.id;
-    hierarchy.parents[item.id] = parent.id;
-    if (!hierarchy.children[parent.id]) hierarchy.children[parent.id] = [];
-    hierarchy.children[parent.id].push(item.id);
-  }
-});
-
-/* Normalize municipality names for cross-dataset matching */
-const NAME_NORMALIZE = {
-  'LANGIDEN': 'LAGIDEN',
-  'LICUAN-BAAY': 'BAAY-LICUAN',
-};
-
-lookup.filter(l => l.level === 3).forEach(item => {
-  const p = item.feature.properties;
-  const munName = stripDiacritics((p.NAME_2 || p.Municipali || '').toUpperCase());
-  const provName = stripDiacritics((p.NAME_1 || p.Province || p.PROVINCE || '').toUpperCase());
-  const normMun = NAME_NORMALIZE[munName] || munName;
-  const parent = lookup.find(l => l.level === 2 && (() => {
-    const childMun = stripDiacritics((l.feature.properties.Municipali || '').toUpperCase());
-    const childProv = stripDiacritics((l.feature.properties.Province || l.feature.properties.PROVINCE || '').toUpperCase());
-    const normChild = NAME_NORMALIZE[childMun] || childMun;
-    return childProv === provName && (normChild.includes(normMun) || normMun.includes(normChild));
-  })());
-  if (parent) {
-    item.feature.properties._parentId = parent.id;
-    hierarchy.parents[item.id] = parent.id;
-    if (!hierarchy.children[parent.id]) hierarchy.children[parent.id] = [];
-    hierarchy.children[parent.id].push(item.id);
-  }
-});
-
-/* Write updated GeoJSON (with _id / _parentId populated) */
-geoFiles.forEach(({ filePath, data }) => {
-  fs.writeFileSync(filePath, JSON.stringify(data));
-});
-
-fs.writeFileSync(path.join(dir, 'hierarchy.json'), JSON.stringify(hierarchy));
-
-const featureCount = Object.keys(hierarchy.names).length;
-const parentCount = Object.keys(hierarchy.parents).length;
-const childCount = Object.keys(hierarchy.children).length;
-console.log(`Done: ${featureCount} features indexed, ${parentCount} parent links, ${childCount} child groups`);
-
-/* Verify hierarchy integrity */
-let orphans = 0;
-lookup.forEach(item => {
-  if (item.level > 0 && hierarchy.parents[item.id] === undefined) orphans++;
-});
-if (orphans > 0) console.log(`Warning: ${orphans} features have no parent`);
-else console.log('All features properly linked');
