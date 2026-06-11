@@ -57,9 +57,10 @@ Feature name resolution priority (`_featureName`):
 - **Default basemap**: Esri World Topo (`'topo'`). Alternatives: OSM (`'osm'`), Esri Satellite (`'satellite'`)
 - **View locked** to Philippines (`maxBounds: [[4, 116], [21.5, 128]]`, `minZoom: 7`) — config in `app.js`
 - **Canvas renderer**: `preferCanvas: true` — faster for many polygons, but `stopPropagation` on feature clicks can fail; use `_suppressMapClick` flag as workaround
+- **Re-entrancy guard**: `state._drilling` flag prevents concurrent drillDown/drillUp calls (e.g. from double-click on map background)
 - **Hover**: only attached for layers with ≤300 features (skipped for barangays)
 - **Loading**: levels 0 and 1 fetched in parallel on init. Levels 2 and 3 prefetched in background after loading overlay hides (`_prefetchLevel`). All raw GeoJSON cached in `state.rawData` — subsequent `_showLevel` calls skip fetch and go straight to filter + render.
-- **Outline toggles**: Province/Municipality buttons in the breadcrumb bar toggle non-interactive outline layers (`interactive: false`, `fillOpacity: 0`). Municipality outline auto-filters to the selected province via `selectedPath[0]`. Outlines refresh on drill down/up.
+- **Outline toggles**: Province/Municipality buttons below the breadcrumb toggle non-interactive outline layers (`interactive: false`, `fillOpacity: 0`). Municipality outline auto-filters to the selected province via `selectedPath[0]`. Outlines refresh on drill down/up. Highlight selected feature with fill when a path entry exists at that level.
 
 Only **NAMRIA** files are active (referenced by `app.js` config). **CAD** files exist but are unused.
 

@@ -336,16 +336,15 @@ const APP = {
           });
         }
 
-        /* Click: drill down, isolate at deepest level, or drill up from hidden */
-        leafletLayer.on('click', function (e) {
-          L.DomEvent.stopPropagation(e);
-          if (level !== self.state.currentLevel) return;
-          /* Clicked a hidden (isolated) barangay → drill up to municipality */
-          if (e.target._hiddenByIsolation) {
-            self.state._suppressMapClick = true;
-            self.drillUp(level - 1);
-            return;
-          }
+          /* Click: drill down, isolate at deepest level, or pass through from hidden */
+          leafletLayer.on('click', function (e) {
+            L.DomEvent.stopPropagation(e);
+            if (level !== self.state.currentLevel) return;
+            /* Clicked a hidden (isolated) feature — swallow click entirely */
+            if (e.target._hiddenByIsolation) {
+              self.state._suppressMapClick = true;
+              return;
+            }
           self.openPanel(feature, level);
           self.state._suppressMapClick = true;
           if (level < 3) {
