@@ -59,8 +59,7 @@ Feature name resolution priority (`_featureName`):
 - **Canvas renderer**: `preferCanvas: true` — faster for many polygons, but `stopPropagation` on feature clicks can fail; use `_suppressMapClick` flag as workaround
 - **Hover**: only attached for layers with ≤300 features (skipped for barangays)
 - **Loading**: levels 0 and 1 fetched in parallel on init. Levels 2 and 3 prefetched in background after loading overlay hides (`_prefetchLevel`). All raw GeoJSON cached in `state.rawData` — subsequent `_showLevel` calls skip fetch and go straight to filter + render.
-
-## GeoJSON data
+- **Outline toggles**: Province/Municipality buttons in the breadcrumb bar toggle non-interactive outline layers (`interactive: false`, `fillOpacity: 0`). Municipality outline auto-filters to the selected province via `selectedPath[0]`. Outlines refresh on drill down/up.
 
 Only **NAMRIA** files are active (referenced by `app.js` config). **CAD** files exist but are unused.
 
@@ -107,5 +106,6 @@ Auto-deploys from GitHub at `https://geo-monitor-ten.vercel.app`. Vercel CLI 54.
 - Do not use strict `===` for GeoJSON property matching — use `.includes()` for name comparison
 - Do not make level 0 interactive — `interactive: false` on the L.geoJSON layer is required to prevent CAR polygon from blocking province clicks
 - Do not advance `currentLevel` after `_showLevel` — must happen before so click guards work
+- Do not make outline toggles interactive — they must use `interactive: false` to avoid blocking feature clicks beneath
 
 No tests, CI, linter, or formatter configured. No backend.
