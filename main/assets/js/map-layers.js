@@ -5,10 +5,16 @@
  */
 
 async function initLayers() {
-  /* Show the region boundary first (level 0) */
-  await APP._showLevel(0, null, null);
+  /* Fetch level 0 and 1 GeoJSON in parallel */
+  const [geo0, geo1] = await Promise.all([
+    fetch(APP.config.geoJSON[0]).then(r => r.json()),
+    fetch(APP.config.geoJSON[1]).then(r => r.json()),
+  ]);
+  APP.state.rawData[0] = geo0;
+  APP.state.rawData[1] = geo1;
 
-  /* Then auto-show provinces as the default "clickable" level */
+  /* Render sequentially — level 0 (non-interactive background), then level 1 */
+  await APP._showLevel(0, null, null);
   await APP._showLevel(1, null, null);
 
   /* Set initial active level to provinces */

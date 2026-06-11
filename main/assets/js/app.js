@@ -453,6 +453,15 @@ const APP = {
     });
   },
 
+  /* ── Background prefetch (cache GeoJSON for faster drill-down) ── */
+  async _prefetchLevel(level) {
+    if (this.state.rawData[level]) return;
+    try {
+      const resp = await fetch(this.config.geoJSON[level]);
+      if (resp.ok) this.state.rawData[level] = await resp.json();
+    } catch (_) { /* best-effort */ }
+  },
+
   /* ── Hover label ──────────────────────────── */
   _showHoverLabel(name, level) {
     const lbl = document.getElementById('map-hover-label');
