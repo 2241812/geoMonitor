@@ -23,6 +23,7 @@ const APP = {
     panelState: 'closed',     // 'closed' | 'peek' | 'open'
     lastViewed: null,          // {feature, level} for mobile panel toggle
     _suppressMapClick: false,
+    _chart: null,              // Chart.js instance (destroy before recreate)
   },
 
   /* ── Config ───────────────────────────────── */
@@ -109,13 +110,21 @@ const APP = {
 
     this.state.map = map;
 
-    /* Mouse move → update hover label position */
+    /* Mouse move → update hover label position (throttled via RAF) */
+    let _hoverX = 0, _hoverY = 0, _hoverPending = false;
     document.addEventListener('mousemove', (e) => {
-      const lbl = document.getElementById('map-hover-label');
-      if (lbl && lbl.classList.contains('visible')) {
-        lbl.style.left = (e.clientX + 14) + 'px';
-        lbl.style.top  = (e.clientY - 10) + 'px';
-      }
+      _hoverX = e.clientX;
+      _hoverY = e.clientY;
+      if (_hoverPending) return;
+      _hoverPending = true;
+      requestAnimationFrame(() => {
+        _hoverPending = false;
+        const lbl = document.getElementById('map-hover-label');
+        if (lbl && lbl.classList.contains('visible')) {
+          lbl.style.left = (_hoverX + 14) + 'px';
+          lbl.style.top  = (_hoverY - 10) + 'px';
+        }
+      });
     });
 
     /* Click empty space → drill back up one level (level 1 is base — no drill-up) */
@@ -553,7 +562,8 @@ const APP = {
     if (chartData.values.length > 0) {
       const ctx = document.getElementById('panel-chart');
       if (ctx) {
-        new Chart(ctx, {
+        if (this.state._chart) this.state._chart.destroy();
+        this.state._chart = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: chartData.labels,
