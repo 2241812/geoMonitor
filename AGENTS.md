@@ -61,7 +61,7 @@ Feature name resolution priority (`_featureName`):
 - **Hover**: only attached for layers with ≤300 features (skipped for barangays)
 - **Loading**: levels 0 and 1 fetched in parallel on init. Levels 2 and 3 prefetched in background after loading overlay hides (`_prefetchLevel`). All raw GeoJSON cached in `state.rawData` — subsequent `_showLevel` calls skip fetch and go straight to filter + render.
 - **Boundary overlay system**: Hydrohub-style mutually exclusive radio mode. Only Province **or** Municipality can be active at a time (never both). Selected boundary renders as a dark floating panel on the right side with three options: None / Province / Municipality.
-- **Boundary overlay layers**: `interactive: true` — clicking a feature on the overlay highlights it using `resetStyle()` to clear the previous highlight, opens the info panel, and triggers `drillDown()` if the overlay matches the current drill level. The corresponding drill layer is dimmed (`fillOpacity: 0`) when the overlay is active to prevent visual overlap. Municipality overlay auto-filters to the selected province via `selectedPath[0]`. Overlays refresh on drill down/up.
+- **Boundary overlay layers**: `interactive: true` — clicking a feature on the overlay highlights it using `resetStyle()` to clear the previous highlight, opens the info panel, and triggers `drillDown()` if the overlay matches the current drill level. The corresponding drill layer is dimmed (`fillOpacity: 0`) when the overlay is active to prevent visual overlap. Municipality overlay shows **all** municipalities (no province filter). Overlays refresh on drill down/up.
 
 Only **NAMRIA** files are active (referenced by `app.js` config). **CAD** files exist but are unused.
 

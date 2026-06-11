@@ -102,6 +102,9 @@ const APP = {
     /* Position zoom control bottom-right */
     map.zoomControl.setPosition('bottomright');
 
+    /* Disable double-click zoom — replaced with drill-up on dblclick */
+    map.doubleClickZoom.disable();
+
     /* Basemaps */
     Object.entries(this.config.baseMaps).forEach(([key, cfg]) => {
       this.state.basemapLayers[key] = L.tileLayer(cfg.url, {
@@ -131,8 +134,8 @@ const APP = {
       });
     });
 
-    /* Click empty space → drill back up one level (level 1 is base — no drill-up) */
-    map.on('click', () => {
+    /* Double-click empty space → drill back up one level (level 1 is base — no drill-up) */
+    map.on('dblclick', () => {
       if (this.state._suppressMapClick) {
         this.state._suppressMapClick = false;
         return;
@@ -605,17 +608,17 @@ const APP = {
     const raw = this.state.rawData[level];
     if (!raw) return;
 
-    /* Outline visual config — bright, visible, distinct from drill layer */
+    /* Outline visual config — black/dark gray, no fill until selected */
     const outlineStyle = {
-      1: { color: '#60a5fa', weight: 2,   opacity: 0.8 },  /* province — bright blue */
-      2: { color: '#34d399', weight: 1.5, opacity: 0.7 },  /* municipality — bright green */
+      color: '#1e293b',
+      weight: 1.5,
+      opacity: 0.6,
     };
-    const { color, weight, opacity } = outlineStyle[level] || outlineStyle[1];
     const self = this;
 
     this.state.outlineLayers[level] = L.geoJSON(raw, {
       interactive: true,
-      style: { color, weight, opacity, fillOpacity: 0 },
+      style: { ...outlineStyle, fillOpacity: 0 },
       onEachFeature(feature, leafletLayer) {
         leafletLayer.on('click', function(e) {
           L.DomEvent.stopPropagation(e);
@@ -625,7 +628,7 @@ const APP = {
             self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
           }
 
-          /* Highlight clicked feature — amber/yellow fill */
+          /* Highlight clicked feature — amber fill, thick border */
           leafletLayer.setStyle({
             fillColor: '#fbbf24',
             fillOpacity: 0.25,
