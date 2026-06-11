@@ -24,6 +24,8 @@ const APP = {
     lastViewed: null,          // {feature, level} for mobile panel toggle
     _suppressMapClick: false,
     _chart: null,              // Chart.js instance (destroy before recreate)
+    outlineLayers: {},         // {1: L.GeoJSON|null, 2: L.GeoJSON|null} — non-interactive reference outlines
+    outlineVisible: {1: false, 2: false},
   },
 
   /* ── Config ───────────────────────────────── */
@@ -193,6 +195,9 @@ const APP = {
     this.state.map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
 
     this._showToast(`Click a ${this.config.levelNames[nextLevel]} to drill in`);
+
+    /* Re-filter outline overlays to match new drill context */
+    this._updateOutlines();
   },
 
   /* ── Drill UP ──────────────────────────────── */
@@ -243,6 +248,9 @@ const APP = {
         this.state.map.fitBounds(entry.bounds, { padding: [60, 60] });
       }
     }
+
+    /* Re-filter outline overlays to match new drill context */
+    this._updateOutlines();
   },
 
   /* ── Show a level (with optional parent filter) ── */
@@ -498,7 +506,86 @@ const APP = {
       html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.drillUp(${item.level})">${this._escHtml(item.name)}</button>`;
     });
 
-    bc.innerHTML = html;
+    bc.innerHTML = html + this._outlineToggleHTML();
+  },
+
+  _outlineToggleHTML() {
+    const items = [
+      { level: 1, label: 'Province' },
+      { level: 2, label: 'Municipality' },
+    ];
+    let html = `<span class="breadcrumb-sep outline-sep">|</span>`;
+    items.forEach(({ level, label }) => {
+      const on = this.state.outlineVisible[level];
+      html += `<button class="breadcrumb-item outline-toggle ${on ? 'active' : ''}" onclick="APP._toggleOutline(${level})" title="Show ${label} outlines">${this._escHtml(label)}</button>`;
+    });
+    return html;
+  },
+
+  /* ── Outline toggles (non-interactive reference layers) ── */
+  _toggleOutline(level) {
+    const visible = !this.state.outlineVisible[level];
+    this.state.outlineVisible[level] = visible;
+    if (visible) {
+      this._showOutline(level);
+    } else {
+      this._hideOutline(level);
+    }
+    this._updateBreadcrumb();
+  },
+
+  _showOutline(level) {
+    const map = this.state.map;
+    if (!map) return;
+    /* Remove existing if present */
+    if (this.state.outlineLayers[level]) {
+      map.removeLayer(this.state.outlineLayers[level]);
+      this.state.outlineLayers[level] = null;
+    }
+    /* Use cached raw data */
+    const raw = this.state.rawData[level];
+    if (!raw) return;
+
+    let data = raw;
+    /* Filter municipality outline to current province context */
+    if (level === 2) {
+      if (this.state.selectedPath.length > 0) {
+        const parentProvince = this.state.selectedPath[0];
+        if (parentProvince && parentProvince.feature) {
+          data = this._filterToParent(raw, 2, parentProvince.feature);
+        }
+      } else {
+        /* No province selected — no context to show municipality outlines */
+        return;
+      }
+    }
+
+    const cfg = this.config.colors[level];
+    this.state.outlineLayers[level] = L.geoJSON(data, {
+      interactive: false,
+      style: {
+        color: cfg.stroke,
+        weight: 1.5,
+        opacity: 0.5,
+        fillOpacity: 0,
+      },
+    }).addTo(map);
+  },
+
+  _hideOutline(level) {
+    if (this.state.outlineLayers[level]) {
+      this.state.map.removeLayer(this.state.outlineLayers[level]);
+      this.state.outlineLayers[level] = null;
+    }
+  },
+
+  /* Refresh outlines after drill down/up to keep filtering correct */
+  _updateOutlines() {
+    [1, 2].forEach(lvl => {
+      if (this.state.outlineVisible[lvl]) {
+        this._showOutline(lvl);
+      }
+    });
   },
 
   /* ── Info Panel ───────────────────────────── */
