@@ -25,8 +25,9 @@ const APP = {
     _suppressMapClick: false,
     _drilling: false,          // guard against re-entrant drill calls
     _chart: null,              // Chart.js instance (destroy before recreate)
-    outlineLayers: {},         // {1: L.GeoJSON|null, 2: L.GeoJSON|null} — non-interactive reference outlines
-    outlineVisible: {1: false, 2: false},
+    outlineLayers: {},         // {1: L.GeoJSON|null, 2: L.GeoJSON|null} — interactive outlines
+    activeOutline: null,       // null | 1 (province) | 2 (municipality) — mutually exclusive
+    _outlineHighlight: null,   // currently highlighted leaflet layer on active outline
   },
 
   /* ── Config ───────────────────────────────── */
@@ -476,6 +477,32 @@ const APP = {
     });
   },
 
+  /* ── Dim / restore drill layer when outline overlay is active ── */
+  _dimDrillLayer(level) {
+    const layer = this.state.layers[level];
+    if (!layer) return;
+    const cfg = this.config.colors[level];
+    layer.eachLayer(l => {
+      l.setStyle({ fillColor: cfg.fill, fillOpacity: 0, opacity: 0.35, weight: 1.2 });
+    });
+  },
+
+  _restoreDrillLayer(level) {
+    const layer = this.state.layers[level];
+    if (!layer) return;
+    const cfg = this.config.colors[level];
+    const fillOpacity = level === 0 ? 0.1 : 0.25;
+    layer.eachLayer(l => {
+      l.setStyle({
+        fillColor: cfg.fill,
+        fillOpacity: fillOpacity,
+        color: cfg.stroke,
+        weight: cfg.weight,
+        opacity: 0.9,
+      });
+    });
+  },
+
   /* ── Background prefetch (cache GeoJSON for faster drill-down) ── */
   async _prefetchLevel(level) {
     if (this.state.rawData[level]) return;
@@ -529,29 +556,41 @@ const APP = {
     const container = document.getElementById('outline-toggles');
     if (!container) return;
     const items = [
-      { level: 1, label: 'Province', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' },
-      { level: 2, label: 'Municipality', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' },
+      { level: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
+      { level: 1, label: 'Province', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' },
+      { level: 2, label: 'Municipality', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' },
     ];
-    let html = '';
+    let html = '<div class="boundary-controls">';
     items.forEach(({ level, label, icon }) => {
-      const on = this.state.outlineVisible[level];
-      html += `<button class="outline-btn ${on ? 'active' : ''}" onclick="APP._toggleOutline(${level})" title="Show ${label} outlines">${icon}<span>${this._escHtml(label)}</span></button>`;
+      const active = this.state.activeOutline === level;
+      html += `<button class="boundary-option ${active ? 'active' : ''}" onclick="APP._setBoundaryMode(${level === null ? 'null' : level})">${icon}<span>${this._escHtml(label)}</span></button>`;
     });
+    html += '</div>';
     container.innerHTML = html;
   },
 
-  /* ── Outline toggles (non-interactive reference layers) ── */
-  _toggleOutline(level) {
-    const visible = !this.state.outlineVisible[level];
-    this.state.outlineVisible[level] = visible;
-    if (visible) {
-      this._showOutline(level);
-    } else {
-      this._hideOutline(level);
+  /* ── Boundary mode: mutually exclusive radio-style toggle ── */
+  _setBoundaryMode(level) {
+    if (this.state.activeOutline === level) {
+      level = null; /* clicking active option deactivates */
     }
-    this._updateBreadcrumb();
+    /* Deactivate current */
+    if (this.state.activeOutline !== null) {
+      this._hideOutline(this.state.activeOutline);
+      this._restoreDrillLayer(this.state.activeOutline);
+    }
+    /* Clear highlight memory */
+    this.state._outlineHighlight = null;
+    /* Activate new */
+    this.state.activeOutline = level;
+    if (level !== null) {
+      this._showOutline(level);
+      this._dimDrillLayer(level);
+    }
+    this._renderOutlineToggles();
   },
 
+  /* ── Interactive outline layer ───────────────── */
   _showOutline(level) {
     const map = this.state.map;
     if (!map) return;
@@ -575,33 +614,45 @@ const APP = {
       }
     }
 
-    /* Determine which feature to highlight */
-    let highlight = null;
-    if (level === 1 && this.state.selectedPath.length > 0) {
-      highlight = this.state.selectedPath[0].feature;
-    } else if (level === 2 && this.state.selectedPath.length > 1) {
-      highlight = this.state.selectedPath[1].feature;
-    }
-
     const cfg = this.config.colors[level];
+    const self = this;
+
     this.state.outlineLayers[level] = L.geoJSON(data, {
-      interactive: false,
-      style(feature) {
-        if (highlight && feature === highlight) {
-          return {
-            color: cfg.stroke,
-            weight: 2,
-            opacity: 0.8,
+      interactive: true,
+      style: {
+        color: cfg.stroke,
+        weight: 1.2,
+        opacity: 0.5,
+        fillOpacity: 0,
+      },
+      onEachFeature(feature, leafletLayer) {
+        leafletLayer.on('click', function(e) {
+          L.DomEvent.stopPropagation(e);
+
+          /* Clear previous highlight on this outline layer */
+          if (self.state._outlineHighlight) {
+            self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
+          }
+
+          /* Highlight clicked feature */
+          leafletLayer.setStyle({
             fillColor: cfg.fill,
-            fillOpacity: 0.2,
-          };
-        }
-        return {
-          color: cfg.stroke,
-          weight: 1.2,
-          opacity: 0.4,
-          fillOpacity: 0,
-        };
+            fillOpacity: 0.3,
+            color: cfg.stroke,
+            weight: 2.5,
+            opacity: 1,
+          });
+          leafletLayer.bringToFront();
+          self.state._outlineHighlight = leafletLayer;
+
+          self.state._suppressMapClick = true;
+          self.openPanel(feature, level);
+
+          /* Drill down if this outline matches the current drill level */
+          if (level === self.state.currentLevel) {
+            self.drillDown(feature, leafletLayer);
+          }
+        });
       },
     }).addTo(map);
   },
@@ -613,13 +664,13 @@ const APP = {
     }
   },
 
-  /* Refresh outlines after drill down/up to keep filtering correct */
+  /* Refresh active outline + sync drill layer visibility after drill up/down */
   _updateOutlines() {
-    [1, 2].forEach(lvl => {
-      if (this.state.outlineVisible[lvl]) {
-        this._showOutline(lvl);
-      }
-    });
+    this.state._outlineHighlight = null;
+    if (this.state.activeOutline !== null) {
+      this._showOutline(this.state.activeOutline);
+      this._dimDrillLayer(this.state.activeOutline);
+    }
   },
 
   /* ── Info Panel ───────────────────────────── */

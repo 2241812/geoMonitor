@@ -125,48 +125,71 @@
 }
 
 /* =============================================
-   OUTLINE TOGGLE BUTTONS — below breadcrumb
+   BOUNDARY CONTROLS — Hydrohub-style floating panel
    ============================================= */
 
 .outline-toggles {
   position: absolute;
   top: 52px;
-  left: 16px;
+  right: 16px;
   z-index: 500;
-  display: flex;
-  gap: 4px;
 }
 
-.outline-btn {
-  display: inline-flex;
+.boundary-controls {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 180, 216, 0.25);
+  border-radius: 10px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  min-width: 110px;
+}
+
+.boundary-option {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #6b7280;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #e5e7eb;
-  border-radius: 7px;
+  gap: 7px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
   white-space: nowrap;
 }
 
-.outline-btn:hover {
-  background: #fff;
-  color: #374151;
-  border-color: #d1d5db;
+.boundary-option svg {
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
-.outline-btn.active {
-  color: #065f46;
-  background: #ecfdf5;
-  border-color: #a7f3d0;
+.boundary-option:hover {
+  background: rgba(0, 180, 216, 0.08);
+  color: #cbd5e1;
 }
 
-.outline-btn.active:hover {
-  background: #d1fae5;
+.boundary-option:hover svg {
+  opacity: 0.8;
+}
+
+.boundary-option.active {
+  color: #00b4d8;
+  background: rgba(0, 180, 216, 0.12);
+}
+
+.boundary-option.active svg {
+  opacity: 1;
+  stroke: #00b4d8;
 }
 
 /* =============================================
@@ -631,11 +654,22 @@
 
   .outline-toggles {
     top: 48px;
-    left: 12px;
+    right: 10px;
   }
 
-  .outline-btn {
+  .boundary-controls {
+    min-width: 90px;
+    padding: 4px;
+  }
+
+  .boundary-option {
     font-size: 10px;
-    padding: 3px 7px;
+    padding: 5px 8px;
+    gap: 5px;
+  }
+
+  .boundary-option svg {
+    width: 8px;
+    height: 8px;
   }
 }
