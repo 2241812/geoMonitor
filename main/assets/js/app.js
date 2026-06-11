@@ -28,6 +28,7 @@ const APP = {
     outlineLayers: {},         // {1: L.GeoJSON|null, 2: L.GeoJSON|null} — interactive outlines
     activeOutline: null,       // null | 1 (province) | 2 (municipality) — mutually exclusive
     _outlineHighlight: null,   // currently highlighted leaflet layer on active outline
+    hierarchy: null,           // preprocessed parent/child lookup from hierarchy.json
   },
 
   /* ── Config ───────────────────────────────── */
@@ -53,14 +54,6 @@ const APP = {
       ['PROVINCE', 'NAME_1'],
       ['Municipali', 'NAME_2', 'NAME_1'],
       ['NAME_3', 'NAME_2'],
-    ],
-
-    /* Parent-link: which property on level N matches the selected parent at level N-1 */
-    parentFilter: [
-      null,                          // level 0 — always show all
-      { childProp: 'PROVINCE',   parentProp: 'PROVINCE' },
-      { childProp: 'Province',   parentProp: 'PROVINCE', fallback: ['Municipali'] },
-      { childProp: 'NAME_1',     parentProp: 'Province', fallback: ['NAME_2'] },
     ],
 
     colors: {
@@ -113,6 +106,12 @@ const APP = {
     this.state.activeBasemap = 'topo';
 
     this.state.map = map;
+
+    /* Load precomputed hierarchy (parent/child/name lookup) */
+    fetch('geoJSON/hierarchy.json')
+      .then(r => r.json())
+      .then(h => { this.state.hierarchy = h; })
+      .catch(() => {});
 
     /* Mouse move → update hover label position (throttled via RAF) */
     let _hoverX = 0, _hoverY = 0, _hoverPending = false;
@@ -365,34 +364,11 @@ const APP = {
     this.state.layers[level] = layer;
   },
 
-  /* ── Filter GeoJSON to parent boundary ─────── */
+  /* ── Filter GeoJSON to parent boundary (uses _parentId from preprocessed hierarchy) ── */
   _filterToParent(data, childLevel, parentFeature) {
-    const pProps = parentFeature.properties;
-
-    const filtered = data.features.filter(feat => {
-      const cProps = feat.properties;
-
-      /* Level 2 (municipalities): match by province name (case-insensitive) */
-      if (childLevel === 2) {
-        const provinceName = (pProps.PROVINCE || pProps.Province || '').toUpperCase();
-        const childProvince = (cProps.Province || cProps.PROVINCE || cProps.NAME_1 || '').toUpperCase();
-        return childProvince === provinceName;
-      }
-
-      /* Level 3 (barangays): match by municipality name + province (case-insensitive) */
-      if (childLevel === 3) {
-        const munName = (pProps.Municipali || pProps.NAME_2 || '').toUpperCase();
-        const childMun = (cProps.NAME_2 || cProps.Municipali || '').toUpperCase();
-        const provName = (pProps.PROVINCE || pProps.Province || pProps.NAME_1 || '').toUpperCase();
-        const childProv = (cProps.NAME_1 || cProps.PROVINCE || cProps.Province || '').toUpperCase();
-        if (childProv !== provName) return false;
-        return childMun.includes(munName) || munName.includes(childMun);
-      }
-
-      return true;
-    });
-
-    return { ...data, features: filtered };
+    const parentId = parentFeature.properties._id;
+    if (!parentId) return { ...data, features: [] };
+    return { ...data, features: data.features.filter(f => f.properties._parentId === parentId) };
   },
 
   /* ── Feature name resolution ─────────────── */
