@@ -558,34 +558,28 @@ const APP = {
     const container = document.getElementById('outline-toggles');
     if (!container) return;
     const items = [
-      { level: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
-      { level: 1, label: 'Province', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' },
-      { level: 2, label: 'Municipality', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' },
+      { mode: null,  label: 'None',        icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
+      { mode: 1,     label: 'Province',    icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' },
+      { mode: 2,     label: 'Municipality',icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' },
     ];
-    let html = '<div class="boundary-controls">';
-    items.forEach(({ level, label, icon }) => {
-      const active = this.state.activeOutline === level;
-      html += `<button class="boundary-option ${active ? 'active' : ''}" onclick="APP._setBoundaryMode(${level === null ? 'null' : level})">${icon}<span>${this._escHtml(label)}</span></button>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
+    const active = this.state.activeOutline;
+    container.innerHTML =
+      '<div class="boundary-controls">' +
+      items.map(({ mode, label, icon }) =>
+        `<button class="boundary-option${active === mode ? ' active' : ''}" onclick="APP._setBoundaryMode(${mode === null ? 'null' : mode})">${icon}<span>${this._escHtml(label)}</span></button>`
+      ).join('') +
+      '</div>';
   },
 
-  /* ── Boundary mode: mutually exclusive radio-style toggle ── */
+  /* ── Boundary overlay toggle (mutually exclusive) ── */
   _setBoundaryMode(level) {
-    /* Guard: only null, 1, or 2 */
     if (level !== null && level !== 1 && level !== 2) return;
-    /* Toggle off if same button clicked */
-    if (this.state.activeOutline === level) {
-      level = null;
-    }
-    /* Deactivate current overlay */
+    if (this.state.activeOutline === level) level = null;
     if (this.state.activeOutline !== null) {
       this._hideOutline(this.state.activeOutline);
       this._restoreDrillLayer(this.state.activeOutline);
     }
     this.state._outlineHighlight = null;
-    /* Activate new */
     this.state.activeOutline = level;
     if (level !== null) {
       this._showOutline(level);
@@ -594,7 +588,7 @@ const APP = {
     this._renderOutlineToggles();
   },
 
-  /* ── Interactive outline layer ───────────────── */
+  /* ── Render one interactive boundary overlay layer ── */
   _showOutline(level) {
     const map = this.state.map;
     if (!map) return;
@@ -604,44 +598,24 @@ const APP = {
     }
     const raw = this.state.rawData[level];
     if (!raw) return;
-
-    /* Outline visual config — black/dark gray, no fill until selected */
-    const outlineStyle = {
-      color: '#1e293b',
-      weight: 1.5,
-      opacity: 0.6,
-    };
     const self = this;
 
     this.state.outlineLayers[level] = L.geoJSON(raw, {
       interactive: true,
-      style: { ...outlineStyle, fillOpacity: 0 },
-      onEachFeature(feature, leafletLayer) {
-        leafletLayer.on('click', function(e) {
+      style: { color: '#1e293b', weight: 1.5, opacity: 0.6, fillOpacity: 0 },
+      onEachFeature(feature, layer) {
+        layer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
-
-          /* Clear previous highlight on this outline layer */
           if (self.state._outlineHighlight) {
             self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
           }
-
-          /* Highlight clicked feature — amber fill, thick border */
-          leafletLayer.setStyle({
-            fillColor: '#fbbf24',
-            fillOpacity: 0.25,
-            color: '#fbbf24',
-            weight: 3,
-            opacity: 1,
-          });
-          leafletLayer.bringToFront();
-          self.state._outlineHighlight = leafletLayer;
-
+          layer.setStyle({ fillColor: '#fbbf24', fillOpacity: 0.25, color: '#fbbf24', weight: 3, opacity: 1 });
+          layer.bringToFront();
+          self.state._outlineHighlight = layer;
           self.state._suppressMapClick = true;
           self.openPanel(feature, level);
-
-          /* Drill down if this outline matches the current drill level */
           if (level === self.state.currentLevel) {
-            self.drillDown(feature, leafletLayer);
+            self.drillDown(feature, layer);
           }
         });
       },
@@ -655,7 +629,7 @@ const APP = {
     }
   },
 
-  /* Refresh active outline + sync drill layer visibility after drill up/down */
+  /* Refresh overlay after drill up/down — reset highlight, re-render, dim drill layer */
   _updateOutlines() {
     this.state._outlineHighlight = null;
     if (this.state.activeOutline !== null) {
