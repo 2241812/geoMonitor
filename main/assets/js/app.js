@@ -506,20 +506,23 @@ const APP = {
       html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.drillUp(${item.level})">${this._escHtml(item.name)}</button>`;
     });
 
-    bc.innerHTML = html + this._outlineToggleHTML();
+    bc.innerHTML = html;
+    this._renderOutlineToggles();
   },
 
-  _outlineToggleHTML() {
+  _renderOutlineToggles() {
+    const container = document.getElementById('outline-toggles');
+    if (!container) return;
     const items = [
-      { level: 1, label: 'Province' },
-      { level: 2, label: 'Municipality' },
+      { level: 1, label: 'Province', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' },
+      { level: 2, label: 'Municipality', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' },
     ];
-    let html = `<span class="breadcrumb-sep outline-sep">|</span>`;
-    items.forEach(({ level, label }) => {
+    let html = '';
+    items.forEach(({ level, label, icon }) => {
       const on = this.state.outlineVisible[level];
-      html += `<button class="breadcrumb-item outline-toggle ${on ? 'active' : ''}" onclick="APP._toggleOutline(${level})" title="Show ${label} outlines">${this._escHtml(label)}</button>`;
+      html += `<button class="outline-btn ${on ? 'active' : ''}" onclick="APP._toggleOutline(${level})" title="Show ${label} outlines">${icon}<span>${this._escHtml(label)}</span></button>`;
     });
-    return html;
+    container.innerHTML = html;
   },
 
   /* ── Outline toggles (non-interactive reference layers) ── */
@@ -537,12 +540,10 @@ const APP = {
   _showOutline(level) {
     const map = this.state.map;
     if (!map) return;
-    /* Remove existing if present */
     if (this.state.outlineLayers[level]) {
       map.removeLayer(this.state.outlineLayers[level]);
       this.state.outlineLayers[level] = null;
     }
-    /* Use cached raw data */
     const raw = this.state.rawData[level];
     if (!raw) return;
 
@@ -555,19 +556,37 @@ const APP = {
           data = this._filterToParent(raw, 2, parentProvince.feature);
         }
       } else {
-        /* No province selected — no context to show municipality outlines */
         return;
       }
+    }
+
+    /* Determine which feature to highlight */
+    let highlight = null;
+    if (level === 1 && this.state.selectedPath.length > 0) {
+      highlight = this.state.selectedPath[0].feature;
+    } else if (level === 2 && this.state.selectedPath.length > 1) {
+      highlight = this.state.selectedPath[1].feature;
     }
 
     const cfg = this.config.colors[level];
     this.state.outlineLayers[level] = L.geoJSON(data, {
       interactive: false,
-      style: {
-        color: cfg.stroke,
-        weight: 1.5,
-        opacity: 0.5,
-        fillOpacity: 0,
+      style(feature) {
+        if (highlight && feature === highlight) {
+          return {
+            color: cfg.stroke,
+            weight: 2,
+            opacity: 0.8,
+            fillColor: cfg.fill,
+            fillOpacity: 0.2,
+          };
+        }
+        return {
+          color: cfg.stroke,
+          weight: 1.2,
+          opacity: 0.4,
+          fillOpacity: 0,
+        };
       },
     }).addTo(map);
   },
