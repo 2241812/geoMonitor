@@ -58,6 +58,7 @@ Feature name resolution priority (`_featureName`):
 - **View locked** to Philippines (`maxBounds: [[4, 116], [21.5, 128]]`, `minZoom: 7`) — config in `app.js`
 - **Canvas renderer**: `preferCanvas: true` — faster for many polygons, but `stopPropagation` on feature clicks can fail; use `_suppressMapClick` flag as workaround
 - **Hover**: only attached for layers with ≤300 features (skipped for barangays)
+- **Loading**: levels 0 and 1 fetched in parallel on init. Levels 2 and 3 prefetched in background after loading overlay hides (`_prefetchLevel`). All raw GeoJSON cached in `state.rawData` — subsequent `_showLevel` calls skip fetch and go straight to filter + render.
 
 ## GeoJSON data
 
