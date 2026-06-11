@@ -102,9 +102,6 @@ const APP = {
     /* Position zoom control bottom-right */
     map.zoomControl.setPosition('bottomright');
 
-    /* Disable double-click zoom — replaced with drill-up on dblclick */
-    map.doubleClickZoom.disable();
-
     /* Basemaps */
     Object.entries(this.config.baseMaps).forEach(([key, cfg]) => {
       this.state.basemapLayers[key] = L.tileLayer(cfg.url, {
@@ -134,8 +131,8 @@ const APP = {
       });
     });
 
-    /* Double-click empty space → drill back up one level (level 1 is base — no drill-up) */
-    map.on('dblclick', () => {
+    /* Click empty space → drill back up one level (level 1 is base — no drill-up) */
+    map.on('click', () => {
       if (this.state._suppressMapClick) {
         this.state._suppressMapClick = false;
         return;
