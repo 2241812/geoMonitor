@@ -341,6 +341,8 @@ const APP = {
           leafletLayer.on('click', function (e) {
             L.DomEvent.stopPropagation(e);
             if (level !== self.state.currentLevel) return;
+            /* When boundary overlay is active for this level, only the overlay handles clicks */
+            if (self.state.activeOutline === level) return;
             /* Clicked a hidden (isolated) feature — swallow click entirely */
             if (e.target._hiddenByIsolation) {
               self.state._suppressMapClick = true;
@@ -571,15 +573,17 @@ const APP = {
 
   /* ── Boundary mode: mutually exclusive radio-style toggle ── */
   _setBoundaryMode(level) {
+    /* Guard: only null, 1, or 2 */
+    if (level !== null && level !== 1 && level !== 2) return;
+    /* Toggle off if same button clicked */
     if (this.state.activeOutline === level) {
-      level = null; /* clicking active option deactivates */
+      level = null;
     }
-    /* Deactivate current */
+    /* Deactivate current overlay */
     if (this.state.activeOutline !== null) {
       this._hideOutline(this.state.activeOutline);
       this._restoreDrillLayer(this.state.activeOutline);
     }
-    /* Clear highlight memory */
     this.state._outlineHighlight = null;
     /* Activate new */
     this.state.activeOutline = level;
@@ -601,30 +605,17 @@ const APP = {
     const raw = this.state.rawData[level];
     if (!raw) return;
 
-    let data = raw;
-    /* Filter municipality outline to current province context */
-    if (level === 2) {
-      if (this.state.selectedPath.length > 0) {
-        const parentProvince = this.state.selectedPath[0];
-        if (parentProvince && parentProvince.feature) {
-          data = this._filterToParent(raw, 2, parentProvince.feature);
-        }
-      } else {
-        return;
-      }
-    }
-
-    const cfg = this.config.colors[level];
+    /* Outline visual config — bright, visible, distinct from drill layer */
+    const outlineStyle = {
+      1: { color: '#60a5fa', weight: 2,   opacity: 0.8 },  /* province — bright blue */
+      2: { color: '#34d399', weight: 1.5, opacity: 0.7 },  /* municipality — bright green */
+    };
+    const { color, weight, opacity } = outlineStyle[level] || outlineStyle[1];
     const self = this;
 
-    this.state.outlineLayers[level] = L.geoJSON(data, {
+    this.state.outlineLayers[level] = L.geoJSON(raw, {
       interactive: true,
-      style: {
-        color: cfg.stroke,
-        weight: 1.2,
-        opacity: 0.5,
-        fillOpacity: 0,
-      },
+      style: { color, weight, opacity, fillOpacity: 0 },
       onEachFeature(feature, leafletLayer) {
         leafletLayer.on('click', function(e) {
           L.DomEvent.stopPropagation(e);
@@ -634,12 +625,12 @@ const APP = {
             self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
           }
 
-          /* Highlight clicked feature */
+          /* Highlight clicked feature — amber/yellow fill */
           leafletLayer.setStyle({
-            fillColor: cfg.fill,
-            fillOpacity: 0.3,
-            color: cfg.stroke,
-            weight: 2.5,
+            fillColor: '#fbbf24',
+            fillOpacity: 0.25,
+            color: '#fbbf24',
+            weight: 3,
             opacity: 1,
           });
           leafletLayer.bringToFront();
