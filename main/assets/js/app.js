@@ -23,6 +23,7 @@ const APP = {
     panelState: 'closed',     // 'closed' | 'peek' | 'open'
     lastViewed: null,          // {feature, level} for mobile panel toggle
     _suppressMapClick: false,
+    _drilling: false,          // guard against re-entrant drill calls
     _chart: null,              // Chart.js instance (destroy before recreate)
     outlineLayers: {},         // {1: L.GeoJSON|null, 2: L.GeoJSON|null} — non-interactive reference outlines
     outlineVisible: {1: false, 2: false},
@@ -135,6 +136,7 @@ const APP = {
         this.state._suppressMapClick = false;
         return;
       }
+      if (this.state._drilling) return;
       if (this.state.currentLevel > 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
@@ -160,97 +162,111 @@ const APP = {
 
   /* ── Drill DOWN ────────────────────────────── */
   async drillDown(feature, leafletLayer) {
-    const currentLevel = this.state.currentLevel;
-    if (currentLevel >= 3) return;
+    if (this.state._drilling) return;
+    this.state._drilling = true;
+    try {
+      const currentLevel = this.state.currentLevel;
+      if (currentLevel >= 3) return;
 
-    const nextLevel = currentLevel + 1;
-    const name = this._featureName(feature, currentLevel);
+      const nextLevel = currentLevel + 1;
+      const name = this._featureName(feature, currentLevel);
 
-    /* Record in path with bounds for drill-up zoom */
-    const bounds = leafletLayer.getBounds();
-    this.state.selectedPath.push({ level: currentLevel, feature, name, bounds });
+      /* Record in path with bounds for drill-up zoom */
+      const bounds = leafletLayer.getBounds();
+      this.state.selectedPath.push({ level: currentLevel, feature, name, bounds });
 
-    /* Advance currentLevel BEFORE _showLevel so its click guard is correct */
-    this.state.currentLevel = nextLevel;
+      /* Advance currentLevel BEFORE _showLevel so its click guard is correct */
+      this.state.currentLevel = nextLevel;
 
-    /* Hide parent level completely — remove from map */
-    if (currentLevel > 0 && this.state.layers[currentLevel]) {
-      this.state.map.removeLayer(this.state.layers[currentLevel]);
-      this.state.layers[currentLevel]._hiddenByDrill = true;
+      /* Hide parent level completely — remove from map */
+      if (currentLevel > 0 && this.state.layers[currentLevel]) {
+        this.state.map.removeLayer(this.state.layers[currentLevel]);
+        this.state.layers[currentLevel]._hiddenByDrill = true;
+      }
+
+      /* Hide CAR boundary (level 0) when drilling past provinces */
+      if (nextLevel >= 2 && this.state.layers[0]) {
+        this.state.map.removeLayer(this.state.layers[0]);
+        this.state.layers[0] = null;
+      }
+
+      /* Update breadcrumb */
+      this._updateBreadcrumb();
+
+      /* Load next level filtered to this parent */
+      await this._showLevel(nextLevel, feature, currentLevel);
+
+      /* Zoom to clicked feature — tighter zoom per level */
+      const zoomCaps = { 1: 10, 2: 12, 3: 14 };
+      this.state.map.fitBounds(bounds, { padding: [60, 60], maxZoom: zoomCaps[currentLevel] || 12 });
+
+      this._showToast(`Click a ${this.config.levelNames[nextLevel]} to drill in`);
+
+      /* Re-filter outline overlays to match new drill context */
+      this._updateOutlines();
+    } finally {
+      this.state._drilling = false;
     }
-
-    /* Hide CAR boundary (level 0) when drilling past provinces */
-    if (nextLevel >= 2 && this.state.layers[0]) {
-      this.state.map.removeLayer(this.state.layers[0]);
-      this.state.layers[0] = null;
-    }
-
-    /* Update breadcrumb */
-    this._updateBreadcrumb();
-
-    /* Load next level filtered to this parent */
-    await this._showLevel(nextLevel, feature, currentLevel);
-
-    /* Zoom to clicked feature */
-    this.state.map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
-
-    this._showToast(`Click a ${this.config.levelNames[nextLevel]} to drill in`);
-
-    /* Re-filter outline overlays to match new drill context */
-    this._updateOutlines();
   },
 
   /* ── Drill UP ──────────────────────────────── */
   async drillUp(targetLevel) {
-    if (typeof targetLevel === 'string' && targetLevel === 'region') targetLevel = 1;
-    if (typeof targetLevel !== 'number' || targetLevel < 1) targetLevel = 1;
+    if (this.state._drilling) return;
+    this.state._drilling = true;
+    try {
+      if (typeof targetLevel === 'string' && targetLevel === 'region') targetLevel = 1;
+      if (typeof targetLevel !== 'number' || targetLevel < 1) targetLevel = 1;
 
-    /* Already at target — no-op */
-    if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel) return;
+      /* Already at target — no-op */
+      if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel) return;
 
-    /* Remove layers deeper than target */
-    for (let lvl = 3; lvl > targetLevel; lvl--) {
-      if (this.state.layers[lvl]) {
-        this.state.map.removeLayer(this.state.layers[lvl]);
-        this.state.layers[lvl] = null;
+      /* Remove layers deeper than target */
+      for (let lvl = 3; lvl > targetLevel; lvl--) {
+        if (this.state.layers[lvl]) {
+          this.state.map.removeLayer(this.state.layers[lvl]);
+          this.state.layers[lvl] = null;
+        }
       }
-    }
 
-    /* Re-add target level layer if it was hidden during drill-down */
-    if (targetLevel > 0 && this.state.layers[targetLevel] && this.state.layers[targetLevel]._hiddenByDrill) {
-      this.state.map.addLayer(this.state.layers[targetLevel]);
-      this.state.layers[targetLevel]._hiddenByDrill = false;
-    }
-
-    /* Reset style of target level — restore all features to default */
-    this._resetLevelStyle(targetLevel);
-
-    /* Trim path and update state */
-    this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
-    this.state.currentLevel = targetLevel;
-
-    this._updateBreadcrumb();
-    this.closePanel();
-
-    /* Re-show level 0 CAR boundary if coming back to province view */
-    if (targetLevel === 1 && !this.state.layers[0]) {
-      await this._showLevel(0, null, null);
-    }
-
-    /* Zoom to the feature at the target level */
-    if (targetLevel === 1) {
-      if (this.state.layers[0]) {
-        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [60, 60] });
+      /* Re-add target level layer if it was hidden during drill-down */
+      if (targetLevel > 0 && this.state.layers[targetLevel] && this.state.layers[targetLevel]._hiddenByDrill) {
+        this.state.map.addLayer(this.state.layers[targetLevel]);
+        this.state.layers[targetLevel]._hiddenByDrill = false;
       }
-    } else {
-      const entry = this.state.selectedPath[targetLevel - 1];
-      if (entry && entry.bounds) {
-        this.state.map.fitBounds(entry.bounds, { padding: [60, 60] });
-      }
-    }
 
-    /* Re-filter outline overlays to match new drill context */
-    this._updateOutlines();
+      /* Reset style of target level — restore all features to default */
+      this._resetLevelStyle(targetLevel);
+
+      /* Trim path and update state */
+      this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
+      this.state.currentLevel = targetLevel;
+
+      this._updateBreadcrumb();
+      this.closePanel();
+
+      /* Re-show level 0 CAR boundary if coming back to province view */
+      if (targetLevel === 1 && !this.state.layers[0]) {
+        await this._showLevel(0, null, null);
+      }
+
+      /* Zoom to the feature at the target level */
+      if (targetLevel === 1) {
+        if (this.state.layers[0]) {
+          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [60, 60], maxZoom: 9 });
+        }
+      } else {
+        const entry = this.state.selectedPath[targetLevel - 1];
+        if (entry && entry.bounds) {
+          const zoomCaps = { 1: 10, 2: 12 };
+          this.state.map.fitBounds(entry.bounds, { padding: [60, 60], maxZoom: zoomCaps[targetLevel] || 12 });
+        }
+      }
+
+      /* Re-filter outline overlays to match new drill context */
+      this._updateOutlines();
+    } finally {
+      this.state._drilling = false;
+    }
   },
 
   /* ── Show a level (with optional parent filter) ── */
@@ -337,7 +353,7 @@ const APP = {
           } else {
             /* Level 3: zoom to + isolate selected barangay */
             self._dimLevel(level, feature);
-            self.state.map.fitBounds(e.target.getBounds(), { padding: [60, 60], maxZoom: 16 });
+            self.state.map.fitBounds(e.target.getBounds(), { padding: [60, 60], maxZoom: 15 });
           }
         });
       },
