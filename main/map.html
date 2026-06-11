@@ -28,49 +28,61 @@
       </div>
     </div>
 
-    <!-- Top-left: Breadcrumb nav bar (rendered dynamically by APP._updateBreadcrumb) -->
+    <!-- Bottom-center: Breadcrumb nav bar (rendered dynamically by APP._updateBreadcrumb) -->
     <div class="map-breadcrumb" id="map-breadcrumb"></div>
 
     <!-- Outline toggle buttons (rendered dynamically) -->
     <div class="outline-toggles" id="outline-toggles"></div>
 
-    <!-- Basemap switcher — bottom left -->
+    <!-- Basemap switcher — square button beside zoom control -->
     <div class="basemap-switcher" id="basemap-switcher">
-      <div class="basemap-label">Basemap</div>
-      <div class="basemap-buttons">
-        <button class="basemap-btn active" data-layer="topo" onclick="APP.switchBasemap('topo')">
+      <button class="basemap-btn" id="basemap-btn" onclick="APP._toggleBasemap()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+        <span>Basemap</span>
+      </button>
+      <div class="basemap-options" id="basemap-options" style="display:none">
+        <button class="basemap-option active" data-layer="topo" onclick="APP.switchBasemap('topo')">
           <span class="basemap-thumb topo-thumb"></span>
-          <span>Topo</span>
+          <span>Topographic</span>
         </button>
-        <button class="basemap-btn" data-layer="osm" onclick="APP.switchBasemap('osm')">
+        <button class="basemap-option" data-layer="osm" onclick="APP.switchBasemap('osm')">
           <span class="basemap-thumb osm-thumb"></span>
           <span>Street</span>
         </button>
-        <button class="basemap-btn" data-layer="satellite" onclick="APP.switchBasemap('satellite')">
+        <button class="basemap-option" data-layer="satellite" onclick="APP.switchBasemap('satellite')">
           <span class="basemap-thumb satellite-thumb"></span>
           <span>Satellite</span>
         </button>
       </div>
     </div>
 
-    <!-- Home button — top right -->
+    <!-- Back to landing page — top right -->
     <a class="map-back-btn" href="index.html">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      Home
+      Back to Home page
     </a>
 
     <!-- Hover label tooltip (custom, follows cursor) -->
     <div class="map-hover-label" id="map-hover-label"></div>
 
-    <!-- Floating info panel — slides in from right on click -->
+    <!-- Floating info panel — collapsible left sidebar -->
     <div class="info-panel" id="info-panel">
+      <div class="info-panel-header">
+        <button class="info-panel-collapse" id="info-panel-collapse" onclick="APP.closePanel()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Collapse side panel</span>
+        </button>
+      </div>
       <div class="info-panel-handle" id="info-panel-handle" onclick="APP.togglePanel()">
         <span class="handle-bar"></span>
       </div>
-      <button class="info-panel-close" id="info-panel-close" onclick="APP.closePanel()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
       <div class="info-panel-content" id="info-panel-content"></div>
+    </div>
+
+    <!-- Left-edge toggle tab — only visible when panel is closed -->
+    <div class="panel-toggle-tab" id="panel-toggle-tab" onclick="APP.togglePanel()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span>Expand side panel</span>
     </div>
   </div>
 

@@ -11,7 +11,6 @@ const APP = {
     basemapLayers: {},
     panelState: 'closed',
     lastViewed: null,
-    _suppressMapClick: false,
     _drilling: false,
     _chart: null,
     outlineLayers: {},
@@ -19,6 +18,7 @@ const APP = {
     _outlineHighlight: null,
     hierarchy: null,
     activeSource: 'namria',
+    activeMode: 'explore',
   },
 
   config: {
@@ -87,7 +87,6 @@ const APP = {
       minZoom: this.config.minZoom,
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
-      preferCanvas: true,
     });
 
     /* Basemaps */
@@ -101,6 +100,9 @@ const APP = {
     this.state.activeBasemap = 'topo';
 
     this.state.map = map;
+
+    /* Position zoom control bottom-right (beside basemap) */
+    if (map.zoomControl) map.zoomControl.setPosition('bottomright');
 
     /* Load hierarchy for active source */
     this._loadHierarchy();
@@ -122,12 +124,14 @@ const APP = {
       });
     });
 
-    /* Click empty space → drill up one level (to region from province, to province from municipality, etc.) */
+    /* Close basemap dropdown on any map click */
     map.on('click', () => {
-      if (this.state._suppressMapClick) {
-        this.state._suppressMapClick = false;
-        return;
-      }
+      const opts = document.getElementById('basemap-options');
+      if (opts) opts.style.display = 'none';
+    });
+
+    /* Click empty space → drill up one level (both modes) */
+    map.on('click', () => {
       if (this.state._drilling) return;
       if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
@@ -179,12 +183,24 @@ const APP = {
     this.state.basemapLayers[key].addTo(map);
     Object.values(this.state.layers).forEach(l => l && l.bringToFront && l.bringToFront());
     this.state.activeBasemap = key;
-    document.querySelectorAll('.basemap-btn').forEach(btn => {
+
+    /* Update active option */
+    document.querySelectorAll('.basemap-option').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.layer === key);
     });
+
+    /* Close dropdown */
+    const opts = document.getElementById('basemap-options');
+    if (opts) opts.style.display = 'none';
   },
 
-  /* ── Drill DOWN ────────────────────────────── */
+  _toggleBasemap() {
+    const opts = document.getElementById('basemap-options');
+    if (!opts) return;
+    opts.style.display = opts.style.display === 'none' ? '' : 'none';
+  },
+
+  /* ── Drill DOWN ──────────────────────────────── */
   async drillDown(feature, leafletLayer) {
     if (this.state._drilling) return;
     this.state._drilling = true;
@@ -195,16 +211,21 @@ const APP = {
       const nextLevel = currentLevel + 1;
       const name = this._featureName(feature, currentLevel);
 
+      this.state.selectedPath = this.state.selectedPath.filter(item => item.level < currentLevel);
       this.state.selectedPath.push({ level: currentLevel, feature, name });
 
       this.state.currentLevel = nextLevel;
 
+      /* Keep context layers visible — dim parent slightly instead of removing */
       if (currentLevel > 0 && this.state.layers[currentLevel]) {
-        this.state.map.removeLayer(this.state.layers[currentLevel]);
+        this.state.layers[currentLevel].eachLayer(function(lf) {
+          lf.setStyle({ fillOpacity: 0.08, opacity: 0.4, weight: 1 });
+        });
         this.state.layers[currentLevel]._hiddenByDrill = true;
       }
 
-      if (nextLevel >= 2 && this.state.layers[0]) {
+      /* At max level: remove level 0 (CAR boundary) so it doesn't clutter */
+      if (nextLevel >= this._src().maxLevel && this.state.layers[0]) {
         this.state.map.removeLayer(this.state.layers[0]);
         this.state.layers[0] = null;
       }
@@ -213,7 +234,10 @@ const APP = {
 
       await this._showLevel(nextLevel, feature, currentLevel);
 
-      this._showToast(`Click a ${this._src().levelNames[nextLevel]} to drill in`);
+      /* Zoom to selected feature */
+      if (leafletLayer && leafletLayer.getBounds) {
+        this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
+      }
 
       this._updateOutlines();
     } finally {
@@ -221,25 +245,43 @@ const APP = {
     }
   },
 
-  /* ── Drill UP ──────────────────────────────── */
+  /* ── Drill UP (both modes) ─────────────────── */
   async drillUp(targetLevel) {
     if (this.state._drilling) return;
     this.state._drilling = true;
     try {
       if (typeof targetLevel !== 'number' || targetLevel < 0) targetLevel = 0;
 
+      /* Clear selection state */
+      this.state._selectedFeature = null;
+      this.state._selectedLevel = null;
+      this.state._selectedLeafletLayer = null;
+
       if (targetLevel === 0) {
-        for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+        for (let lvl = this._src().maxLevel; lvl > 1; lvl--) {
           if (this.state.layers[lvl]) {
             this.state.map.removeLayer(this.state.layers[lvl]);
             this.state.layers[lvl] = null;
           }
         }
+        /* Restore levels 0 and 1 to full style */
+        if (this.state.layers[1]) this._resetLevelStyle(1);
+        if (this.state.layers[0]) this._resetLevelStyle(0);
         this.state.selectedPath = [];
         this.state.currentLevel = 0;
-        this._updateBreadcrumb();
-        this.closePanel();
         await this._showLevel(0);
+        await this._showLevel(1, null, null);
+        this.state.currentLevel = 1;
+        /* Zoom to CAR bounds */
+        if (this.state.layers[0]) {
+          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+        }
+        /* Show CAR info in panel */
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
+        this._updateBreadcrumb();
         this._updateOutlines();
         return;
       }
@@ -253,23 +295,42 @@ const APP = {
         }
       }
 
-      if (targetLevel > 0 && this.state.layers[targetLevel] && this.state.layers[targetLevel]._hiddenByDrill) {
-        this.state.map.addLayer(this.state.layers[targetLevel]);
+      /* Restore context layer style (was dimmed during drillDown) */
+      if (targetLevel > 0 && this.state.layers[targetLevel]) {
+        this._resetLevelStyle(targetLevel);
         this.state.layers[targetLevel]._hiddenByDrill = false;
       }
 
-      this._resetLevelStyle(targetLevel);
+      /* Re-add level 0 (CAR) if it was removed at maxLevel */
+      if (targetLevel < this._src().maxLevel && !this.state.layers[0]) {
+        this._showLevel(0);
+      }
 
       this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
       this.state.currentLevel = targetLevel;
 
-      this._updateBreadcrumb();
-      this.closePanel();
-
-      if (targetLevel === 1 && !this.state.layers[0]) {
-        await this._showLevel(0, null, null);
+      /* Zoom to specific feature bounds (not whole level) */
+      if (targetLevel > 0 && this.state.selectedPath.length > 0) {
+        const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
+        const levelLayer = this.state.layers[targetLevel];
+        if (levelLayer) {
+          levelLayer.eachLayer((lf) => {
+            if (lf.feature === lastItem.feature) {
+              this.state.map.fitBounds(lf.getBounds(), { padding: [40, 40] });
+            }
+          });
+        }
+      } else if (targetLevel === 0 && this.state.layers[0]) {
+        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
       }
 
+      /* Show the feature at target level in panel */
+      if (targetLevel > 0 && this.state.selectedPath.length > 0) {
+        const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
+        this.openPanel(lastItem.feature, lastItem.level);
+      }
+
+      this._updateBreadcrumb();
       this._updateOutlines();
     } finally {
       this.state._drilling = false;
@@ -322,6 +383,7 @@ const APP = {
           leafletLayer.on('mouseover', function (e) {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
+            if (self.state.activeOutline === level) return;
             e.target.setStyle({ fillOpacity: 0.55, weight: styleConfig.weight + 1 });
             e.target.bringToFront();
             self._showHoverLabel(name, level);
@@ -329,6 +391,7 @@ const APP = {
           leafletLayer.on('mouseout', function (e) {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
+            if (self.state.activeOutline === level) return;
             e.target.setStyle({
               fillColor: styleConfig.fill,
               fillOpacity: 0.25,
@@ -342,20 +405,21 @@ const APP = {
 
           leafletLayer.on('click', function (e) {
             L.DomEvent.stopPropagation(e);
-            if (level !== self.state.currentLevel) return;
             if (self.state.activeOutline === level) return;
-            if (e.target._hiddenByIsolation) {
-              self.state._suppressMapClick = true;
+            /* Clicked on a parent level → drill up to it */
+            if (level < self.state.currentLevel) {
+              self.drillUp(level);
               return;
             }
-          self.openPanel(feature, level);
-          self.state._suppressMapClick = true;
-          if (level < self._src().maxLevel) {
-            self.drillDown(feature, leafletLayer);
-          } else {
-            self._dimLevel(level, feature);
-          }
-        });
+            if (level !== self.state.currentLevel) return;
+            if (e.target._hiddenByIsolation) return;
+            self.openPanel(feature, level);
+            if (level >= self._src().maxLevel) {
+              self._highlightAndDim(feature, leafletLayer, level);
+            } else {
+              self.drillDown(feature, leafletLayer);
+            }
+          });
       },
     });
 
@@ -438,6 +502,36 @@ const APP = {
     }
   },
 
+  /* ── Highlight selection via dim (max-level click) ── */
+  _highlightAndDim(feature, leafletLayer, level) {
+    this._dimLevel(level, feature);
+    this.state._selectedFeature = feature;
+    this.state._selectedLevel = level;
+    this.state._selectedLeafletLayer = leafletLayer;
+
+    /* Zoom to selected feature */
+    if (leafletLayer && leafletLayer.getBounds) {
+      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
+    }
+
+    /* Update breadcrumb */
+    const name = this._featureName(feature, level);
+    this.state.selectedPath = this.state.selectedPath.filter(item => item.level < level);
+    this.state.selectedPath.push({ level, feature, name });
+    this._updateBreadcrumb();
+  },
+
+  /* ── Clear selection ──────────────────────────── */
+  _clearSelection() {
+    if (this.state._selectedLevel != null) {
+      this._resetLevelStyle(this.state._selectedLevel);
+      this.state._selectedFeature = null;
+      this.state._selectedLevel = null;
+      this.state._selectedLeafletLayer = null;
+    }
+    this.closePanel();
+  },
+
   _resetLevelStyle(level) {
     const layer = this.state.layers[level];
     if (!layer) return;
@@ -504,6 +598,62 @@ const APP = {
     if (lbl) lbl.classList.remove('visible');
   },
 
+  /* ── Home / Reset ─────────────────────────── */
+  _goHome() {
+    this.state._selectedFeature = null;
+    this.state._selectedLevel = null;
+    this.state._selectedLeafletLayer = null;
+    this.state.selectedPath = [];
+    this.state.currentLevel = 0;
+    for (let lvl = this._src().maxLevel; lvl > 1; lvl--) {
+      if (this.state.layers[lvl]) {
+        this.state.map.removeLayer(this.state.layers[lvl]);
+        this.state.layers[lvl] = null;
+      }
+    }
+    this._showLevel(0);
+    this._showLevel(1, null, null);
+    this.state.currentLevel = 1;
+    if (this.state.layers[0]) {
+      this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+    }
+    /* Show CAR info in panel */
+    const carData = this.state.rawData[0];
+    if (carData && carData.features && carData.features[0]) {
+      this.openPanel(carData.features[0], 0);
+    }
+    this._updateBreadcrumb();
+    this._updateOutlines();
+  },
+
+  /* ── Mode switch ──────────────────────────── */
+  _setMode(mode) {
+    if (mode === this.state.activeMode) return;
+    this._clearSelection();
+    this.closePanel();
+    this.state.activeMode = mode;
+    if (mode === 'boundary') {
+      this._resetLevelStyle(0);
+      this._resetLevelStyle(1);
+      this.state.currentLevel = 0;
+      this.state.selectedPath = [];
+      this.drillUp(0);
+    } else {
+      this.state.currentLevel = 0;
+      for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+        if (this.state.layers[lvl]) {
+          this.state.map.removeLayer(this.state.layers[lvl]);
+          this.state.layers[lvl] = null;
+        }
+      }
+      this.state.selectedPath = [];
+      this._showLevel(0);
+      this._showLevel(1, null, null);
+      this.state.currentLevel = 1;
+    }
+    this._updateBreadcrumb();
+  },
+
   /* ── Breadcrumb ───────────────────────────── */
   _updateBreadcrumb() {
     const bc = document.getElementById('map-breadcrumb');
@@ -512,13 +662,18 @@ const APP = {
     let html = '';
 
     const src = this._src();
+
+    /* Mode switch buttons */
+    html += `<button class="mode-toggle${this.state.activeMode === 'explore' ? ' active' : ''}" onclick="APP._setMode('explore')" title="Explore mode — click to select, map click deselects">Explore</button>`;
+    html += `<button class="mode-toggle${this.state.activeMode === 'boundary' ? ' active' : ''}" onclick="APP._setMode('boundary')" title="Boundary mode — click to drill down through hierarchy">Boundary</button>`;
+
+    /* Breadcrumb trail (both modes) */
     const atRoot = this.state.selectedPath.length === 0;
 
-    /* Source toggle button */
+    /* Source toggle (subtle) */
     const otherSource = this.state.activeSource === 'namria' ? 'cad' : 'namria';
     html += `<button class="source-toggle" onclick="APP.switchSource('${otherSource}')" title="Switch to ${this.config.sources[otherSource].label}">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      ${src.label}
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     </button>`;
 
     /* Root: "CAR Region" */
@@ -540,6 +695,10 @@ const APP = {
   _renderOutlineToggles() {
     const container = document.getElementById('outline-toggles');
     if (!container) return;
+    if (this.state.activeMode !== 'boundary') {
+      container.innerHTML = '';
+      return;
+    }
     const src = this._src();
     const items = [
       { mode: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
@@ -593,13 +752,13 @@ const APP = {
       onEachFeature(feature, layer) {
         layer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
+          if (self.state._drilling) return;
           if (self.state._outlineHighlight) {
             self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
           }
           layer.setStyle({ fillColor: '#fbbf24', fillOpacity: 0.25, color: '#fbbf24', weight: 3, opacity: 1 });
           layer.bringToFront();
           self.state._outlineHighlight = layer;
-          self.state._suppressMapClick = true;
           self.openPanel(feature, level);
           if (level === self.state.currentLevel) {
             self.drillDown(feature, layer);
@@ -685,6 +844,10 @@ const APP = {
       this.state.panelState = 'open';
     }
 
+    /* Hide toggle tab when panel is open */
+    const tab = document.getElementById('panel-toggle-tab');
+    if (tab) tab.classList.add('hidden');
+
     if (chartData.values.length > 0) {
       const ctx = document.getElementById('panel-chart');
       if (ctx) {
@@ -717,6 +880,9 @@ const APP = {
     const panel = document.getElementById('info-panel');
     if (panel) panel.classList.remove('peek', 'open');
     this.state.panelState = 'closed';
+    /* Show toggle tab */
+    const tab = document.getElementById('panel-toggle-tab');
+    if (tab) tab.classList.remove('hidden');
   },
 
   togglePanel() {
@@ -727,8 +893,16 @@ const APP = {
     } else if (this.state.panelState === 'peek') {
       panel.classList.replace('peek', 'open');
       this.state.panelState = 'open';
+      const tab = document.getElementById('panel-toggle-tab');
+      if (tab) tab.classList.add('hidden');
     } else if (this.state.lastViewed) {
       this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+    } else {
+      /* Default: show CAR region details */
+      const carData = this.state.rawData[0];
+      if (carData && carData.features && carData.features[0]) {
+        this.openPanel(carData.features[0], 0);
+      }
     }
   },
 
