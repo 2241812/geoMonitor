@@ -87,6 +87,7 @@ const APP = {
       minZoom: this.config.minZoom,
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
+      zoomSnap: 0.5,
     });
 
     /* Basemaps */
@@ -269,8 +270,9 @@ const APP = {
         if (this.state.layers[0]) this._resetLevelStyle(0);
         this.state.selectedPath = [];
         this.state.currentLevel = 0;
-        await this._showLevel(0);
-        await this._showLevel(1, null, null);
+        /* Only rebuild if layers don't exist yet (avoids visual flicker) */
+        if (!this.state.layers[0]) await this._showLevel(0);
+        if (!this.state.layers[1]) await this._showLevel(1, null, null);
         this.state.currentLevel = 1;
         /* Zoom to CAR bounds */
         if (this.state.layers[0]) {
