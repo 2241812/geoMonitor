@@ -441,22 +441,26 @@
 
 .info-panel {
   position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
+  top: 16px;
+  left: 16px;
+  bottom: auto;
   width: 340px;
+  max-height: calc(100vh - 32px);
   background: #fff;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   z-index: 600;
-  overflow-y: auto;
-  transform: translateX(-100%);
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  transform: translateX(calc(-100% - 20px));
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
   display: flex;
   flex-direction: column;
+  opacity: 0;
 }
 
 .info-panel.open {
   transform: translateX(0);
+  opacity: 1;
 }
 
 .info-panel-header {
@@ -690,10 +694,12 @@
 
   .info-panel.open {
     transform: translateY(0);
+    opacity: 1;
   }
 
   .info-panel.peek {
     transform: translateY(calc(100% - 130px));
+    opacity: 1;
   }
 
   .info-panel-header {
