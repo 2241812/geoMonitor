@@ -747,7 +747,7 @@ const APP = {
     const self = this;
 
     this.state.outlineLayers[level] = L.geoJSON(raw, {
-      interactive: true,
+      interactive: level >= this.state.currentLevel,
       style: { color: '#1e293b', weight: 1.5, opacity: 0.6, fillOpacity: 0 },
       onEachFeature(feature, layer) {
         layer.on('click', function (e) {
