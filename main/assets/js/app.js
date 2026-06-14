@@ -910,21 +910,38 @@ const APP = {
 
   _resolveDetails(props, level, name) {
     const d = {};
+    const hierarchy = this.state.hierarchy;
+    const childCount = (id) => {
+      if (!hierarchy || !hierarchy.children) return null;
+      const kids = hierarchy.children[id];
+      return kids ? kids.length : null;
+    };
+
     if (this.state.activeSource === 'cad') {
       d[this._src().levelNames[level] || 'Feature'] = name;
       if (props.Province) d['Province'] = props.Province;
       if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
+      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
       if (level === 2) {
         d['Municipality/City'] = props.Municipali || name;
         if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
-        if (props.PSGC) d['PSGC'] = props.PSGC;
+        if (props.PSGC) d['PSGC'] = String(props.PSGC);
+        if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
+        if (props.X_Coord && props.Y_Coord) {
+          d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
+        }
       } else if (level === 1) {
         d['Province'] = props.PROVINCE || props.Province || name;
-        if (props.PSGC_P) d['PSGC'] = props.PSGC_P;
+        if (props.PSGC_P) d['PSGC'] = String(props.PSGC_P);
+        if (props.REGION) d['Region'] = props.REGION;
+        const cc = childCount(props._id);
+        if (cc !== null) d['Municipalities'] = String(cc);
       } else {
         d['Region'] = props.Region || 'Cordillera Administrative Region';
-        if (props.PSGC) d['PSGC'] = props.PSGC;
+        if (props.PSGC) d['PSGC'] = String(props.PSGC);
+        const cc = childCount(props._id);
+        if (cc !== null) d['Provinces'] = String(cc);
       }
     }
     const area = this._resolveArea(props);
