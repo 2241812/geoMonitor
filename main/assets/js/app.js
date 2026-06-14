@@ -785,7 +785,10 @@ const APP = {
     this.state._outlineHighlight = null;
     if (this.state.activeOutline !== null) {
       this._showOutline(this.state.activeOutline);
-      this._dimDrillLayer(this.state.activeOutline);
+      /* Don't dim drill layer at the same level — let both coexist for full visibility */
+      if (this.state.activeOutline !== this.state.currentLevel) {
+        this._dimDrillLayer(this.state.activeOutline);
+      }
     }
   },
 
