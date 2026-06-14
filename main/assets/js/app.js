@@ -414,7 +414,11 @@ const APP = {
               return;
             }
             if (level !== self.state.currentLevel) return;
-            if (e.target._hiddenByIsolation) return;
+            if (e.target._hiddenByIsolation) {
+              /* Clicking a dimmed feature at deepest level → drill up */
+              self.drillUp(level - 1);
+              return;
+            }
             self.openPanel(feature, level);
             if (level >= self._src().maxLevel) {
               self._highlightAndDim(feature, leafletLayer, level);
