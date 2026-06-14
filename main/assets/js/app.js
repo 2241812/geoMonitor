@@ -87,7 +87,6 @@ const APP = {
       minZoom: this.config.minZoom,
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
-      zoomSnap: 0.5,
     });
 
     /* Basemaps */
@@ -270,10 +269,13 @@ const APP = {
         if (this.state.layers[0]) this._resetLevelStyle(0);
         this.state.selectedPath = [];
         this.state.currentLevel = 0;
-        /* Only rebuild if layers don't exist yet (avoids visual flicker) */
-        if (!this.state.layers[0]) await this._showLevel(0);
-        if (!this.state.layers[1]) await this._showLevel(1, null, null);
+        await this._showLevel(0);
+        await this._showLevel(1, null, null);
         this.state.currentLevel = 1;
+        /* Zoom to CAR bounds */
+        if (this.state.layers[0]) {
+          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+        }
         /* Show CAR info in panel */
         const carData = this.state.rawData[0];
         if (carData && carData.features && carData.features[0]) {
@@ -307,7 +309,20 @@ const APP = {
       this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
       this.state.currentLevel = targetLevel;
 
-      /* Preserve user's viewport — no automatic zoom on drill-up */
+      /* Zoom to specific feature bounds (not whole level) */
+      if (targetLevel > 0 && this.state.selectedPath.length > 0) {
+        const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
+        const levelLayer = this.state.layers[targetLevel];
+        if (levelLayer) {
+          levelLayer.eachLayer((lf) => {
+            if (lf.feature === lastItem.feature) {
+              this.state.map.fitBounds(lf.getBounds(), { padding: [40, 40] });
+            }
+          });
+        }
+      } else if (targetLevel === 0 && this.state.layers[0]) {
+        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+      }
 
       /* Show the feature at target level in panel */
       if (targetLevel > 0 && this.state.selectedPath.length > 0) {
