@@ -834,17 +834,10 @@ const APP = {
       </div>`;
     }
 
-    const isMobile = window.innerWidth <= 640;
-
     content.innerHTML = html;
-    panel.classList.remove('peek', 'open');
-    if (isMobile) {
-      panel.classList.add('peek');
-      this.state.panelState = 'peek';
-    } else {
-      panel.classList.add('open');
-      this.state.panelState = 'open';
-    }
+    panel.classList.remove('open');
+    panel.classList.add('open');
+    this.state.panelState = 'open';
 
     /* Hide toggle tab when panel is open */
     const tab = document.getElementById('panel-toggle-tab');
@@ -880,7 +873,7 @@ const APP = {
 
   closePanel() {
     const panel = document.getElementById('info-panel');
-    if (panel) panel.classList.remove('peek', 'open');
+    if (panel) panel.classList.remove('open');
     this.state.panelState = 'closed';
     /* Show toggle tab */
     const tab = document.getElementById('panel-toggle-tab');
@@ -892,11 +885,6 @@ const APP = {
     if (!panel) return;
     if (this.state.panelState === 'open') {
       this.closePanel();
-    } else if (this.state.panelState === 'peek') {
-      panel.classList.replace('peek', 'open');
-      this.state.panelState = 'open';
-      const tab = document.getElementById('panel-toggle-tab');
-      if (tab) tab.classList.add('hidden');
     } else if (this.state.lastViewed) {
       this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
     } else {
