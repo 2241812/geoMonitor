@@ -1,38 +1,8 @@
 # DENR CAR Watershed Monitoring (geoMonitor)
 
-An interactive web map for monitoring the 14 major watersheds of the Cordillera Administrative Region (CAR), Philippines.
+Interactive web map for exploring administrative boundaries of the Cordillera Administrative Region (CAR), Philippines — built for DENR.
 
-Built for the Department of Environment and Natural Resources (DENR).
-
-## Current Status
-
-Phase 2–4 scaffolding complete. The web app is functional as a static site:
-
-- **Landing page** (`main/index.html`) — project intro with CTA to the map
-- **Map dashboard** (`main/map.html`) — Leaflet map + Chart.js dashboard in a split-pane layout
-- **GeoJSON data loaded** — 7 boundary files across two sources (NAMRIA + CAD) covering 4 administrative levels: Region, Province, Municipality, Barangay (~3.4 MB total)
-- **Interactive features** — click any polygon to highlight it, zoom to fit, and view its properties and a chart in the side panel
-- **Responsive design** — stacks vertically on mobile
-
-### What's implemented
-
-| Feature | Status |
-|---------|--------|
-| Landing page with branding | Done |
-| Leaflet map with 3 basemaps (OSM, Topo, Satellite) | Done |
-| GeoJSON layer loading with styling | Done |
-| Layer control (show/hide admin levels) | Done |
-| Click-to-select with highlight + fitBounds | Done |
-| Dashboard panel with property details | Done |
-| Chart.js bar chart of numeric attributes | Done |
-| Responsive layout (mobile/tablet) | Done |
-| Loading overlay during data fetch | Done |
-
-### What's left (from project plan)
-
-- **Phase 1 (ongoing)**: Verify GeoJSON accuracy and attribute completeness; re-simplify if needed for performance
-- **Phase 3 (extensions)**: Add watershed boundary, river, cave, contour, and geology layers
-- **Phase 4 (extension)**: Add population, geological breakdown, and per-watershed filtering to the dashboard
+**Live**: https://geo-monitor-ten.vercel.app
 
 ## Quick Start
 
@@ -40,51 +10,109 @@ Phase 2–4 scaffolding complete. The web app is functional as a static site:
 python3 -m http.server 8000 -d main
 ```
 
-Then open `http://localhost:8000` in a browser. A server is required because `fetch()` is used to load GeoJSON files.
+Open `http://localhost:8000`. A server is required (`fetch()` loads GeoJSON).
 
 ## Tech Stack
 
-- **Mapping**: [Leaflet.js](https://leafletjs.com/) 1.9.4 (CDN)
-- **Charts**: [Chart.js](https://www.chartjs.org/) 4.4.7 (CDN)
-- **Font**: [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts
-- **Data format**: GeoJSON (converted from ArcGIS Shapefiles via Mapshaper/QGIS)
+- **Mapping**: Leaflet 1.9.4 (Canvas renderer), Esri World Topo / OSM / Satellite basemaps
+- **Charts**: Chart.js 4.4.7
+- **Font**: Inter via Google Fonts
+- **Build**: None — static HTML/CSS/JS, edit and refresh
+- **Data**: GeoJSON (converted from ArcGIS Shapefiles)
+
+## What It Does
+
+Drill-down map of CAR administrative boundaries with two data sources:
+
+| Source | Levels | Drill Path |
+|--------|--------|------------|
+| **NAMRIA** | 3 | Region → Province → Municipality |
+| **CAD** | 2 | Region → Municipality |
+
+Click any polygon to open an info panel with property details + bar chart of numeric measurements. Click empty space to drill back up. Toggle data sources via the NAMRIA/CAD button in the breadcrumb.
+
+Boundary overlays (Province / Municipality outlines) can be toggled as a floating dark panel — mutually exclusive radio mode.
 
 ## Repository Structure
 
 ```
 main/
 ├── assets/
-│   ├── css/style.css         # All styles (landing, map, dashboard, responsive)
+│   ├── css/map.css           # All styles (landing, map, dashboard, responsive)
 │   └── js/
-│       ├── app.js            # Global APP object, config, state, EventTarget
-│       ├── map-init.js       # initMap() — Leaflet map + basemaps + layer control
-│       ├── map-layers.js     # initLayers() — GeoJSON loading, click/hover events
-│       └── dashboard.js      # initDashboard() — info panel + Chart.js integration
+│       ├── app.js            # APP object — state, config, drill logic, panels, overlays
+│       ├── map-layers.js     # initLayers() — fetches and renders levels 0 and 1
+│       └── dashboard.js      # Compatibility shim — delegates to APP.openPanel / closePanel
 ├── geoJSON/
 │   ├── CAR NAMRIA Boundary.geojson
 │   ├── CAR NAMRIA Provincial Boundary.geojson
 │   ├── CAR NAMRIA Municipal Boundary.geojson
-│   ├── CAR NAMRIA Barangay Boundary.geojson
 │   ├── CAR CAD Boundary.geojson
-│   ├── CAR CAD Provincial Boundary.geojson
-│   └── CAR CAD Municipal Boundary.geojson
+│   ├── CAR CAD Municipal Boundary.geojson
+│   ├── hierarchy-namria.json              # Preprocessed parent/child/name lookup
+│   └── hierarchy-cad.json                 # Same for CAD source
 ├── index.html                # Landing page
 ├── map.html                  # Map + dashboard page
-└── src/context/
-    └── DENR_Watershed_Monitoring_Plan.md  # Original project plan & learning guide
+└── preprocess-hierarchy.js   # Build-time script (node) — cross-walks GeoJSON → hierarchy
 ```
 
 ## Data Sources
 
-- **NAMRIA** — National Mapping and Resource Information Authority
-- **CAD** — Cadastral (land ownership records)
+- **NAMRIA** — National Mapping and Resource Information Authority (3 levels: Region, Province, Municipality)
+- **CAD** — Cadastral (2 levels: Region, Municipality; no separate province geometry)
 
-Both provide CAR administrative boundaries at multiple levels.
+Both cover CAR administrative boundaries at multiple levels with different property schemas.
+
+## Key Architecture
+
+- **Global state** lives on `APP` object (`app.js`) — all config, layers, drill path, panel state
+- **No build system** — edit directly, refresh to see changes
+- **Script load order** (strict, `map.html`): `app.js` → `map-layers.js` → `dashboard.js`, then inline `DOMContentLoaded` calls `APP.init()` → `initLayers()`
+- **No programmatic zoom** — all zoom/pan is user-controlled (scroll, pinch)
+- **Canvas renderer** (`preferCanvas: true`) — `_suppressMapClick` flag prevents double drill-up
+- **`_drilling` guard** — prevents concurrent drillDown/drillUp calls
+
+### Source Toggle
+
+A NAMRIA/CAD button in the breadcrumb switches data sources. Switching clears all layers, loads the correct hierarchy file, and re-initializes the map.
+
+### Hierarchy Preprocessing
+
+A build-time script cross-walks all GeoJSON files, computing stable `_id` / `_parentId` for every feature:
+
+```sh
+node preprocess-hierarchy.js
+```
+
+Outputs `hierarchy-namria.json` and `hierarchy-cad.json` with `{ parents, children, names }` maps. Each GeoJSON file is updated in-place with `_id` / `_parentId`. The runtime `_filterToParent` is a simple:
+
+```js
+data.features.filter(f => f.properties._parentId === parentId)
+```
+
+Run this script and re-deploy if GeoJSON source files are updated.
+
+### Drill-Down Flow
+
+1. **init**: Levels 0 (CAR boundary) and 1 (provinces / municipalities) fetched in parallel
+2. **Click a feature**: opens info panel, drills to next level filtered to parent
+3. **Deepest level**: isolates the selected feature (dimmed background)
+4. **Click hidden feature**: swallowed — no drill-up
+5. **Click empty space**: drills up one level (to region from province, to province from municipality, etc.)
+6. **Breadcrumb**: click any ancestor to jump back
+
+## Deployment
+
+```sh
+vercel --prod --yes
+```
+
+Auto-deploys from GitHub via Vercel CLI (v54.x, Node.js 18).
 
 ## Development Notes
 
-- **No build system** — edit HTML/CSS/JS directly; refresh to see changes
-- **Script load order is strict** (in `map.html`): `app.js` → `map-init.js` → `map-layers.js` → `dashboard.js`
-- **Global state** lives on the `APP` object (`app.js`); modules communicate via custom events (`EVENTS.FEATURE_SELECT` / `EVENTS.FEATURE_CLEAR`)
-- GeoJSON files are single-line JSON (no trailing newline); valid but `wc -l` reports 0
+- GeoJSON files are single-line JSON (no trailing newline)
+- `map-init.js` exists on disk but is **not loaded** (compatibility shim)
+- `EVENTS` object in `app.js` is **unused** (dead legacy code)
+- `dashboard.js` is a **compatibility shim** — all real logic is in `app.js`
 - No tests, CI, linter, or formatter configured
