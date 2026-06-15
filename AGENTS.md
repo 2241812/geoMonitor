@@ -19,7 +19,7 @@ GeoJSON `fetch()` requires a server. Open `http://localhost:8000`.
 - **`EVENTS`** object exists in `app.js` but is **unused** (stale legacy code)
 - **Global state**: `APP` object (`app.js`) — all config, state, and methods live on it
 - **`dashboard.js`**: compatibility shim only — delegates to `APP.openPanel`/`APP.closePanel`
-- **Source toggle**: breadcrumb has a NAMRIA/CAD toggle button. Switching sources clears all layers, reloads hierarchy, and re-initializes the map.
+- **Source toggle**: info panel hero has a NAMRIA/CAD toggle button (shows current source label). Switching sources clears all layers, reloads hierarchy, and re-initializes the map synchronously.
 - **NAMRIA**: 3 levels (Region → Province → Municipality)
 - **CAD**: 2 levels (Region → Municipality) — CAD files have `Province` + `Muni_City` properties, no separate province geometry
 
@@ -34,8 +34,7 @@ Drill levels: 0 = Region (CAR boundary) → 1 = Province → 2 = Municipality
 - **Deepest level click**: calls `_dimLevel` to isolate selected feature (`fillOpacity: 0` for others, marks with `_hiddenByIsolation = true` to suppress hover/click).
 - **Clicking a hidden feature**: swallows click (no drill-up) — user must click empty space
 - **Map background click**: drills up one level (any level ≥ 1). Clicking empty space at province (level 1) goes to region-only view.
-- **`_suppressMapClick`** guard prevents Canvas renderer from firing map click after feature click handler (avoids double drill-up)
-- **No programmatic zoom**: user controls zoom entirely via scroll/touch. All `fitBounds` calls removed.
+- **Zoom-to-selection**: `fitBounds` with `padding: [40, 40]` zooms to the selected feature on drill-down and highlight. No animation params — browser defaults.
 
 ### Hierarchy preprocessing
 
@@ -69,15 +68,15 @@ Feature name resolution priority (`_featureName`):
 
 - **Default basemap**: Esri World Topo (`'topo'`). Alternatives: OSM (`'osm'`), Esri Satellite (`'satellite'`)
 - **View locked** to Philippines (`maxBounds: [[4, 116], [21.5, 128]]`, `minZoom: 7`) — config in `app.js`
-- **Canvas renderer**: `preferCanvas: true` — faster for many polygons, but `stopPropagation` on feature clicks can fail; use `_suppressMapClick` flag as workaround
+- **Canvas renderer**: `preferCanvas: true` — faster for many polygons. `L.DomEvent.stopPropagation` on feature click handlers prevents map background click from firing.
 - **Re-entrancy guard**: `state._drilling` flag prevents concurrent drillDown/drillUp calls (e.g. from double-click on map background)
-- **No programmatic zoom**: all zoom/pan is user-controlled. No `fitBounds`, no zoom buttons.
 - **Hover**: only attached for layers with ≤300 features (skipped for barangays, now removed)
 - **Loading**: levels 0 and 1 fetched in parallel on init. Deeper levels prefetched in background. All raw GeoJSON cached in `state.rawData` — subsequent `_showLevel` calls skip fetch and go straight to filter + render.
-- **Boundary overlay system**: Hydrohub-style mutually exclusive radio mode. Only Province **or** Municipality can be active at a time (never both). Selected boundary renders as a dark floating panel on the right side with three options: None / Province / Municipality.
-- **Boundary overlay layers**: `interactive: true` — clicking a feature on the overlay highlights it using `resetStyle()` to clear the previous highlight, opens the info panel, and triggers `drillDown()` if the overlay matches the current drill level. The corresponding drill layer is dimmed (`fillOpacity: 0`) when the overlay is active to prevent visual overlap. Municipality overlay shows **all** municipalities (no province filter). Overlays refresh on drill down/up.
+- **Boundary overlay system**: Hydrohub-style mutually exclusive radio mode. Only Province **or** Municipality can be active at a time (never both). Overlay toggles (None / Province / Municipality with SVG icons) render in both Explore and Boundary modes.
+- **Boundary overlay layers**: `interactive: true` — clicking a feature on the overlay highlights it using `resetStyle()` to clear the previous highlight, opens the info panel, and triggers `drillDown()` **only in Boundary mode** if the overlay matches the current drill level. The corresponding drill layer is dimmed (`fillOpacity: 0`) when the overlay is active to prevent visual overlap. Municipality overlay shows **all** municipalities (no province filter). Overlays refresh on drill down/up.
+- **UI layout**: Back button (top-left), Fullscreen toggle (top-right), Basemap switcher (bottom-left), Legend (bottom-right), Reset-view pill (above breadcrumb, bottom-center). All use `map-icon-btn` or `map-pill-btn` base classes.
 
-Only **NAMRIA** files are active (referenced by `app.js` config). **CAD** files exist but are unused.
+Both **NAMRIA** and **CAD** sources are active (switchable via info panel toggle). CAD has 2 levels (Region → Municipality); NAMRIA has 3 levels (Region → Province → Municipality).
 
 Files in `main/geoJSON/` are single-line JSON (no trailing newline). Six active files:
 
@@ -119,9 +118,8 @@ Auto-deploys from GitHub at `https://geo-monitor-ten.vercel.app`. Vercel CLI 54.
 - Do not reorder script tags in `map.html`
 - Do not rely on `map-init.js` or `EVENTS` — they are dead code
 - Do not use NAMRIA + CAD GeoJSON together — property schemas are incompatible
-- Do not remove `_suppressMapClick` guard — Canvas renderer needs it
 - Do not make level 0 interactive — `interactive: false` on the L.geoJSON layer is required to prevent CAR polygon from blocking province clicks
 - Do not advance `currentLevel` after `_showLevel` — must happen before so click guards work
-- Do not make outline toggles interactive — they must use `interactive: false` to avoid blocking feature clicks beneath
+- Do not remove `L.DomEvent.stopPropagation` from feature click handlers — prevents map background click from firing after feature click
 
 No tests, CI, linter, or formatter configured. No backend.

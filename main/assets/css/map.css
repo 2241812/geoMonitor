@@ -691,6 +691,27 @@
   margin: 0;
 }
 
+.panel-source-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background 0.15s, border-color 0.15s;
+}
+.panel-source-toggle:hover {
+  background: rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.4);
+}
+
 .panel-section {
   padding: 16px 20px;
   border-bottom: 1px solid #f3f4f6;
