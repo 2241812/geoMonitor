@@ -461,7 +461,7 @@ const APP = {
     return 'Cordillera Administrative Region';
   },
 
-  /* ── Highlight selected layer ─────────────── */
+  /* ── Highlight selected layer ──────────────��� */
   _highlightLayer(leafletLayer, styleConfig, level) {
     leafletLayer.setStyle({
       fillColor: '#ffdd57',
@@ -996,7 +996,4 @@ const APP = {
   },
 };
 
-const EVENTS = {
-  FEATURE_SELECT: 'feature:select',
-  FEATURE_CLEAR: 'feature:clear',
-};
+// Dead code — EVENTS object is unused
