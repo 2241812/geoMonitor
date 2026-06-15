@@ -25,26 +25,26 @@ const sources = [
       2: (p) => `${p.Municipali || ''}`,
     },
     parentMatch: {
-      // level → { parentProp: property on this level, parentLevel: the level to match against }
       1: { id: () => 'CAR' },
       2: { id: (p) => slug(p.Province || p.PROVINCE || '') },
     },
-    normalizeNames: {
-      // level-2 municipality name normalization for orphan matching
-    },
+    normalizeNames: {},
   },
   {
     name: 'cad',
     files: [
       { level: 0, file: 'CAR CAD Boundary.geojson' },
-      { level: 1, file: 'CAR CAD Municipal Boundary.geojson' },
+      { level: 1, file: 'CAR CAD Provincial Boundary (Dissolved).geojson' },
+      { level: 2, file: 'CAR CAD Municipal Boundary.geojson' },
     ],
     nameProps: {
       0: () => 'Cordillera Administrative Region',
-      1: (p) => `${p.Muni_City || ''}`,
+      1: (p) => `${p.Province || ''}`,
+      2: (p) => `${p.Muni_City || ''}`,
     },
     parentMatch: {
       1: { id: () => 'CAR' },
+      2: { id: (p) => slug(p.Province || '') },
     },
     normalizeNames: {},
   },
@@ -54,7 +54,6 @@ sources.forEach((source) => {
   const hierarchy = { parents: {}, children: {}, names: {} };
   const lookup = [];
   const geoDatas = [];
-  const NAME_NORMALIZE = source.normalizeNames || {};
 
   // Read + index features
   source.files.forEach(({ level, file }) => {
@@ -91,7 +90,7 @@ sources.forEach((source) => {
   hierarchy.children['CAR'] = [];
 
   source.files.forEach(({ level }) => {
-    if (level === 0) return; // CAR is root
+    if (level === 0) return;
     const match = source.parentMatch[level];
     if (!match) return;
 
