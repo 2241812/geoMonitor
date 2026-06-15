@@ -644,6 +644,10 @@ const APP = {
   /* ── Mode switch ──────────────────────────── */
   _setMode(mode) {
     if (mode === this.state.activeMode) return;
+    
+    document.body.classList.remove('mode-explore', 'mode-boundary');
+    document.body.classList.add('mode-' + mode);
+    
     this._clearSelection();
     this.closePanel();
 
@@ -969,7 +973,6 @@ const APP = {
         d['Region'] = props.Region || 'Cordillera Administrative Region';
       }
       if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
-      if (props.Hectares) d['Hectares'] = Number(props.Hectares).toLocaleString(undefined, { maximumFractionDigits: 2 });
       if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
       if (level === 2) {
@@ -990,31 +993,32 @@ const APP = {
         if (cc !== null) d['Provinces'] = String(cc);
       }
     }
-    const area = this._resolveMetric(props, ['AREA', 'Area', 'Shape_Area']);
-    if (area) d['Area'] = area;
     
-    const perimeter = this._resolveMetric(props, ['PERIMETER', 'Shape_Length']);
-    if (perimeter) d['Perimeter'] = perimeter;
+    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
+    if (sqMeters > 0) d['Square Meters'] = sqMeters.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    let hectares = parseFloat(props.Hectares || props.Area || 0);
+    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
+    if (hectares > 0) d['Hectares'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
+    if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
     return d;
-  },
-
-  _resolveMetric(props, keys) {
-    for (const k of keys) {
-      const v = props[k];
-      if (v != null && v !== '') {
-        const n = parseFloat(v);
-        if (!isNaN(n)) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-      }
-    }
-    return null;
   },
 
   _resolveChartData(props) {
     const labels = [], values = [];
-    for (const k of ['Shape_Area', 'Shape_Length', 'AREA', 'Area', 'Hectares', 'PERIMETER']) {
-      const v = parseFloat(props[k]);
-      if (!isNaN(v) && v > 0) { labels.push(k.replace(/_/g, ' ')); values.push(v); }
-    }
+    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
+    if (sqMeters > 0) { labels.push('Square Meters'); values.push(sqMeters); }
+    
+    let hectares = parseFloat(props.Hectares || props.Area || 0);
+    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
+    if (hectares > 0) { labels.push('Hectares'); values.push(hectares); }
+    
+    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
+    if (perimeter > 0) { labels.push('Perimeter'); values.push(perimeter); }
+    
     return { labels, values };
   },
 
