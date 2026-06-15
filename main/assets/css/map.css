@@ -33,13 +33,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
   cursor: pointer;
   color: #374151;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.2s;
   z-index: 500;
 }
 .map-icon-btn:hover {
   background: #f3f4f6;
   color: #111827;
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
 }
 .map-icon-btn svg {
   width: 18px;
@@ -63,13 +64,14 @@
   font-weight: 600;
   color: #374151;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.2s;
   z-index: 500;
 }
 .map-pill-btn:hover {
   background: #f3f4f6;
   color: #065f46;
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
 }
 .map-pill-btn svg {
   flex-shrink: 0;
@@ -444,12 +446,13 @@ body.mode-explore .outline-toggles {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
   cursor: pointer;
   color: #374151;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.2s;
 }
 .basemap-btn:hover {
   background: #f3f4f6;
   color: #111827;
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px) scale(1.02);
 }
 .basemap-btn svg {
   width: 18px;
@@ -458,13 +461,23 @@ body.mode-explore .outline-toggles {
 
 .basemap-options {
   position: absolute;
-  bottom: 48px;
-  left: 0;
+  bottom: 0;
+  left: 52px;
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   min-width: 160px;
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.basemap-options.show {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
 .basemap-option {
@@ -575,11 +588,12 @@ body.mode-explore .outline-toggles {
   color: #6b7280;
   font-family: 'Inter', system-ui, sans-serif;
   white-space: nowrap;
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.15s, background 0.15s, transform 0.2s;
 }
 .panel-toggle-tab:hover {
   color: #065f46;
   background: #ecfdf5;
+  transform: translateX(4px);
 }
 .panel-toggle-tab.hidden {
   display: none;
@@ -770,6 +784,7 @@ body.mode-explore .outline-toggles {
 .panel-drill-hint {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 16px;
   margin: 0 20px 16px;
@@ -780,11 +795,13 @@ body.mode-explore .outline-toggles {
   color: #065f46;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .panel-drill-hint:hover {
   background: #d1fae5;
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(6, 95, 70, 0.1);
 }
 
 .panel-drill-hint svg {

@@ -201,13 +201,13 @@ const APP = {
 
     /* Close dropdown */
     const opts = document.getElementById('basemap-options');
-    if (opts) opts.style.display = 'none';
+    if (opts) opts.classList.remove('show');
   },
 
   _toggleBasemap() {
     const opts = document.getElementById('basemap-options');
     if (!opts) return;
-    opts.style.display = opts.style.display === 'none' ? '' : 'none';
+    opts.classList.toggle('show');
   },
 
   /* ── Drill DOWN ──────────────────────────────── */
