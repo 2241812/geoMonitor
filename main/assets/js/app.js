@@ -44,11 +44,12 @@ const APP = {
         label: 'CAD',
         geoJSON: {
           0: 'geoJSON/CAR CAD Boundary.geojson',
-          1: 'geoJSON/CAR CAD Municipal Boundary.geojson',
+          1: 'geoJSON/CAR CAD Provincial Boundary (Dissolved).geojson',
+          2: 'geoJSON/CAR CAD Municipal Boundary.geojson',
         },
         hierarchy: 'geoJSON/hierarchy-cad.json',
-        levelNames: ['Region', 'Municipality'],
-        maxLevel: 1,
+        levelNames: ['Region', 'Province', 'Municipality'],
+        maxLevel: 2,
       },
     },
 
@@ -79,6 +80,10 @@ const APP = {
     return this.config.sources[this.state.activeSource];
   },
 
+  _geoJSONPath(level) {
+    return this._src().geoJSON[level];
+  },
+
   /* ── Init ────────────────────────────────── */
   init() {
     const map = L.map('map', {
@@ -87,6 +92,7 @@ const APP = {
       minZoom: this.config.minZoom,
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
+      zoomSnap: 0.5,
     });
 
     /* Basemaps */
@@ -346,9 +352,9 @@ const APP = {
 
     const geoKey = level;
     if (!this.state.rawData[geoKey]) {
-      const src = this._src();
-      if (!src.geoJSON[level]) return;
-      const resp = await fetch(src.geoJSON[level]);
+      const path = this._geoJSONPath(level);
+      if (!path) return;
+      const resp = await fetch(path);
       if (!resp.ok) throw new Error('Failed to load level ' + level);
       this.state.rawData[geoKey] = await resp.json();
     }
@@ -440,7 +446,8 @@ const APP = {
     if (!p) return 'Unknown';
 
     if (this.state.activeSource === 'cad') {
-      if (level === 1) return p.Muni_City || 'Unknown';
+      if (level === 2) return p.Muni_City || 'Unknown';
+      if (level === 1) return p.Province || 'Unknown';
       return 'Cordillera Administrative Region';
     }
 
@@ -578,9 +585,9 @@ const APP = {
   async _prefetchLevel(level) {
     if (this.state.rawData[level]) return;
     try {
-      const src = this._src();
-      if (!src.geoJSON[level]) return;
-      const resp = await fetch(src.geoJSON[level]);
+      const path = this._geoJSONPath(level);
+      if (!path) return;
+      const resp = await fetch(path);
       if (resp.ok) this.state.rawData[level] = await resp.json();
     } catch (_) { }
   },
@@ -695,27 +702,34 @@ const APP = {
   _renderOutlineToggles() {
     const container = document.getElementById('outline-toggles');
     if (!container) return;
+
     if (this.state.activeMode !== 'boundary') {
       container.innerHTML = '';
       return;
     }
+
     const src = this._src();
-    const items = [
-      { mode: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
-    ];
+    const active = this.state.activeOutline;
+
+    let html = '<div class="boundary-controls">';
+    html += '<div class="boundary-header">Boundary Overlay</div>';
+
     if (src.maxLevel >= 1) {
-      items.push({ mode: 1, label: src.levelNames[1], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' });
+      const isActive = active === 1;
+      html += `<button class="boundary-option${isActive ? ' active' : ''}" onclick="APP._setBoundaryMode(1)">
+        <span class="boundary-radio-dot"></span>
+        <span>${this._escHtml(src.levelNames[1])}</span>
+      </button>`;
     }
     if (src.maxLevel >= 2) {
-      items.push({ mode: 2, label: src.levelNames[2], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' });
+      const isActive = active === 2;
+      html += `<button class="boundary-option${isActive ? ' active' : ''}" onclick="APP._setBoundaryMode(2)">
+        <span class="boundary-radio-dot"></span>
+        <span>${this._escHtml(src.levelNames[2])}</span>
+      </button>`;
     }
-    const active = this.state.activeOutline;
-    container.innerHTML =
-      '<div class="boundary-controls">' +
-      items.map(({ mode, label, icon }) =>
-        `<button class="boundary-option${active === mode ? ' active' : ''}" onclick="APP._setBoundaryMode(${mode === null ? 'null' : mode})">${icon}<span>${this._escHtml(label)}</span></button>`
-      ).join('') +
-      '</div>';
+
+    container.innerHTML = html + '</div>';
   },
 
   _setBoundaryMode(level) {
@@ -908,21 +922,49 @@ const APP = {
 
   _resolveDetails(props, level, name) {
     const d = {};
+    const hierarchy = this.state.hierarchy;
+    const childCount = (id) => {
+      if (!hierarchy || !hierarchy.children) return null;
+      const kids = hierarchy.children[id];
+      return kids ? kids.length : null;
+    };
+
     if (this.state.activeSource === 'cad') {
-      d[this._src().levelNames[level] || 'Feature'] = name;
-      if (props.Province) d['Province'] = props.Province;
+      if (level === 2) {
+        d['Municipality/City'] = props.Muni_City || name;
+        if (props.Province) d['Province'] = props.Province;
+      } else if (level === 1) {
+        d['Province'] = props.Province || name;
+        const cc = childCount(props._id);
+        if (cc !== null) d['Municipalities'] = String(cc);
+      } else {
+        d['Region'] = props.Region || 'Cordillera Administrative Region';
+        const cc = childCount(props._id);
+        if (cc !== null) d['Provinces'] = String(cc);
+      }
       if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
+      if (props.Hectares) d['Hectares'] = String(Math.round(+props.Hectares));
+      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
       if (level === 2) {
         d['Municipality/City'] = props.Municipali || name;
         if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
-        if (props.PSGC) d['PSGC'] = props.PSGC;
+        if (props.PSGC) d['PSGC'] = String(props.PSGC);
+        if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
+        if (props.X_Coord && props.Y_Coord) {
+          d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
+        }
       } else if (level === 1) {
         d['Province'] = props.PROVINCE || props.Province || name;
-        if (props.PSGC_P) d['PSGC'] = props.PSGC_P;
+        if (props.PSGC_P) d['PSGC'] = String(props.PSGC_P);
+        if (props.REGION) d['Region'] = props.REGION;
+        const cc = childCount(props._id);
+        if (cc !== null) d['Municipalities'] = String(cc);
       } else {
         d['Region'] = props.Region || 'Cordillera Administrative Region';
-        if (props.PSGC) d['PSGC'] = props.PSGC;
+        if (props.PSGC) d['PSGC'] = String(props.PSGC);
+        const cc = childCount(props._id);
+        if (cc !== null) d['Provinces'] = String(cc);
       }
     }
     const area = this._resolveArea(props);
@@ -952,7 +994,8 @@ const APP = {
 
   _heroSubtitle(props, level) {
     if (this.state.activeSource === 'cad') {
-      if (level === 1) return props.Province || props.REGION || '';
+      if (level === 2) return props.Province || props.REGION || '';
+      if (level === 1) return 'Province — Cordillera Administrative Region';
       return 'Cordillera Administrative Region';
     }
     if (level === 2) return props.Province || props.PROVINCE || 'Province';
@@ -979,6 +1022,27 @@ const APP = {
     const d = document.createElement('div');
     d.appendChild(document.createTextNode(String(str)));
     return d.innerHTML;
+  },
+  toggleFullscreen() {
+    const btn = document.getElementById('map-fullscreen-btn');
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      if (btn) btn.title = 'Exit fullscreen';
+    } else {
+      document.exitFullscreen().catch(() => {});
+      if (btn) btn.title = 'Enter fullscreen';
+    }
+    const updateIcon = () => {
+      if (btn) {
+        const isFull = !!document.fullscreenElement;
+        btn.innerHTML = isFull
+          ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>'
+          : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+        btn.title = isFull ? 'Exit fullscreen' : 'Enter fullscreen';
+      }
+    };
+    document.addEventListener('fullscreenchange', updateIcon, { once: true });
+    setTimeout(updateIcon, 100);
   },
 };
 
