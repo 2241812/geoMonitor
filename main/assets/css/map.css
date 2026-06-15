@@ -400,7 +400,7 @@ body.mode-explore .outline-toggles {
   position: absolute;
   bottom: 16px;
   left: 16px;
-  z-index: 500;
+  z-index: 700;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -564,8 +564,8 @@ body.mode-explore .outline-toggles {
   top: 16px;
   left: 16px;
   bottom: auto;
-  width: 340px;
-  max-height: calc(100vh - 32px);
+  width: 360px;
+  max-height: calc(100vh - 80px);
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
