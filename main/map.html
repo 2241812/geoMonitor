@@ -33,6 +33,12 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
     </a>
 
+    <!-- Reset to CAR overview pill — top-right -->
+    <button class="reset-view-btn map-pill-btn" onclick="APP.drillUp(0)" title="Reset to CAR overview">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      CAR Overview
+    </button>
+
     <!-- Fullscreen toggle — top-right -->
     <button class="map-fullscreen-btn map-icon-btn" id="map-fullscreen-btn" onclick="APP.toggleFullscreen()" title="Enter fullscreen">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -43,12 +49,6 @@
 
     <!-- Bottom-center: Breadcrumb nav bar (rendered dynamically by APP._updateBreadcrumb) -->
     <div class="map-breadcrumb" id="map-breadcrumb"></div>
-
-    <!-- Reset to CAR overview pill — above breadcrumb -->
-    <button class="reset-view-btn map-pill-btn" onclick="APP.drillUp(0)" title="Reset to CAR overview">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      CAR Overview
-    </button>
 
     <!-- Basemap switcher — bottom-left -->
     <div class="basemap-switcher" id="basemap-switcher">
@@ -68,20 +68,6 @@
           <span class="basemap-thumb satellite-thumb"></span>
           <span>Satellite</span>
         </button>
-      </div>
-    </div>
-
-    <!-- Legend indicator — bottom-right -->
-    <div class="map-legend" id="map-legend">
-      <button class="map-legend-btn" onclick="this.parentNode.classList.toggle('open')" title="Toggle legend">
-        <span class="legend-dot region-dot"></span>
-        <span class="legend-dot province-dot"></span>
-        <span class="legend-dot muni-dot"></span>
-      </button>
-      <div class="map-legend-popup">
-        <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
-        <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
-        <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
       </div>
     </div>
 

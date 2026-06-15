@@ -241,6 +241,13 @@
   top: 64px;
   right: 16px;
   z-index: 500;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+body.mode-explore .outline-toggles {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-10px);
 }
 
 .boundary-controls {
@@ -341,42 +348,34 @@
 }
 
 /* =============================================
-   RESET VIEW — bottom-center, near breadcrumb
+   RESET VIEW — top-right, beside fullscreen
    ============================================= */
 
 .reset-view-btn {
   position: absolute;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-/* =============================================
-   LEGEND — bottom-right, above zoom
-   ============================================= */
-
-.map-legend {
-  position: absolute;
-  bottom: 100px;
-  right: 16px;
+  top: 16px;
+  right: 64px;
   z-index: 500;
 }
 
-.map-legend-btn {
+/* =============================================
+   SIDE PANEL LEGEND
+   ============================================= */
+
+.panel-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.panel-legend .legend-item {
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.97);
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
-  cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s;
-}
-.map-legend-btn:hover {
-  background: #f3f4f6;
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
 }
 
 .legend-dot {
@@ -386,43 +385,12 @@
   display: block;
   border: 1.5px solid rgba(255, 255, 255, 0.6);
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .region-dot   { background: #059669; }
 .province-dot { background: #2563eb; }
 .muni-dot     { background: #d97706; }
-
-.map-legend-popup {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.16);
-  padding: 10px 14px;
-  min-width: 140px;
-  display: none;
-  z-index: 501;
-}
-
-.map-legend.open .map-legend-popup {
-  display: block;
-}
-
-.map-legend-popup .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #374151;
-  padding: 4px 0;
-}
-
-.map-legend-popup .legend-item + .legend-item {
-  border-top: 1px solid #f3f4f6;
-  padding-top: 6px;
-}
 
 /* =============================================
    BASEMAP SWITCHER — bottom-left
@@ -692,24 +660,29 @@
 }
 
 .panel-source-toggle {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.25);
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 4px 10px;
-  border-radius: 6px;
+  letter-spacing: 0.08em;
+  padding: 8px 10px;
+  border-radius: 8px;
   cursor: pointer;
   font-family: 'Inter', system-ui, sans-serif;
-  transition: background 0.15s, border-color 0.15s;
+  text-align: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .panel-source-toggle:hover {
-  background: rgba(255,255,255,0.3);
-  border-color: rgba(255,255,255,0.4);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+.panel-source-toggle:active {
+  transform: translateY(1px);
 }
 
 .panel-section {
@@ -860,14 +833,19 @@
 
   .info-panel {
     width: 100vw;
-    top: 0;
+    top: auto;
     left: 0;
     bottom: 0;
-    height: 100vh;
-    max-height: 100vh;
+    height: auto;
+    max-height: 85vh;
     transform: translateY(100%);
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .info-panel.peek {
+    transform: translateY(calc(100% - 110px));
+    opacity: 1;
   }
 
   .info-panel.open {
@@ -876,18 +854,28 @@
   }
 
   .info-panel-header {
-    display: flex;
+    display: none;
   }
 
   .info-panel-handle {
-    display: none;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 0;
+    background: #065f46;
+    border-radius: 16px 16px 0 0;
+    cursor: pointer;
+  }
+
+  .handle-bar {
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
+    margin-bottom: -10px;
   }
 
   .info-panel-content {
-    display: none;
-  }
-
-  .info-panel-content {
+    display: block;
     padding-top: 0;
   }
 

@@ -81,6 +81,8 @@ const APP = {
 
   /* ── Init ────────────────────────────────── */
   init() {
+    document.body.classList.add('mode-explore');
+
     const map = L.map('map', {
       center: this.config.mapCenter,
       zoom: this.config.mapZoom,
@@ -769,7 +771,13 @@ const APP = {
           self.state._outlineHighlight = layer;
           self.openPanel(feature, level);
           if (self.state.activeMode === 'boundary' && level === self.state.currentLevel) {
-            self.drillDown(feature, layer);
+            if (level < self._src().maxLevel) {
+              self.drillDown(feature, layer);
+            } else {
+              self._highlightAndDim(feature, layer, level);
+            }
+          } else if (layer && layer.getBounds) {
+            self.state.map.fitBounds(layer.getBounds(), { padding: [40, 40] });
           }
         });
       },
@@ -848,6 +856,16 @@ const APP = {
       </div>`;
     }
 
+    /* Add Map Legend to Side Panel */
+    html += `<div class="panel-section">
+      <div class="panel-section-title">Legend</div>
+      <div class="panel-legend">
+        <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
+        <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
+        <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
+      </div>
+    </div>`;
+
     content.innerHTML = html;
     panel.classList.remove('open');
     panel.classList.add('open');
@@ -887,7 +905,9 @@ const APP = {
 
   closePanel() {
     const panel = document.getElementById('info-panel');
-    if (panel) panel.classList.remove('open');
+    if (panel) {
+      panel.classList.remove('open', 'peek');
+    }
     this.state.panelState = 'closed';
     /* Show toggle tab */
     const tab = document.getElementById('panel-toggle-tab');
@@ -897,7 +917,19 @@ const APP = {
   togglePanel() {
     const panel = document.getElementById('info-panel');
     if (!panel) return;
+    
+    // Mobile bottom sheet behavior
+    const isMobile = window.innerWidth <= 640;
+    
     if (this.state.panelState === 'open') {
+      if (isMobile) {
+        panel.classList.remove('open');
+        panel.classList.add('peek');
+        this.state.panelState = 'peek';
+      } else {
+        this.closePanel();
+      }
+    } else if (this.state.panelState === 'peek') {
       this.closePanel();
     } else if (this.state.lastViewed) {
       this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
@@ -927,37 +959,37 @@ const APP = {
         d['Region'] = props.Region || 'Cordillera Administrative Region';
       }
       if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
-      if (props.Hectares) d['Hectares'] = String(Math.round(+props.Hectares));
+      if (props.Hectares) d['Hectares'] = Number(props.Hectares).toLocaleString(undefined, { maximumFractionDigits: 2 });
       if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
       if (level === 2) {
         d['Municipality/City'] = props.Municipali || name;
         if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
-        if (props.PSGC) d['PSGC'] = String(props.PSGC);
         if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
         if (props.X_Coord && props.Y_Coord) {
           d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
         }
       } else if (level === 1) {
         d['Province'] = props.PROVINCE || props.Province || name;
-        if (props.PSGC_P) d['PSGC'] = String(props.PSGC_P);
         if (props.REGION) d['Region'] = props.REGION;
         const cc = childCount(props._id);
         if (cc !== null) d['Municipalities'] = String(cc);
       } else {
         d['Region'] = props.Region || 'Cordillera Administrative Region';
-        if (props.PSGC) d['PSGC'] = String(props.PSGC);
         const cc = childCount(props._id);
         if (cc !== null) d['Provinces'] = String(cc);
       }
     }
-    const area = this._resolveArea(props);
+    const area = this._resolveMetric(props, ['AREA', 'Area', 'Shape_Area']);
     if (area) d['Area'] = area;
+    
+    const perimeter = this._resolveMetric(props, ['PERIMETER', 'Shape_Length']);
+    if (perimeter) d['Perimeter'] = perimeter;
     return d;
   },
 
-  _resolveArea(props) {
-    for (const k of ['Hectares', 'Area', 'AREA', 'Shape_Area', 'PERIMETER']) {
+  _resolveMetric(props, keys) {
+    for (const k of keys) {
       const v = props[k];
       if (v != null && v !== '') {
         const n = parseFloat(v);
