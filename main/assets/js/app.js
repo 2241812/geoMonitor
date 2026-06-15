@@ -169,13 +169,20 @@ const APP = {
       if (l) this.state.map.removeLayer(l);
     });
     this.state.outlineLayers = {};
-    this.closePanel();
-
+    const wasOpen = this.state.panelState === 'open' || this.state.panelState === 'peek';
+    
     this.state.activeSource = name;
     this._loadHierarchy();
     this._updateBreadcrumb();
 
-    window.initLayers();
+    window.initLayers().then(() => {
+      if (wasOpen) {
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
+      }
+    });
   },
 
   /* ── Basemap switcher ─────────────────────── */
@@ -817,15 +824,18 @@ const APP = {
 
     let html = '';
 
-    const otherSource = this.state.activeSource === 'namria' ? 'cad' : 'namria';
-    const otherLabel = this.config.sources[otherSource].label;
+    const namriaActive = this.state.activeSource === 'namria' ? 'active' : '';
+    const cadActive = this.state.activeSource === 'cad' ? 'active' : '';
+
     html += `<div class="panel-hero">
       <div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
       <h2 class="panel-title">${this._escHtml(name)}</h2>
       <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>
-      <button class="panel-source-toggle" onclick="APP.switchSource('${otherSource}')" title="Switch to ${otherLabel}">
-        ${this._escHtml(this.state.activeSource.toUpperCase())}
-      </button>
+      
+      <div class="panel-source-switch">
+        <button class="source-switch-btn ${namriaActive}" onclick="APP.switchSource('namria')">NAMRIA</button>
+        <button class="source-switch-btn ${cadActive}" onclick="APP.switchSource('cad')">CAD</button>
+      </div>
     </div>`;
 
     if (level < src.maxLevel) {
