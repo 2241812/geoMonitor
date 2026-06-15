@@ -120,10 +120,10 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* =============================================
-   BREADCRUMB NAV — top left drill-down trail
+   BREADCRUMB NAV & DRILL CONTROLS
    ============================================= */
 
-.map-breadcrumb {
+.breadcrumb-container {
   position: absolute;
   bottom: 24px;
   left: 50%;
@@ -131,13 +131,68 @@
   z-index: 500;
   display: flex;
   align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 220px);
+}
+
+.map-breadcrumb {
+  display: flex;
+  align-items: center;
   gap: 3px;
   background: rgba(255, 255, 255, 0.97);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   padding: 5px 8px;
-  max-width: calc(100vw - 220px);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.map-breadcrumb::-webkit-scrollbar { display: none; }
+
+.map-drill-up-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #059669;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
+  cursor: pointer;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 500;
+}
+.map-drill-up-btn:hover {
+  background: #047857;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+}
+.map-drill-up-btn:active {
+  transform: translateY(0);
+}
+.map-drill-up-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.map-mode-toggle {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 24px;
+  padding: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .breadcrumb-item {

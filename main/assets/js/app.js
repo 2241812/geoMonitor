@@ -681,20 +681,32 @@ const APP = {
     this._updateBreadcrumb();
   },
 
-  /* ── Breadcrumb ───────────────────────────── */
+  /* ── UI Updaters ───────────────────────────── */
   _updateBreadcrumb() {
     const bc = document.getElementById('map-breadcrumb');
+    const mt = document.getElementById('map-mode-toggle');
+    const upBtn = document.getElementById('map-drill-up-btn');
+    
+    if (upBtn) {
+      if (this.state.currentLevel > 0) {
+        upBtn.classList.remove('hidden');
+        upBtn.setAttribute('onclick', `APP.drillUp(${this.state.currentLevel - 1})`);
+      } else {
+        upBtn.classList.add('hidden');
+      }
+    }
+
+    if (mt) {
+      mt.innerHTML = `
+        <button class="mode-toggle${this.state.activeMode === 'explore' ? ' active' : ''}" onclick="APP._setMode('explore')" title="Explore mode — click to select, map click deselects">Explore</button>
+        <button class="mode-toggle${this.state.activeMode === 'boundary' ? ' active' : ''}" onclick="APP._setMode('boundary')" title="Boundary mode — click to drill down through hierarchy">Boundary</button>
+      `;
+    }
+
     if (!bc) return;
 
     let html = '';
 
-    const src = this._src();
-
-    /* Mode switch buttons */
-    html += `<button class="mode-toggle${this.state.activeMode === 'explore' ? ' active' : ''}" onclick="APP._setMode('explore')" title="Explore mode — click to select, map click deselects">Explore</button>`;
-    html += `<button class="mode-toggle${this.state.activeMode === 'boundary' ? ' active' : ''}" onclick="APP._setMode('boundary')" title="Boundary mode — click to drill down through hierarchy">Boundary</button>`;
-
-    /* Breadcrumb trail (both modes) */
     const atRoot = this.state.selectedPath.length === 0;
 
     /* Root: "CAR Region" */
