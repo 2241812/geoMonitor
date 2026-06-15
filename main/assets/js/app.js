@@ -12,6 +12,7 @@ const APP = {
     panelState: 'closed',
     lastViewed: null,
     _drilling: false,
+    _suppressMapClick: false,
     _chart: null,
     outlineLayers: {},
     activeOutline: null,
@@ -139,6 +140,11 @@ const APP = {
     /* Click empty space → drill up one level (both modes) */
     map.on('click', () => {
       if (this.state._drilling) return;
+      /* Canvas renderer fires map click after feature click — suppress it */
+      if (this.state._suppressMapClick) {
+        this.state._suppressMapClick = false;
+        return;
+      }
       if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
@@ -247,7 +253,7 @@ const APP = {
 
       /* Zoom to selected feature */
       if (leafletLayer && leafletLayer.getBounds) {
-        this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
+        this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
       }
 
       this._updateOutlines();
@@ -285,7 +291,7 @@ const APP = {
         this.state.currentLevel = 1;
         /* Zoom to CAR bounds */
         if (this.state.layers[0]) {
-          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
         }
         /* Show CAR info in panel */
         const carData = this.state.rawData[0];
@@ -327,12 +333,12 @@ const APP = {
         if (levelLayer) {
           levelLayer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
-              this.state.map.fitBounds(lf.getBounds(), { padding: [40, 40] });
+              this.state.map.fitBounds(lf.getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
             }
           });
         }
       } else if (targetLevel === 0 && this.state.layers[0]) {
-        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
       }
 
       /* Show the feature at target level in panel */
@@ -416,6 +422,7 @@ const APP = {
 
           leafletLayer.on('click', function (e) {
             L.DomEvent.stopPropagation(e);
+            self.state._suppressMapClick = true;
             if (self.state.activeOutline === level) return;
             /* Clicked on a parent level → drill up to it */
             if (level < self.state.currentLevel) {
@@ -523,7 +530,7 @@ const APP = {
 
     /* Zoom to selected feature */
     if (leafletLayer && leafletLayer.getBounds) {
-      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
+      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
     }
 
     /* Update breadcrumb */
@@ -627,7 +634,7 @@ const APP = {
     this._showLevel(1, null, null);
     this.state.currentLevel = 1;
     if (this.state.layers[0]) {
-      this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+      this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
     }
     /* Show CAR info in panel */
     const carData = this.state.rawData[0];
@@ -778,6 +785,7 @@ const APP = {
       onEachFeature(feature, layer) {
         layer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
+          self.state._suppressMapClick = true;
           if (self.state._drilling) return;
           if (self.state._outlineHighlight) {
             self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
