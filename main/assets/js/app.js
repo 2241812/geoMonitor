@@ -12,7 +12,6 @@ const APP = {
     panelState: 'closed',
     lastViewed: null,
     _drilling: false,
-    _suppressMapClick: false,
     _chart: null,
     outlineLayers: {},
     activeOutline: null,
@@ -45,12 +44,11 @@ const APP = {
         label: 'CAD',
         geoJSON: {
           0: 'geoJSON/CAR CAD Boundary.geojson',
-          1: 'geoJSON/CAR CAD Provincial Boundary (Dissolved).geojson',
-          2: 'geoJSON/CAR CAD Municipal Boundary.geojson',
+          1: 'geoJSON/CAR CAD Municipal Boundary.geojson',
         },
         hierarchy: 'geoJSON/hierarchy-cad.json',
-        levelNames: ['Region', 'Province', 'Municipality'],
-        maxLevel: 2,
+        levelNames: ['Region', 'Municipality'],
+        maxLevel: 1,
       },
     },
 
@@ -79,10 +77,6 @@ const APP = {
 
   _src() {
     return this.config.sources[this.state.activeSource];
-  },
-
-  _geoJSONPath(level) {
-    return this._src().geoJSON[level];
   },
 
   /* ── Init ────────────────────────────────── */
@@ -140,11 +134,6 @@ const APP = {
     /* Click empty space → drill up one level (both modes) */
     map.on('click', () => {
       if (this.state._drilling) return;
-      /* Canvas renderer fires map click after feature click — suppress it */
-      if (this.state._suppressMapClick) {
-        this.state._suppressMapClick = false;
-        return;
-      }
       if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
@@ -159,7 +148,7 @@ const APP = {
   },
 
   /* ── Source toggle ────────────────────────── */
-  async switchSource(name) {
+  switchSource(name) {
     if (name === this.state.activeSource) return;
     if (!this.config.sources[name]) return;
     if (this.state._drilling) return;
@@ -184,12 +173,7 @@ const APP = {
     this._loadHierarchy();
     this._updateBreadcrumb();
 
-    await window.initLayers();
-
-    if (this.state.activeSource === 'cad' && this.state.activeMode === 'boundary') {
-      if (!this.state.rawData[2]) await this._prefetchLevel(2);
-      this._setBoundaryMode(2);
-    }
+    window.initLayers();
   },
 
   /* ── Basemap switcher ─────────────────────── */
@@ -253,7 +237,7 @@ const APP = {
 
       /* Zoom to selected feature */
       if (leafletLayer && leafletLayer.getBounds) {
-        this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
+        this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
       }
 
       this._updateOutlines();
@@ -291,7 +275,7 @@ const APP = {
         this.state.currentLevel = 1;
         /* Zoom to CAR bounds */
         if (this.state.layers[0]) {
-          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
+          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
         }
         /* Show CAR info in panel */
         const carData = this.state.rawData[0];
@@ -333,12 +317,12 @@ const APP = {
         if (levelLayer) {
           levelLayer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
-              this.state.map.fitBounds(lf.getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
+              this.state.map.fitBounds(lf.getBounds(), { padding: [40, 40] });
             }
           });
         }
       } else if (targetLevel === 0 && this.state.layers[0]) {
-        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
+        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
       }
 
       /* Show the feature at target level in panel */
@@ -363,9 +347,9 @@ const APP = {
 
     const geoKey = level;
     if (!this.state.rawData[geoKey]) {
-      const path = this._geoJSONPath(level);
-      if (!path) return;
-      const resp = await fetch(path);
+      const src = this._src();
+      if (!src.geoJSON[level]) return;
+      const resp = await fetch(src.geoJSON[level]);
       if (!resp.ok) throw new Error('Failed to load level ' + level);
       this.state.rawData[geoKey] = await resp.json();
     }
@@ -422,7 +406,6 @@ const APP = {
 
           leafletLayer.on('click', function (e) {
             L.DomEvent.stopPropagation(e);
-            self.state._suppressMapClick = true;
             if (self.state.activeOutline === level) return;
             /* Clicked on a parent level → drill up to it */
             if (level < self.state.currentLevel) {
@@ -458,8 +441,7 @@ const APP = {
     if (!p) return 'Unknown';
 
     if (this.state.activeSource === 'cad') {
-      if (level === 2) return p.Muni_City || 'Unknown';
-      if (level === 1) return p.Province || 'Unknown';
+      if (level === 1) return p.Muni_City || 'Unknown';
       return 'Cordillera Administrative Region';
     }
 
@@ -530,7 +512,7 @@ const APP = {
 
     /* Zoom to selected feature */
     if (leafletLayer && leafletLayer.getBounds) {
-      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
+      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
     }
 
     /* Update breadcrumb */
@@ -597,9 +579,9 @@ const APP = {
   async _prefetchLevel(level) {
     if (this.state.rawData[level]) return;
     try {
-      const path = this._geoJSONPath(level);
-      if (!path) return;
-      const resp = await fetch(path);
+      const src = this._src();
+      if (!src.geoJSON[level]) return;
+      const resp = await fetch(src.geoJSON[level]);
       if (resp.ok) this.state.rawData[level] = await resp.json();
     } catch (_) { }
   },
@@ -634,7 +616,7 @@ const APP = {
     this._showLevel(1, null, null);
     this.state.currentLevel = 1;
     if (this.state.layers[0]) {
-      this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40], animate: true, duration: 0.4 });
+      this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
     }
     /* Show CAR info in panel */
     const carData = this.state.rawData[0];
@@ -650,6 +632,14 @@ const APP = {
     if (mode === this.state.activeMode) return;
     this._clearSelection();
     this.closePanel();
+
+    if (this.state.activeOutline !== null) {
+      this._hideOutline(this.state.activeOutline);
+      this._restoreDrillLayer(this.state.activeOutline);
+    }
+    this.state.activeOutline = null;
+    this.state._outlineHighlight = null;
+
     this.state.activeMode = mode;
     if (mode === 'boundary') {
       this._resetLevelStyle(0);
@@ -689,12 +679,6 @@ const APP = {
     /* Breadcrumb trail (both modes) */
     const atRoot = this.state.selectedPath.length === 0;
 
-    /* Source toggle (subtle) */
-    const otherSource = this.state.activeSource === 'namria' ? 'cad' : 'namria';
-    html += `<button class="source-toggle" onclick="APP.switchSource('${otherSource}')" title="Switch to ${this.config.sources[otherSource].label}">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-    </button>`;
-
     /* Root: "CAR Region" */
     html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(0)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -715,45 +699,31 @@ const APP = {
     const container = document.getElementById('outline-toggles');
     if (!container) return;
 
-    if (this.state.activeMode !== 'boundary') {
-      container.innerHTML = '';
-      return;
-    }
-
-    if (this.state.activeSource === 'cad') {
-      container.innerHTML = '';
-      return;
-    }
-
     const src = this._src();
     const active = this.state.activeOutline;
 
-    let html = '<div class="boundary-controls">';
-    html += '<div class="boundary-header">Boundary Overlay</div>';
-
+    const items = [
+      { mode: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
+    ];
     if (src.maxLevel >= 1) {
-      const isActive = active === 1;
-      html += `<button class="boundary-option${isActive ? ' active' : ''}" onclick="APP._setBoundaryMode(1)">
-        <span class="boundary-radio-dot"></span>
-        <span>${this._escHtml(src.levelNames[1])}</span>
-      </button>`;
+      items.push({ mode: 1, label: src.levelNames[1], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' });
     }
     if (src.maxLevel >= 2) {
-      const isActive = active === 2;
-      html += `<button class="boundary-option${isActive ? ' active' : ''}" onclick="APP._setBoundaryMode(2)">
-        <span class="boundary-radio-dot"></span>
-        <span>${this._escHtml(src.levelNames[2])}</span>
-      </button>`;
+      items.push({ mode: 2, label: src.levelNames[2], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' });
     }
 
-    container.innerHTML = html + '</div>';
+    container.innerHTML =
+      '<div class="boundary-controls">' +
+      items.map(({ mode, label, icon }) =>
+        `<button class="boundary-option${active === mode ? ' active' : ''}" onclick="APP._setBoundaryMode(${mode === null ? 'null' : mode})">${icon}<span>${this._escHtml(label)}</span></button>`
+      ).join('') +
+      '</div>';
   },
 
   _setBoundaryMode(level) {
     const src = this._src();
     const max = src.maxLevel;
     if (level !== null && (level < 1 || level > max)) return;
-    if (level === 1 && this.state.activeSource === 'cad') return;
     if (this.state.activeOutline === level) level = null;
     if (this.state.activeOutline !== null) {
       this._hideOutline(this.state.activeOutline);
@@ -785,7 +755,6 @@ const APP = {
       onEachFeature(feature, layer) {
         layer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
-          self.state._suppressMapClick = true;
           if (self.state._drilling) return;
           if (self.state._outlineHighlight) {
             self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
@@ -794,7 +763,7 @@ const APP = {
           layer.bringToFront();
           self.state._outlineHighlight = layer;
           self.openPanel(feature, level);
-          if (level === self.state.currentLevel) {
+          if (self.state.activeMode === 'boundary' && level === self.state.currentLevel) {
             self.drillDown(feature, layer);
           }
         });
@@ -832,10 +801,15 @@ const APP = {
 
     let html = '';
 
+    const otherSource = this.state.activeSource === 'namria' ? 'cad' : 'namria';
+    const otherLabel = this.config.sources[otherSource].label;
     html += `<div class="panel-hero">
       <div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
       <h2 class="panel-title">${this._escHtml(name)}</h2>
       <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>
+      <button class="panel-source-toggle" onclick="APP.switchSource('${otherSource}')" title="Switch to ${otherLabel}">
+        ${this._escHtml(this.state.activeSource.toUpperCase())}
+      </button>
     </div>`;
 
     if (level < src.maxLevel) {
@@ -950,17 +924,11 @@ const APP = {
     };
 
     if (this.state.activeSource === 'cad') {
-      if (level === 2) {
+      if (level === 1) {
         d['Municipality/City'] = props.Muni_City || name;
         if (props.Province) d['Province'] = props.Province;
-      } else if (level === 1) {
-        d['Province'] = props.Province || name;
-        const cc = childCount(props._id);
-        if (cc !== null) d['Municipalities'] = String(cc);
       } else {
         d['Region'] = props.Region || 'Cordillera Administrative Region';
-        const cc = childCount(props._id);
-        if (cc !== null) d['Provinces'] = String(cc);
       }
       if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
       if (props.Hectares) d['Hectares'] = String(Math.round(+props.Hectares));
@@ -1014,8 +982,7 @@ const APP = {
 
   _heroSubtitle(props, level) {
     if (this.state.activeSource === 'cad') {
-      if (level === 2) return props.Province || props.REGION || '';
-      if (level === 1) return 'Province — Cordillera Administrative Region';
+      if (level === 1) return props.Province || props.REGION || '';
       return 'Cordillera Administrative Region';
     }
     if (level === 2) return props.Province || props.PROVINCE || 'Province';
