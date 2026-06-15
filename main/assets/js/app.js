@@ -915,7 +915,7 @@ const APP = {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-              y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+              y: { type: 'logarithmic', ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
               x: { ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { display: false } },
             },
           },
@@ -971,17 +971,13 @@ const APP = {
     
     if (isExpanded) {
       panel.classList.remove('expanded');
-      document.body.classList.remove('panel-expanded');
       if (btn) btn.innerText = 'Show More';
+      if (this.state.map) this.state.map.panBy([-100, 0], {animate: true, duration: 0.3});
     } else {
       panel.classList.add('expanded');
-      document.body.classList.add('panel-expanded');
       if (btn) btn.innerText = 'Show Less';
+      if (this.state.map) this.state.map.panBy([100, 0], {animate: true, duration: 0.3});
     }
-    
-    setTimeout(() => {
-      if (this.state.map) this.state.map.invalidateSize();
-    }, 320); // wait for CSS transition to finish
   },
 
   _resolveDetails(props, level, name) {
