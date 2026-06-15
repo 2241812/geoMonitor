@@ -1,2 +1,4 @@
 .vercel
 tmp/
+.omo/
+node_modules/
