@@ -659,30 +659,39 @@ body.mode-explore .outline-toggles {
   margin: 0;
 }
 
-.panel-source-toggle {
-  display: block;
-  width: 100%;
+.panel-source-switch {
+  display: flex;
   margin-top: 16px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #fff;
-  font-size: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.source-switch-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: 6px 0;
+  border-radius: 6px;
   cursor: pointer;
   font-family: 'Inter', system-ui, sans-serif;
   text-align: center;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.panel-source-toggle:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-1px);
+
+.source-switch-btn.active {
+  background: #fff;
+  color: #065f46;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-.panel-source-toggle:active {
-  transform: translateY(1px);
+
+.source-switch-btn:hover:not(.active) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .panel-section {
