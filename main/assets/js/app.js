@@ -880,6 +880,13 @@ const APP = {
       </div>
     </div>`;
 
+    /* Add Show More Button */
+    html += `<div class="panel-show-more">
+      <button class="show-more-btn" onclick="APP.toggleExpandedPanel()">
+        Show More
+      </button>
+    </div>`;
+
     content.innerHTML = html;
     panel.classList.remove('open');
     panel.classList.add('open');
@@ -954,6 +961,27 @@ const APP = {
         this.openPanel(carData.features[0], 0);
       }
     }
+  },
+
+  toggleExpandedPanel() {
+    const panel = document.getElementById('info-panel');
+    const btn = document.querySelector('.show-more-btn');
+    if (!panel) return;
+    const isExpanded = panel.classList.contains('expanded');
+    
+    if (isExpanded) {
+      panel.classList.remove('expanded');
+      document.body.classList.remove('panel-expanded');
+      if (btn) btn.innerText = 'Show More';
+    } else {
+      panel.classList.add('expanded');
+      document.body.classList.add('panel-expanded');
+      if (btn) btn.innerText = 'Show Less';
+    }
+    
+    setTimeout(() => {
+      if (this.state.map) this.state.map.invalidateSize();
+    }, 320); // wait for CSS transition to finish
   },
 
   _resolveDetails(props, level, name) {
