@@ -153,7 +153,7 @@ const APP = {
   },
 
   /* ── Source toggle ────────────────────────── */
-  switchSource(name) {
+  async switchSource(name) {
     if (name === this.state.activeSource) return;
     if (!this.config.sources[name]) return;
     if (this.state._drilling) return;
@@ -178,7 +178,12 @@ const APP = {
     this._loadHierarchy();
     this._updateBreadcrumb();
 
-    window.initLayers();
+    await window.initLayers();
+
+    if (this.state.activeSource === 'cad' && this.state.activeMode === 'boundary') {
+      if (!this.state.rawData[2]) await this._prefetchLevel(2);
+      this._setBoundaryMode(2);
+    }
   },
 
   /* ── Basemap switcher ─────────────────────── */
@@ -708,13 +713,18 @@ const APP = {
       return;
     }
 
+    if (this.state.activeSource === 'cad') {
+      container.innerHTML = '';
+      return;
+    }
+
     const src = this._src();
     const active = this.state.activeOutline;
 
     let html = '<div class="boundary-controls">';
     html += '<div class="boundary-header">Boundary Overlay</div>';
 
-    if (src.maxLevel >= 1 && this.state.activeSource !== 'cad') {
+    if (src.maxLevel >= 1) {
       const isActive = active === 1;
       html += `<button class="boundary-option${isActive ? ' active' : ''}" onclick="APP._setBoundaryMode(1)">
         <span class="boundary-radio-dot"></span>
