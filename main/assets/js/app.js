@@ -714,7 +714,7 @@ const APP = {
     let html = '<div class="boundary-controls">';
     html += '<div class="boundary-header">Boundary Overlay</div>';
 
-    if (src.maxLevel >= 1) {
+    if (src.maxLevel >= 1 && this.state.activeSource !== 'cad') {
       const isActive = active === 1;
       html += `<button class="boundary-option${isActive ? ' active' : ''}" onclick="APP._setBoundaryMode(1)">
         <span class="boundary-radio-dot"></span>
@@ -733,8 +733,10 @@ const APP = {
   },
 
   _setBoundaryMode(level) {
-    const max = this._src().maxLevel;
+    const src = this._src();
+    const max = src.maxLevel;
     if (level !== null && (level < 1 || level > max)) return;
+    if (level === 1 && this.state.activeSource === 'cad') return;
     if (this.state.activeOutline === level) level = null;
     if (this.state.activeOutline !== null) {
       this._hideOutline(this.state.activeOutline);
