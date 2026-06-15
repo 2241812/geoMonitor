@@ -637,6 +637,14 @@ const APP = {
     if (mode === this.state.activeMode) return;
     this._clearSelection();
     this.closePanel();
+
+    if (this.state.activeOutline !== null) {
+      this._hideOutline(this.state.activeOutline);
+      this._restoreDrillLayer(this.state.activeOutline);
+    }
+    this.state.activeOutline = null;
+    this.state._outlineHighlight = null;
+
     this.state.activeMode = mode;
     if (mode === 'boundary') {
       this._resetLevelStyle(0);
@@ -676,12 +684,6 @@ const APP = {
     /* Breadcrumb trail (both modes) */
     const atRoot = this.state.selectedPath.length === 0;
 
-    /* Source toggle (subtle) */
-    const otherSource = this.state.activeSource === 'namria' ? 'cad' : 'namria';
-    html += `<button class="source-toggle" onclick="APP.switchSource('${otherSource}')" title="Switch to ${this.config.sources[otherSource].label}">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-    </button>`;
-
     /* Root: "CAR Region" */
     html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(0)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -701,11 +703,10 @@ const APP = {
   _renderOutlineToggles() {
     const container = document.getElementById('outline-toggles');
     if (!container) return;
-    if (this.state.activeMode !== 'boundary') {
-      container.innerHTML = '';
-      return;
-    }
+
     const src = this._src();
+    const active = this.state.activeOutline;
+
     const items = [
       { mode: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
     ];
@@ -715,7 +716,7 @@ const APP = {
     if (src.maxLevel >= 2) {
       items.push({ mode: 2, label: src.levelNames[2], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' });
     }
-    const active = this.state.activeOutline;
+
     container.innerHTML =
       '<div class="boundary-controls">' +
       items.map(({ mode, label, icon }) =>
@@ -725,7 +726,8 @@ const APP = {
   },
 
   _setBoundaryMode(level) {
-    const max = this._src().maxLevel;
+    const src = this._src();
+    const max = src.maxLevel;
     if (level !== null && (level < 1 || level > max)) return;
     if (this.state.activeOutline === level) level = null;
     if (this.state.activeOutline !== null) {
@@ -766,7 +768,7 @@ const APP = {
           layer.bringToFront();
           self.state._outlineHighlight = layer;
           self.openPanel(feature, level);
-          if (level === self.state.currentLevel) {
+          if (self.state.activeMode === 'boundary' && level === self.state.currentLevel) {
             self.drillDown(feature, layer);
           }
         });
@@ -807,10 +809,15 @@ const APP = {
 
     let html = '';
 
+    const otherSource = this.state.activeSource === 'namria' ? 'cad' : 'namria';
+    const otherLabel = this.config.sources[otherSource].label;
     html += `<div class="panel-hero">
       <div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
       <h2 class="panel-title">${this._escHtml(name)}</h2>
       <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>
+      <button class="panel-source-toggle" onclick="APP.switchSource('${otherSource}')" title="Switch to ${otherLabel}">
+        ${this._escHtml(this.state.activeSource.toUpperCase())}
+      </button>
     </div>`;
 
     if (level < src.maxLevel) {
@@ -913,9 +920,14 @@ const APP = {
     };
 
     if (this.state.activeSource === 'cad') {
-      d[this._src().levelNames[level] || 'Feature'] = name;
-      if (props.Province) d['Province'] = props.Province;
+      if (level === 1) {
+        d['Municipality/City'] = props.Muni_City || name;
+        if (props.Province) d['Province'] = props.Province;
+      } else {
+        d['Region'] = props.Region || 'Cordillera Administrative Region';
+      }
       if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
+      if (props.Hectares) d['Hectares'] = String(Math.round(+props.Hectares));
       if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
       if (level === 2) {
@@ -993,6 +1005,27 @@ const APP = {
     const d = document.createElement('div');
     d.appendChild(document.createTextNode(String(str)));
     return d.innerHTML;
+  },
+  toggleFullscreen() {
+    const btn = document.getElementById('map-fullscreen-btn');
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      if (btn) btn.title = 'Exit fullscreen';
+    } else {
+      document.exitFullscreen().catch(() => {});
+      if (btn) btn.title = 'Enter fullscreen';
+    }
+    const updateIcon = () => {
+      if (btn) {
+        const isFull = !!document.fullscreenElement;
+        btn.innerHTML = isFull
+          ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>'
+          : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+        btn.title = isFull ? 'Exit fullscreen' : 'Enter fullscreen';
+      }
+    };
+    document.addEventListener('fullscreenchange', updateIcon, { once: true });
+    setTimeout(updateIcon, 100);
   },
 };
 
