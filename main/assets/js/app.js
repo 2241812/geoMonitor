@@ -549,9 +549,9 @@ const APP = {
     this.state._selectedLevel = level;
     this.state._selectedLeafletLayer = leafletLayer;
 
-    /* Zoom to selected feature */
+    /* Zoom to selected feature (reduced zoom effect with larger padding) */
     if (leafletLayer && leafletLayer.getBounds) {
-      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
+      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [150, 150], maxZoom: 11 });
     }
 
     /* Update breadcrumb */
