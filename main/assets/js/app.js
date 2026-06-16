@@ -53,10 +53,10 @@ const APP = {
     },
 
     colors: {
-      0: { fill: '#ff7f0e', stroke: '#c2570a', weight: 3 },
-      1: { fill: '#1f77b4', stroke: '#0a3d6b', weight: 2 },
-      2: { fill: '#2ca02c', stroke: '#1a6b1a', weight: 1.5 },
-      highlight: { fill: '#ffdd57', stroke: '#e60000', weight: 3 },
+      0: { fill: '#000000', stroke: '#000000', weight: 3 },
+      1: { fill: '#000000', stroke: '#000000', weight: 2 },
+      2: { fill: '#000000', stroke: '#000000', weight: 1.5 },
+      highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
     },
 
     baseMaps: {
@@ -473,9 +473,9 @@ const APP = {
   /* ── Highlight selected layer ─────────────── */
   _highlightLayer(leafletLayer, styleConfig, level) {
     leafletLayer.setStyle({
-      fillColor: '#ffdd57',
-      fillOpacity: 0.5,
-      color: '#e60000',
+      fillColor: '#065f46',
+      fillOpacity: 0.3,
+      color: '#000000',
       weight: 3,
       opacity: 1,
     });
@@ -498,9 +498,9 @@ const APP = {
       } else {
         leafletLayer._hiddenByIsolation = false;
         leafletLayer.setStyle({
-          fillColor: '#ffdd57',
-          fillOpacity: 0.5,
-          color: '#e60000',
+          fillColor: '#065f46',
+          fillOpacity: 0.3,
+          color: '#000000',
           weight: 3,
           opacity: 1,
         });
