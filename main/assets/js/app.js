@@ -977,12 +977,14 @@ const APP = {
     
     if (isExpanded) {
       panel.classList.remove('expanded');
+      document.body.classList.remove('panel-expanded');
       if (btn) btn.innerText = 'Show More';
-      if (this.state.map) this.state.map.panBy([-100, 0], {animate: true, duration: 0.3});
+      if (this.state.map) this.state.map.panBy([58, 0], {animate: true, duration: 0.3});
     } else {
       panel.classList.add('expanded');
+      document.body.classList.add('panel-expanded');
       if (btn) btn.innerText = 'Show Less';
-      if (this.state.map) this.state.map.panBy([100, 0], {animate: true, duration: 0.3});
+      if (this.state.map) this.state.map.panBy([-58, 0], {animate: true, duration: 0.3});
     }
   },
 
