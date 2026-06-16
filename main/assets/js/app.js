@@ -235,15 +235,15 @@ const APP = {
 
       this.state.currentLevel = nextLevel;
 
-      /* Keep context layers visible — highlight parent, dim others */
+      /* Parent context → thin dashed outline ("you are inside this boundary") */
       if (currentLevel > 0 && this.state.layers[currentLevel]) {
         const cfg = this.config.colors[currentLevel];
         this.state.layers[currentLevel].eachLayer(function(lf) {
           if (lf.feature === feature) {
-            lf.setStyle({ fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
+            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
             lf.bringToFront();
           } else {
-            lf.setStyle({ fillOpacity: 0, opacity: 0.4, weight: 1 });
+            lf.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
           }
         });
         this.state.layers[currentLevel]._hiddenByDrill = true;
@@ -364,11 +364,12 @@ const APP = {
           this._resetLevelStyle(targetLevel);
           layer._hiddenByDrill = false;
           
-          /* Then highlight the active one (outline only) */
+          /* Highlight the active one with a dashed colored outline (parent context style) */
+          const cfg = this.config.colors[targetLevel];
           layer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
               this.state._selectedLeafletLayer = lf;
-              lf.setStyle({ fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
+              lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
               lf.bringToFront();
             }
           });
@@ -417,6 +418,7 @@ const APP = {
         color: styleConfig.stroke,
         weight: styleConfig.weight,
         opacity: 0.9,
+        dashArray: null,
       }),
 
       onEachFeature(feature, leafletLayer) {
@@ -435,7 +437,7 @@ const APP = {
             /* Do not alter style if this feature is currently selected */
             if (self.state._selectedFeature === feature) return;
 
-            e.target.setStyle({ fillOpacity: 0.55, weight: styleConfig.weight + 1 });
+            e.target.setStyle({ fillColor: styleConfig.fill, fillOpacity: 0.35, weight: styleConfig.weight + 1, dashArray: null });
             e.target.bringToFront();
           });
           leafletLayer.on('mouseout', function (e) {
@@ -454,6 +456,7 @@ const APP = {
               color: styleConfig.stroke,
               weight: styleConfig.weight,
               opacity: 0.9,
+              dashArray: null,
             });
           });
         }
@@ -526,10 +529,11 @@ const APP = {
   _highlightLayer(leafletLayer, styleConfig, level) {
     leafletLayer.setStyle({
       fillColor: styleConfig ? styleConfig.fill : this.config.colors[level].fill,
-      fillOpacity: 0.35,
+      fillOpacity: 0.5,
       color: '#000000',
       weight: 3,
       opacity: 1,
+      dashArray: null,
     });
     leafletLayer.bringToFront();
   },
@@ -551,10 +555,11 @@ const APP = {
         leafletLayer._hiddenByIsolation = false;
         leafletLayer.setStyle({
           fillColor: cfg.fill,
-          fillOpacity: 0.35,
+          fillOpacity: 0.5,
           color: '#000000',
           weight: 3,
           opacity: 1,
+          dashArray: null,
         });
         leafletLayer.bringToFront();
       }
@@ -612,6 +617,7 @@ const APP = {
         color: cfg.stroke,
         weight: cfg.weight,
         opacity: 0.9,
+        dashArray: null,
       });
     });
   },
