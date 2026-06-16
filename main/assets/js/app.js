@@ -819,6 +819,7 @@ const APP = {
     const content = document.getElementById('info-panel-content');
     if (!panel || !content) return;
 
+    document.body.classList.add('panel-open');
     this.state.lastViewed = { feature, level };
     const name = this._featureName(feature, level);
     const src = this._src();
@@ -926,9 +927,10 @@ const APP = {
 
   closePanel() {
     const panel = document.getElementById('info-panel');
-    if (panel) {
-      panel.classList.remove('open', 'peek');
-    }
+    if (!panel) return;
+    
+    document.body.classList.remove('panel-open');
+    panel.classList.remove('open', 'peek');
     this.state.panelState = 'closed';
     /* Show toggle tab */
     const tab = document.getElementById('panel-toggle-tab');
@@ -938,27 +940,31 @@ const APP = {
   togglePanel() {
     const panel = document.getElementById('info-panel');
     if (!panel) return;
-    
-    // Mobile bottom sheet behavior
     const isMobile = window.innerWidth <= 640;
     
-    if (this.state.panelState === 'open') {
-      if (isMobile) {
-        panel.classList.remove('open');
-        panel.classList.add('peek');
-        this.state.panelState = 'peek';
+    if (isMobile) {
+      if (panel.classList.contains('open')) {
+        this.closePanel();
+      } else if (panel.classList.contains('peek')) {
+        panel.classList.remove('peek');
+        panel.classList.add('open');
+        document.body.classList.add('panel-open');
+      } else if (this.state.lastViewed) {
+        this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
       } else {
         this.closePanel();
       }
-    } else if (this.state.panelState === 'peek') {
-      this.closePanel();
-    } else if (this.state.lastViewed) {
-      this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
     } else {
-      /* Default: show CAR region details */
-      const carData = this.state.rawData[0];
-      if (carData && carData.features && carData.features[0]) {
-        this.openPanel(carData.features[0], 0);
+      if (panel.classList.contains('open')) {
+        this.closePanel();
+      } else if (this.state.lastViewed) {
+        this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+      } else {
+        /* Default: show CAR region details */
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
       }
     }
   },
