@@ -14,12 +14,11 @@ async function initLayers() {
   APP.state.rawData[0] = geo0;
   APP.state.rawData[1] = geo1;
 
-  /* Render sequentially — level 0 (non-interactive background), then level 1 */
+  /* Render sequentially — level 0 only initially */
   await APP._showLevel(0, null, null);
-  await APP._showLevel(1, null, null);
 
-  /* Set initial active level to provinces (or level 1 for CAD) */
-  APP.state.currentLevel = 1;
+  /* Set initial active level to CAR Region (0) */
+  APP.state.currentLevel = 0;
 
   /* Prefetch deeper levels in background */
   for (let lvl = 2; lvl <= src.maxLevel; lvl++) {
