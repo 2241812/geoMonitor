@@ -263,18 +263,21 @@ const APP = {
       this.state._selectedLeafletLayer = null;
 
       if (targetLevel === 0) {
-        for (let lvl = this._src().maxLevel; lvl > 0; lvl--) {
+        for (let lvl = this._src().maxLevel; lvl > 1; lvl--) {
           if (this.state.layers[lvl]) {
             this.state.map.removeLayer(this.state.layers[lvl]);
             this.state.layers[lvl] = null;
           }
         }
-        /* Restore level 0 to full style */
+        /* Restore levels 0 and 1 to full style */
+        if (this.state.layers[1]) this._resetLevelStyle(1);
         if (this.state.layers[0]) this._resetLevelStyle(0);
         this.state.selectedPath = [];
         this.state.currentLevel = 0;
         /* Only rebuild if layers don't exist yet (avoids visual flicker) */
         if (!this.state.layers[0]) await this._showLevel(0);
+        if (!this.state.layers[1]) await this._showLevel(1, null, null);
+        this.state.currentLevel = 1;
         /* Zoom to CAR bounds */
         if (this.state.layers[0]) {
           this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
@@ -364,7 +367,7 @@ const APP = {
     const useHover = featureCount <= 300;
 
     const layer = L.geoJSON(data, {
-      interactive: true,
+      interactive: level !== 0,
       style: () => ({
         fillColor: styleConfig.fill,
         fillOpacity: 0,
@@ -615,7 +618,8 @@ const APP = {
       }
     }
     this._showLevel(0);
-    this.state.currentLevel = 0;
+    this._showLevel(1, null, null);
+    this.state.currentLevel = 1;
     if (this.state.layers[0]) {
       this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
     }
@@ -662,7 +666,8 @@ const APP = {
       }
       this.state.selectedPath = [];
       this._showLevel(0);
-      this.state.currentLevel = 0;
+      this._showLevel(1, null, null);
+      this.state.currentLevel = 1;
     }
     this._updateBreadcrumb();
   },
@@ -683,7 +688,11 @@ const APP = {
     /* Breadcrumb trail (both modes) */
     const atRoot = this.state.selectedPath.length === 0;
 
-    /* Removed Root CAR Region button per request */
+    /* Root: "CAR Region" */
+    html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(0)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      CAR Region
+    </button>`;
 
     this.state.selectedPath.forEach((item, idx) => {
       const isLast = idx === this.state.selectedPath.length - 1;
