@@ -136,6 +136,10 @@ const APP = {
     /* Click empty space → drill up one level (both modes) */
     map.on('click', () => {
       if (this.state._drilling) return;
+      if (this.state.currentLevel === 1 && this.state.selectedPath.length === 0) {
+        this.closePanel();
+        return;
+      }
       if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
@@ -176,7 +180,12 @@ const APP = {
     this._updateBreadcrumb();
 
     window.initLayers().then(() => {
-      /* Map resets on source switch, so panel should remain closed */
+      if (wasOpen) {
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
+      }
     });
   },
 
@@ -221,10 +230,16 @@ const APP = {
 
       this.state.currentLevel = nextLevel;
 
-      /* Keep context layers visible — dim parent slightly instead of removing */
+      /* Keep context layers visible — highlight parent, dim others */
       if (currentLevel > 0 && this.state.layers[currentLevel]) {
+        const cfg = this.config.colors[currentLevel];
         this.state.layers[currentLevel].eachLayer(function(lf) {
-          lf.setStyle({ fillOpacity: 0.08, opacity: 0.4, weight: 1 });
+          if (lf.feature === feature) {
+            lf.setStyle({ fillColor: cfg.fill, fillOpacity: 0.35, color: '#000000', weight: 3, opacity: 1 });
+            lf.bringToFront();
+          } else {
+            lf.setStyle({ fillOpacity: 0, opacity: 0.4, weight: 1 });
+          }
         });
         this.state.layers[currentLevel]._hiddenByDrill = true;
       }
@@ -282,7 +297,11 @@ const APP = {
         if (this.state.layers[0]) {
           this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
         }
-        /* Panel remains closed when nothing is selected */
+        /* Show CAR info in panel */
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
         this._updateBreadcrumb();
         this._updateOutlines();
         return;
@@ -326,10 +345,26 @@ const APP = {
         this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
       }
 
-      /* Show the feature at target level in panel */
+      /* Show the feature at target level in panel and KEEP IT HIGHLIGHTED */
       if (targetLevel > 0 && this.state.selectedPath.length > 0) {
         const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
         this.openPanel(lastItem.feature, lastItem.level);
+        
+        const layer = this.state.layers[targetLevel];
+        if (layer) {
+          /* Restore normal un-highlighted state for all first */
+          this._resetLevelStyle(targetLevel);
+          layer._hiddenByDrill = false;
+          
+          /* Then highlight the active one (without isolating others) */
+          const cfg = this.config.colors[targetLevel];
+          layer.eachLayer((lf) => {
+            if (lf.feature === lastItem.feature) {
+              lf.setStyle({ fillColor: cfg.fill, fillOpacity: 0.35, color: '#000000', weight: 3, opacity: 1 });
+              lf.bringToFront();
+            }
+          });
+        }
       }
 
       this._updateBreadcrumb();

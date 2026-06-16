@@ -28,4 +28,9 @@ async function initLayers() {
 
   /* Update breadcrumb to reflect initial state */
   APP._updateBreadcrumb();
+
+  /* Open CAR panel by default */
+  if (geo0 && geo0.features && geo0.features[0]) {
+    APP.openPanel(geo0.features[0], 0);
+  }
 }
