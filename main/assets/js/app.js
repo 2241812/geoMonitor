@@ -235,7 +235,7 @@ const APP = {
         const cfg = this.config.colors[currentLevel];
         this.state.layers[currentLevel].eachLayer(function(lf) {
           if (lf.feature === feature) {
-            lf.setStyle({ fillColor: cfg.fill, fillOpacity: 0.35, color: '#000000', weight: 3, opacity: 1 });
+            lf.setStyle({ fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
             lf.bringToFront();
           } else {
             lf.setStyle({ fillOpacity: 0, opacity: 0.4, weight: 1 });
@@ -356,11 +356,10 @@ const APP = {
           this._resetLevelStyle(targetLevel);
           layer._hiddenByDrill = false;
           
-          /* Then highlight the active one (without isolating others) */
-          const cfg = this.config.colors[targetLevel];
+          /* Then highlight the active one (outline only) */
           layer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
-              lf.setStyle({ fillColor: cfg.fill, fillOpacity: 0.35, color: '#000000', weight: 3, opacity: 1 });
+              lf.setStyle({ fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
               lf.bringToFront();
             }
           });
