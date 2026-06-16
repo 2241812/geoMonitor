@@ -420,14 +420,25 @@ const APP = {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
             if (self.state.activeOutline === level) return;
+            
+            self._showHoverLabel(name, level);
+            
+            /* Do not alter style if this feature is currently selected */
+            if (self.state._selectedFeature === feature) return;
+
             e.target.setStyle({ fillOpacity: 0.55, weight: styleConfig.weight + 1 });
             e.target.bringToFront();
-            self._showHoverLabel(name, level);
           });
           leafletLayer.on('mouseout', function (e) {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
             if (self.state.activeOutline === level) return;
+            
+            self._hideHoverLabel();
+
+            /* Do not clear highlight if this feature is currently selected */
+            if (self.state._selectedFeature === feature) return;
+
             e.target.setStyle({
               fillColor: styleConfig.fill,
               fillOpacity: 0,
@@ -435,7 +446,6 @@ const APP = {
               weight: styleConfig.weight,
               opacity: 0.9,
             });
-            self._hideHoverLabel();
           });
         }
 
