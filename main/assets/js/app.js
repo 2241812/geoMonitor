@@ -130,7 +130,7 @@ const APP = {
     /* Close basemap dropdown on any map click */
     map.on('click', () => {
       const opts = document.getElementById('basemap-options');
-      if (opts) opts.style.display = 'none';
+      if (opts) opts.classList.remove('show');
     });
 
     /* Click empty space → drill up one level (both modes) */
