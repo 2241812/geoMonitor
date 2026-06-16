@@ -820,6 +820,8 @@ const APP = {
     if (!panel || !content) return;
 
     document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded');
     this.state.lastViewed = { feature, level };
     const name = this._featureName(feature, level);
     const src = this._src();
@@ -929,9 +931,14 @@ const APP = {
     const panel = document.getElementById('info-panel');
     if (!panel) return;
     
-    document.body.classList.remove('panel-open');
-    panel.classList.remove('open', 'peek');
+    document.body.classList.remove('panel-open', 'panel-expanded');
+    panel.classList.remove('open', 'peek', 'expanded');
     this.state.panelState = 'closed';
+    
+    // Also reset the "Show More" button text if it exists
+    const btn = document.querySelector('.show-more-btn');
+    if (btn) btn.innerText = 'Show More';
+    
     /* Show toggle tab */
     const tab = document.getElementById('panel-toggle-tab');
     if (tab) tab.classList.remove('hidden');

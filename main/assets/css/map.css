@@ -433,7 +433,7 @@ body.panel-open .basemap-switcher {
   transform: translateX(calc(385px + 16px));
 }
 
-body.panel-expanded .basemap-switcher {
+body.panel-open.panel-expanded .basemap-switcher {
   transform: translateX(calc(500px + 16px));
 }
 
