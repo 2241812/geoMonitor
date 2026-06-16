@@ -350,6 +350,9 @@ const APP = {
         const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
         this.openPanel(lastItem.feature, lastItem.level);
         
+        this.state._selectedFeature = lastItem.feature;
+        this.state._selectedLevel = lastItem.level;
+
         const layer = this.state.layers[targetLevel];
         if (layer) {
           /* Restore normal un-highlighted state for all first */
@@ -359,6 +362,7 @@ const APP = {
           /* Then highlight the active one (outline only) */
           layer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
+              this.state._selectedLeafletLayer = lf;
               lf.setStyle({ fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
               lf.bringToFront();
             }
@@ -463,6 +467,14 @@ const APP = {
               self.drillUp(level - 1);
               return;
             }
+
+            /* If a feature is already selected at this level, and we click a DIFFERENT one, 
+               treat it as 'clicking outside' to deselect and drill up, rather than instantly switching. */
+            if (self.state._selectedFeature && self.state._selectedFeature !== feature) {
+              self.drillUp(level - 1);
+              return;
+            }
+
             self.openPanel(feature, level);
             if (level >= self._src().maxLevel) {
               self._highlightAndDim(feature, leafletLayer, level);
