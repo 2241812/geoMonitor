@@ -176,12 +176,7 @@ const APP = {
     this._updateBreadcrumb();
 
     window.initLayers().then(() => {
-      if (wasOpen) {
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
-        }
-      }
+      /* Map resets on source switch, so panel should remain closed */
     });
   },
 
@@ -287,11 +282,7 @@ const APP = {
         if (this.state.layers[0]) {
           this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
         }
-        /* Show CAR info in panel */
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
-        }
+        /* Panel remains closed when nothing is selected */
         this._updateBreadcrumb();
         this._updateOutlines();
         return;
