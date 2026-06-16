@@ -379,7 +379,7 @@ const APP = {
       interactive: level !== 0,
       style: () => ({
         fillColor: styleConfig.fill,
-        fillOpacity: level === 0 ? 0.1 : 0.25,
+        fillOpacity: 0,
         color: styleConfig.stroke,
         weight: styleConfig.weight,
         opacity: 0.9,
@@ -405,7 +405,7 @@ const APP = {
             if (self.state.activeOutline === level) return;
             e.target.setStyle({
               fillColor: styleConfig.fill,
-              fillOpacity: 0.25,
+              fillOpacity: 0,
               color: styleConfig.stroke,
               weight: styleConfig.weight,
               opacity: 0.9,
@@ -551,7 +551,7 @@ const APP = {
     const layer = this.state.layers[level];
     if (!layer) return;
     const cfg = this.config.colors[level];
-    const fillOpacity = level === 0 ? 0.1 : 0.25;
+    const fillOpacity = 0;
     layer.eachLayer(function(leafletLayer) {
       delete leafletLayer._hiddenByIsolation;
       leafletLayer.setStyle({
@@ -577,7 +577,7 @@ const APP = {
     const layer = this.state.layers[level];
     if (!layer) return;
     const cfg = this.config.colors[level];
-    const fillOpacity = level === 0 ? 0.1 : 0.25;
+    const fillOpacity = 0;
     layer.eachLayer(l => {
       l.setStyle({
         fillColor: cfg.fill,
