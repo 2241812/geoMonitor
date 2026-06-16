@@ -90,6 +90,7 @@ const APP = {
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
       zoomSnap: 0.5,
+      zoomAnimation: true,
     });
 
     /* Basemaps */
@@ -257,12 +258,18 @@ const APP = {
 
       this._updateBreadcrumb();
 
-      await this._showLevel(nextLevel, feature, currentLevel);
-
-      /* Zoom to selected feature */
+      /* Fly into the selected feature with smooth animation */
       if (leafletLayer && leafletLayer.getBounds) {
-        this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [40, 40] });
+        this.state.map.flyToBounds(leafletLayer.getBounds(), {
+          padding: [40, 40],
+          duration: 0.8,
+          easeLinearity: 0.25,
+        });
       }
+
+      /* Delayed child reveal: render children after zoom starts settling */
+      await new Promise(r => setTimeout(r, 300));
+      await this._showLevel(nextLevel, feature, currentLevel);
 
       this._updateOutlines();
     } finally {
@@ -299,8 +306,13 @@ const APP = {
         if (!this.state.layers[1]) await this._showLevel(1, null, null);
         this.state.currentLevel = 1;
         /* Zoom to CAR bounds */
+        /* Fly back to CAR bounds with smooth animation */
         if (this.state.layers[0]) {
-          this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+          this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
+            padding: [40, 40],
+            duration: 0.8,
+            easeLinearity: 0.25,
+          });
         }
         /* Show CAR info in panel */
         const carData = this.state.rawData[0];
@@ -335,19 +347,46 @@ const APP = {
       this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
       this.state.currentLevel = targetLevel;
 
-      /* Zoom to specific feature bounds (not whole level) */
+      /* Zoom-out-then-in: briefly zoom wider, then ease to the target */
       if (targetLevel > 0 && this.state.selectedPath.length > 0) {
         const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
         const levelLayer = this.state.layers[targetLevel];
         if (levelLayer) {
           levelLayer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
-              this.state.map.fitBounds(lf.getBounds(), { padding: [40, 40] });
+              const targetBounds = lf.getBounds();
+              /* Step 1: zoom out wider */
+              this.state.map.flyToBounds(targetBounds.pad(0.5), {
+                padding: [60, 60],
+                duration: 0.4,
+                easeLinearity: 0.5,
+              });
+              /* Step 2: ease back in to the actual target */
+              setTimeout(() => {
+                this.state.map.flyToBounds(targetBounds, {
+                  padding: [40, 40],
+                  duration: 0.5,
+                  easeLinearity: 0.25,
+                });
+              }, 420);
             }
           });
         }
       } else if (targetLevel === 0 && this.state.layers[0]) {
-        this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+        /* Zoom-out-then-in for region reset */
+        const regionBounds = this.state.layers[0].getBounds();
+        this.state.map.flyToBounds(regionBounds.pad(0.3), {
+          padding: [40, 40],
+          duration: 0.4,
+          easeLinearity: 0.5,
+        });
+        setTimeout(() => {
+          this.state.map.flyToBounds(regionBounds, {
+            padding: [40, 40],
+            duration: 0.5,
+            easeLinearity: 0.25,
+          });
+        }, 420);
       }
 
       /* Show the feature at target level in panel and KEEP IT HIGHLIGHTED */
@@ -581,9 +620,14 @@ const APP = {
     this.state._selectedLevel = level;
     this.state._selectedLeafletLayer = leafletLayer;
 
-    /* Zoom to selected feature (reduced zoom effect with larger padding) */
+    /* Zoom to selected feature (gentler, capped zoom with smooth animation) */
     if (leafletLayer && leafletLayer.getBounds) {
-      this.state.map.fitBounds(leafletLayer.getBounds(), { padding: [150, 150], maxZoom: 11 });
+      this.state.map.flyToBounds(leafletLayer.getBounds(), {
+        padding: [150, 150],
+        maxZoom: 10,
+        duration: 0.8,
+        easeLinearity: 0.25,
+      });
     }
 
     /* Update breadcrumb */
@@ -688,7 +732,11 @@ const APP = {
     this._showLevel(1, null, null);
     this.state.currentLevel = 1;
     if (this.state.layers[0]) {
-      this.state.map.fitBounds(this.state.layers[0].getBounds(), { padding: [40, 40] });
+      this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
+        padding: [40, 40],
+        duration: 0.8,
+        easeLinearity: 0.25,
+      });
     }
     /* Show CAR info in panel */
     const carData = this.state.rawData[0];
@@ -847,7 +895,11 @@ const APP = {
               self._highlightAndDim(feature, layer, level);
             }
           } else if (layer && layer.getBounds) {
-            self.state.map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+            self.state.map.flyToBounds(layer.getBounds(), {
+              padding: [40, 40],
+              duration: 0.8,
+              easeLinearity: 0.25,
+            });
           }
         });
       },
