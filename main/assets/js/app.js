@@ -53,9 +53,9 @@ const APP = {
     },
 
     colors: {
-      0: { fill: '#000000', stroke: '#000000', weight: 3 },
-      1: { fill: '#000000', stroke: '#000000', weight: 2 },
-      2: { fill: '#000000', stroke: '#000000', weight: 1.5 },
+      0: { fill: '#059669', stroke: '#000000', weight: 3 },
+      1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
+      2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
       highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
     },
 
@@ -473,8 +473,8 @@ const APP = {
   /* ── Highlight selected layer ─────────────── */
   _highlightLayer(leafletLayer, styleConfig, level) {
     leafletLayer.setStyle({
-      fillColor: '#065f46',
-      fillOpacity: 0.3,
+      fillColor: styleConfig ? styleConfig.fill : this.config.colors[level].fill,
+      fillOpacity: 0.35,
       color: '#000000',
       weight: 3,
       opacity: 1,
@@ -498,8 +498,8 @@ const APP = {
       } else {
         leafletLayer._hiddenByIsolation = false;
         leafletLayer.setStyle({
-          fillColor: '#065f46',
-          fillOpacity: 0.3,
+          fillColor: cfg.fill,
+          fillOpacity: 0.35,
           color: '#000000',
           weight: 3,
           opacity: 1,
@@ -777,7 +777,8 @@ const APP = {
           if (self.state._outlineHighlight) {
             self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
           }
-          layer.setStyle({ fillColor: '#fbbf24', fillOpacity: 0.25, color: '#fbbf24', weight: 3, opacity: 1 });
+          const cfg = self.config.colors[level];
+          layer.setStyle({ fillColor: cfg.fill, fillOpacity: 0.35, color: '#000000', weight: 3, opacity: 1 });
           layer.bringToFront();
           self.state._outlineHighlight = layer;
           self.openPanel(feature, level);
