@@ -228,6 +228,11 @@ const APP = {
       this.state.selectedPath = this.state.selectedPath.filter(item => item.level < currentLevel);
       this.state.selectedPath.push({ level: currentLevel, feature, name });
 
+      /* Clear selection state so it doesn't leak into the deeper level */
+      this.state._selectedFeature = null;
+      this.state._selectedLevel = null;
+      this.state._selectedLeafletLayer = null;
+
       this.state.currentLevel = nextLevel;
 
       /* Keep context layers visible — highlight parent, dim others */
