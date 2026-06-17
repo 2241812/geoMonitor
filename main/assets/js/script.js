@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  /* ── Scroll-triggered fade-in ── */
+  /* ── Scroll-triggered fade-in & scale-in ── */
   var observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (entry.isIntersecting) {
@@ -12,7 +12,7 @@
   }, { threshold: 0.15 });
 
   document.addEventListener('DOMContentLoaded', function () {
-    var els = document.querySelectorAll('.fade-in-up');
+    var els = document.querySelectorAll('.fade-in-up, .scale-in');
     for (var i = 0; i < els.length; i++) {
       observer.observe(els[i]);
     }
@@ -54,15 +54,38 @@
     if (statsSection) counterObserver.observe(statsSection);
   });
 
-  /* ── Sticky header shadow on scroll ── */
+  /* ── Sticky header shadow on scroll & Parallax ── */
   document.addEventListener('DOMContentLoaded', function () {
     var header = document.getElementById('site-header');
+    var heroBg = document.querySelector('.hero-bg');
+    var heroContent = document.querySelector('.hero-content');
+    var ctaBg = document.querySelector('.cta-bg');
 
     window.addEventListener('scroll', function () {
-      if (window.scrollY > 60) {
+      var scrollY = window.scrollY;
+      
+      // Header sticky state
+      if (scrollY > 60) {
         header.classList.add('scrolled');
       } else {
         header.classList.remove('scrolled');
+      }
+
+      // Hero Parallax
+      if (heroBg && heroContent) {
+        var heroProgress = Math.min(scrollY / window.innerHeight, 1);
+        heroBg.style.transform = 'translateY(' + (heroProgress * 40) + '%)';
+        heroContent.style.opacity = Math.max(1 - (heroProgress / 0.7), 0);
+      }
+
+      // CTA Parallax
+      if (ctaBg) {
+        var ctaRect = document.getElementById('dashboard-section').getBoundingClientRect();
+        if (ctaRect.top < window.innerHeight && ctaRect.bottom > 0) {
+          // Calculate progress from 0 (just appeared) to 1 (fully scrolled past)
+          var ctaProgress = 1 - (ctaRect.bottom / (window.innerHeight + ctaRect.height));
+          ctaBg.style.transform = 'translateY(' + (ctaProgress * 25) + '%)';
+        }
       }
     }, { passive: true });
   });
