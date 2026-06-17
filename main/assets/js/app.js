@@ -1082,7 +1082,11 @@ const APP = {
         panel.classList.add('open');
         document.body.classList.add('panel-open');
       } else if (this.state.lastViewed) {
-        this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+        if (this.state.lastViewed.isWatershed) {
+          this._openWatershedPanel(this.state.lastViewed.feature);
+        } else {
+          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+        }
       } else {
         this.closePanel();
       }
@@ -1090,7 +1094,11 @@ const APP = {
       if (panel.classList.contains('open')) {
         this.closePanel();
       } else if (this.state.lastViewed) {
-        this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+        if (this.state.lastViewed.isWatershed) {
+          this._openWatershedPanel(this.state.lastViewed.feature);
+        } else {
+          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+        }
       } else {
         /* Default: show CAR region details */
         const carData = this.state.rawData[0];
@@ -1306,23 +1314,18 @@ const APP = {
       }
       this.state.map.addLayer(this.state.watershedLayer);
       this.state.watershedLayer.bringToFront();
-      
-      this.state.map.flyToBounds(this.state.watershedLayer.getBounds(), {
-        ...this._getPaddingOpts(),
-        duration: 0.6,
-        easeLinearity: 0.25
-      });
     } else {
       if (this.state.watershedLayer) {
         this.state.map.removeLayer(this.state.watershedLayer);
+        // Clear highlighted outline from watershed if any
+        if (this.state._outlineHighlight) {
+          this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
+          this.state._outlineHighlight = null;
+        }
       }
-      this.closePanel();
-      if (this.state.layers[0]) {
-        this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
-          ...this._getPaddingOpts(),
-          duration: 0.6,
-          easeLinearity: 0.25
-        });
+      
+      if (this.state.lastViewed && this.state.lastViewed.isWatershed) {
+        this.closePanel();
       }
     }
   },
@@ -1333,8 +1336,8 @@ const APP = {
     const id = p.WSID || p.UNQ_ID || '';
     const connectsTo = this.config.watershedConnections[name] || 'Unknown';
     
-    // Store in global state for chart
-    this.state.lastViewed = feature;
+    // Store in global state for chart and panel toggle
+    this.state.lastViewed = { feature, isWatershed: true };
     
     const panel = document.getElementById('info-panel');
     const content = document.getElementById('info-panel-content');
@@ -1375,13 +1378,6 @@ const APP = {
           <strong>Regions Spanned:</strong> ${this._escHtml(p.Region || 'N/A')}
         </div>
       </div>
-      
-      <div class="panel-section">
-        <div class="panel-section-title">Measurements</div>
-        <div class="chart-container">
-          <canvas id="measurements-chart"></canvas>
-        </div>
-      </div>
     `;
 
     content.innerHTML = html;
@@ -1397,8 +1393,6 @@ const APP = {
         this.state.panelState = 'open';
       }
     }
-
-    this._renderChart(feature);
   },
 };
 
