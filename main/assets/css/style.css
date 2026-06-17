@@ -511,8 +511,25 @@ img {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgba(5, 150, 105, 0.15) 0%, transparent 50%),
-    linear-gradient(to bottom, rgba(5, 150, 105, 0.05) 0%, transparent 30%);
+    linear-gradient(to top, rgba(5, 150, 105, 0.2) 0%, transparent 60%),
+    linear-gradient(to bottom, rgba(5, 150, 105, 0.1) 0%, transparent 40%);
+}
+
+.map-preview-overlay::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, rgba(5, 150, 105, 0.4), transparent);
+  animation: mapScan 3.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes mapScan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
 }
 
 .map-preview-badge {
@@ -531,6 +548,13 @@ img {
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.03em;
+  animation: mapBadgePulse 2.5s ease-in-out infinite;
+}
+
+@keyframes mapBadgePulse {
+  0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(5, 150, 105, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
 }
 
 /* ═══════════════ INFO ═══════════════ */
