@@ -930,10 +930,20 @@ img {
   filter: saturate(1.1) brightness(1.1);
   transform: scale(1.02);
 }
-.basin-card.basin-card-focus .basin-card-overlay,
+.basin-card.basin-card-focus .basin-card-overlay {
+  opacity: 0.8;
+  height: 45%;
+}
 .basin-card.basin-card-focus .basin-card-content {
-  opacity: 0;
-  pointer-events: none;
+  top: auto;
+  bottom: var(--space-lg);
+  left: var(--space-lg);
+  transform: translate(0, 0);
+  align-items: flex-start;
+  text-align: left;
+}
+.basin-card.basin-card-focus .basin-card-desc {
+  opacity: 1;
 }
 
 .basin-card-line {
