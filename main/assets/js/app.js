@@ -233,6 +233,9 @@ const APP = {
   },
 
   _toggleBasemap() {
+    const wsOpts = document.getElementById('watershed-options');
+    if (wsOpts) wsOpts.classList.remove('show');
+    
     const opts = document.getElementById('basemap-options');
     if (!opts) return;
     opts.classList.toggle('show');
@@ -1252,18 +1255,23 @@ const APP = {
 
   /* ── Watershed Overlay Toggle ───────────── */
   toggleWatershedMenu() {
+    const baseOpts = document.getElementById('basemap-options');
+    if (baseOpts) baseOpts.classList.remove('show');
+    
     const opts = document.getElementById('watershed-options');
     if (!opts) return;
     opts.classList.toggle('show');
   },
 
-  async updateWatersheds(radio) {
-    const val = radio.value;
+  async updateWatersheds(checkbox) {
+    const val = checkbox.value;
     
-    if (val === 'none') {
-      this.state.activeWatershedIds = [];
+    if (checkbox.checked) {
+      if (!this.state.activeWatershedIds.includes(val)) {
+        this.state.activeWatershedIds.push(val);
+      }
     } else {
-      this.state.activeWatershedIds = [val];
+      this.state.activeWatershedIds = this.state.activeWatershedIds.filter(id => id !== val);
     }
     
     const btn = document.getElementById('watershed-btn');
