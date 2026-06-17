@@ -739,6 +739,35 @@ body.panel-open.panel-expanded .bottom-left-controls {
   opacity: 1;
 }
 
+.expanded-content {
+  display: none;
+  margin-top: 16px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  padding-top: 16px;
+}
+
+.info-panel.expanded .expanded-content {
+  display: block;
+}
+
+.watershed-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: #334155;
+  border: 1px solid #f1f5f9;
+}
+
+.watershed-list-item svg {
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
 .info-panel-header {
   display: flex;
   align-items: center;
