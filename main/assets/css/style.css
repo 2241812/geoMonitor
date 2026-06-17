@@ -802,7 +802,7 @@ img {
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.8s var(--ease-out);
+  transition: all 1.2s var(--ease-out);
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: var(--shadow-md);
   width: 100%;
@@ -836,13 +836,28 @@ img {
     0 0 40px -8px rgba(5, 150, 105, 0.08);
 }
 
+.basin-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  opacity: 0;
+  z-index: 1;
+  transition: opacity 1.2s var(--ease-out);
+  pointer-events: none;
+}
+
+.basin-card:hover::after {
+  opacity: 1;
+}
+
 .basin-card-image {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 1.2s var(--ease-out), filter 0.8s var(--ease-out);
+  transition: transform 1.5s var(--ease-out), filter 1.2s var(--ease-out);
   filter: saturate(0.8) brightness(0.5);
   display: block;
 }
@@ -883,7 +898,7 @@ img {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  transition: all 0.8s var(--ease-out);
+  transition: all 1.2s var(--ease-out);
 }
 
 .basin-card:hover .basin-card-content {
@@ -925,7 +940,7 @@ img {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  transition: opacity 0.8s var(--ease-out);
+  transition: opacity 1.2s var(--ease-out);
 }
 
 .basin-card:hover .basin-card-desc {
