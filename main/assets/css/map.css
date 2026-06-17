@@ -742,8 +742,14 @@ body.panel-open.panel-expanded .bottom-left-controls {
 .expanded-content {
   display: none;
   margin-top: 16px;
-  border-top: 1px solid rgba(0,0,0,0.05);
+  border-top: 2px dashed rgba(0,0,0,0.1);
   padding-top: 16px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .info-panel.expanded .expanded-content {
@@ -754,18 +760,25 @@ body.panel-open.panel-expanded .bottom-left-controls {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
-  background: #f8fafc;
+  padding: 10px 12px;
+  background: #f0f9ff;
   border-radius: 8px;
-  margin-bottom: 6px;
-  font-size: 0.85rem;
-  color: #334155;
-  border: 1px solid #f1f5f9;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  transition: all 0.2s ease;
 }
 
-.watershed-list-item svg {
-  color: #0284c7;
-  flex-shrink: 0;
+.watershed-list-item:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);
+}
+
+.watershed-list-item input[type="checkbox"] {
+  cursor: pointer;
+  transform: scale(1.1);
 }
 
 .info-panel-header {
