@@ -1,6 +1,28 @@
 (function () {
   'use strict';
 
+  /* ── Lenis Smooth Scroll ── */
+  if (typeof Lenis !== 'undefined') {
+    var lenis = new Lenis({
+      duration: 1.0, 
+      easing: function(t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+      direction: 'vertical',
+      gestureDirection: 'vertical',
+      smooth: true,
+      mouseMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
+      infinite: false,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+  }
+
   /* ── Scroll-triggered fade-in & scale-in ── */
   var observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
