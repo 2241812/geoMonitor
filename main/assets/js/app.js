@@ -158,6 +158,13 @@ const APP = {
       .then(w => { this.state.watershedIntersections = w; })
       .catch(() => {});
 
+    /* Prevent mobile info-panel swipes from moving the map */
+    const infoPanel = document.getElementById('info-panel');
+    if (infoPanel) {
+      L.DomEvent.disableClickPropagation(infoPanel);
+      L.DomEvent.disableScrollPropagation(infoPanel);
+    }
+
     /* Mouse move → update hover label position (throttled via RAF) */
     let _hoverX = 0, _hoverY = 0, _hoverPending = false;
     document.addEventListener('mousemove', (e) => {
@@ -1437,12 +1444,12 @@ const APP = {
 
   async updateWatersheds(checkbox) {
     const val = checkbox.value;
-    
+
     /* Sync all checkboxes with this value across the DOM */
     document.querySelectorAll(`input[type="checkbox"][value="${val}"]`).forEach(cb => {
       if (cb !== checkbox) cb.checked = checkbox.checked;
     });
-    
+
     if (checkbox.checked) {
       if (!this.state.activeWatershedIds.includes(val)) {
         this.state.activeWatershedIds.push(val);
@@ -1450,7 +1457,7 @@ const APP = {
     } else {
       this.state.activeWatershedIds = this.state.activeWatershedIds.filter(id => id !== val);
     }
-    
+
     const btn = document.getElementById('watershed-btn');
     if (btn) btn.classList.toggle('active', this.state.activeWatershedIds.length > 0);
 
@@ -1458,23 +1465,20 @@ const APP = {
     if (!this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
       if (this.state._fetchingWatersheds) {
         await this.state._fetchingWatersheds;
-        // Fall through to the else-if block now that the layer exists
       } else {
         this.state._fetchingWatersheds = (async () => {
           try {
             const response = await fetch('geoJSON/CAR Watersheds.geojson');
             const data = await response.json();
             this.state.rawData['watershed'] = data;
-            
+
+            // Instantiate all layers once, without a filter
             this.state.watershedLayer = L.geoJSON(data, {
               style: this.config.colors.watershed,
-              filter: (feature) => {
-                const name = feature.properties.Name || feature.properties.Old_Name || '';
-                return this.state.activeWatershedIds.includes(name);
-              },
               onEachFeature: (feature, layer) => {
                 layer.on({
                   mouseover: (e) => {
+                    if (e.target._isHidden) return; // Ignore hidden layers
                     if (this.state._outlineHighlight === e.target) return;
                     const style = Object.assign({}, this.config.colors.watershedHighlight);
                     style.weight = 3;
@@ -1489,6 +1493,7 @@ const APP = {
                     }
                   },
                   mouseout: (e) => {
+                    if (e.target._isHidden) return;
                     if (this.state._outlineHighlight === e.target) return;
                     this.state.watershedLayer.resetStyle(e.target);
                     const lbl = document.getElementById('map-hover-label');
@@ -1498,6 +1503,7 @@ const APP = {
                     }
                   },
                   click: (e) => {
+                    if (e.target._isHidden) return;
                     L.DomEvent.stopPropagation(e);
                     if (this.state._outlineHighlight) {
                       this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
@@ -1514,26 +1520,41 @@ const APP = {
                 });
               }
             });
-            
-            this.state.map.addLayer(this.state.watershedLayer);
-            this.state.watershedLayer.bringToFront();
+
+            // Store array of all child layers for quick filtering
+            this.state._allWatershedChildLayers = [];
+            this.state.watershedLayer.eachLayer(layer => {
+              layer._isHidden = true; // default to hidden
+              this.state._allWatershedChildLayers.push(layer);
+            });
+
           } catch (err) {
             console.error("Failed to load watersheds:", err);
           }
         })();
         await this.state._fetchingWatersheds;
         this.state._fetchingWatersheds = null;
-        return; // First fetch handles rendering via filter, no need to clearLayers
       }
     }
-    
+
     if (this.state.watershedLayer) {
-      this.state.watershedLayer.clearLayers();
       if (this.state.activeWatershedIds.length > 0) {
         if (!this.state.map.hasLayer(this.state.watershedLayer)) {
           this.state.map.addLayer(this.state.watershedLayer);
         }
-        this.state.watershedLayer.addData(this.state.rawData['watershed']);
+        
+        // Fast layer toggling
+        this.state.watershedLayer.clearLayers();
+        this.state._allWatershedChildLayers.forEach(layer => {
+          const name = layer.feature.properties.Name || layer.feature.properties.Old_Name || '';
+          if (this.state.activeWatershedIds.includes(name)) {
+            layer._isHidden = false;
+            this.state.watershedLayer.addLayer(layer);
+          } else {
+            layer._isHidden = true;
+          }
+        });
+        
         this.state.watershedLayer.bringToFront();
       } else {
         this.state.map.removeLayer(this.state.watershedLayer);
