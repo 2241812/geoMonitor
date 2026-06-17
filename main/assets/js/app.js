@@ -61,8 +61,8 @@ const APP = {
       1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
       2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
       highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
-      watershed: { fill: '#0ea5e9', stroke: '#0ea5e9', weight: 2, fillOpacity: 0 },
-      watershedHighlight: { fill: '#0ea5e9', stroke: '#0284c7', weight: 4, fillOpacity: 0.1 },
+      watershed: { fill: '#0ea5e9', stroke: '#0284c7', weight: 2, fillOpacity: 0.35 },
+      watershedHighlight: { fill: '#0ea5e9', stroke: '#0369a1', weight: 4, fillOpacity: 0.55 },
     },
 
     watershedConnections: {
@@ -620,7 +620,7 @@ const APP = {
   _highlightLayer(leafletLayer, styleConfig, level) {
     leafletLayer.setStyle({
       fillColor: styleConfig ? styleConfig.fill : this.config.colors[level].fill,
-      fillOpacity: 0.5,
+      fillOpacity: 0.65,
       color: '#000000',
       weight: 3,
       opacity: 1,
@@ -646,7 +646,7 @@ const APP = {
         leafletLayer._hiddenByIsolation = false;
         leafletLayer.setStyle({
           fillColor: cfg.fill,
-          fillOpacity: 0.5,
+          fillOpacity: 0.65,
           color: '#000000',
           weight: 3,
           opacity: 1,
@@ -704,16 +704,14 @@ const APP = {
     const layer = this.state.layers[level];
     if (!layer) return;
     const cfg = this.config.colors[level];
-    const fillOpacity = 0;
     layer.eachLayer(function(leafletLayer) {
       delete leafletLayer._hiddenByIsolation;
       leafletLayer.setStyle({
         fillColor: cfg.fill,
-        fillOpacity: fillOpacity,
         color: cfg.stroke,
         weight: cfg.weight,
         opacity: 0.9,
-        dashArray: null,
+        fillOpacity: 0.25,
       });
     });
   },
