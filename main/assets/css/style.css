@@ -1490,3 +1490,12 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-stopped { overflow: hidden; }
 .lenis.lenis-smooth iframe { pointer-events: none; }
 
+
+@keyframes mapFadeIn {
+  from { opacity: 0; }
+  to { opacity: 0.9; }
+}
+.fade-in-path {
+  animation: mapFadeIn 0.5s ease-in-out forwards;
+}
+
