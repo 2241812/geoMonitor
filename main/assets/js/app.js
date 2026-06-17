@@ -89,7 +89,9 @@ const APP = {
       minZoom: this.config.minZoom,
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
-      zoomSnap: 0.5,
+      zoomSnap: 0.1,
+      zoomDelta: 0.25,
+      wheelPxPerZoomLevel: 100,
       zoomAnimation: true,
     });
 
