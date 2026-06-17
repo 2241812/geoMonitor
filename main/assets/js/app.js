@@ -1483,24 +1483,19 @@ const APP = {
                     const name = p.Name || p.Old_Name || 'Unknown Watershed';
                     const lbl = document.getElementById('map-hover-label');
                     if (lbl) {
-                      lbl.textContent = name;
-                      lbl.style.display = 'block';
-                      lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
-                      lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
-                    }
-                  },
-                  mousemove: (e) => {
-                    const lbl = document.getElementById('map-hover-label');
-                    if (lbl) {
-                      lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
-                      lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
+                      lbl.innerHTML = `<span class="label-level">Watershed</span>${this._escHtml(name)}`;
+                      lbl.classList.add('visible');
+                      lbl.style.display = ''; /* Clear any inline display */
                     }
                   },
                   mouseout: (e) => {
                     if (this.state._outlineHighlight === e.target) return;
                     this.state.watershedLayer.resetStyle(e.target);
                     const lbl = document.getElementById('map-hover-label');
-                    if (lbl) lbl.style.display = 'none';
+                    if (lbl) {
+                      lbl.classList.remove('visible');
+                      lbl.style.display = ''; /* Clear any inline display */
+                    }
                   },
                   click: (e) => {
                     L.DomEvent.stopPropagation(e);
