@@ -497,15 +497,16 @@ body.panel-open.panel-expanded .bottom-left-controls {
 
 .basemap-options {
   position: absolute;
-  bottom: 0;
-  left: 52px;
+  bottom: calc(100% + 12px);
+  left: 0;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   min-width: 160px;
   opacity: 0;
-  transform: translateX(-10px);
+  transform: translateY(10px);
+  z-index: 100;
   pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -513,7 +514,7 @@ body.panel-open.panel-expanded .bottom-left-controls {
 .basemap-options.show,
 .watershed-options.show {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -523,8 +524,8 @@ body.panel-open.panel-expanded .bottom-left-controls {
 
 .watershed-options {
   position: absolute;
-  bottom: 0;
-  left: 52px;
+  bottom: calc(100% + 12px);
+  left: 0;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -532,7 +533,8 @@ body.panel-open.panel-expanded .bottom-left-controls {
   max-height: 300px;
   min-width: 200px;
   opacity: 0;
-  transform: translateX(-10px);
+  transform: translateY(10px);
+  z-index: 100;
   pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   padding: 8px 0;
@@ -1053,8 +1055,6 @@ body.panel-open.panel-expanded .bottom-left-controls {
 
   .basemap-options,
   .watershed-options {
-    bottom: 44px;
-    left: 0;
     min-width: 140px;
   }
 
