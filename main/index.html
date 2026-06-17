@@ -6,10 +6,8 @@
   <title>DENR CAR Watershed Monitoring</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css">
-
-  <!-- Prefetch map resources for instant navigation -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/landing.css">
   <link rel="prefetch" href="map.html">
   <link rel="prefetch" href="assets/css/map.css">
   <link rel="prefetch" href="assets/js/app.js">
@@ -30,6 +28,7 @@
         <div class="header-text">
           <span class="header-republic">Republic of the Philippines</span>
           <span class="header-agency">Department of Environment and Natural Resources</span>
+          <span class="header-subagency">Cordillera Administrative Region</span>
         </div>
       </div>
       <div class="header-right">
@@ -42,215 +41,311 @@
     </div>
   </header>
 
-  <!-- Section 1: Hero -->
-  <section class="hero">
-    <div class="hero-bg" style="background-image: url('assets/images/20220506_111217.jpg');"></div>
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <img src="assets/images/20220506_111217.jpg" alt="Cordillera Landscape">
+    </div>
     <div class="hero-overlay"></div>
 
+    <div class="hero-particles">
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+    </div>
+
     <div class="hero-content">
-      <h1>CAR Watershed Monitoring</h1>
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Watershed Monitoring System
+      </div>
+      <h1 class="hero-title">CAR Watershed Monitoring</h1>
       <p class="hero-subtitle">Tracking administrative boundaries, geological data, and environmental metrics across the Cordilleras — the Watershed Cradle of Northern Luzon.</p>
     </div>
 
-    <div class="scroll-indicator">
-      <span class="scroll-text">Scroll</span>
-      <span class="scroll-arrow">↓</span>
+    <a href="#basins" class="scroll-indicator-link">
+      <div class="scroll-indicator">
+        <span>Scroll</span>
+        <div class="scroll-line"></div>
+        <svg class="scroll-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </a>
+  </section>
+
+  <!-- Stats Banner -->
+  <section class="stats-section">
+    <div class="stats-inner" id="stats-inner">
+      <div class="stat-item fade-in-up">
+        <span class="stat-number" data-target="6">0</span>
+        <span class="stat-label">Provinces</span>
+      </div>
+      <div class="stat-item fade-in-up">
+        <span class="stat-number" data-target="77">0</span>
+        <span class="stat-label">Municipalities</span>
+      </div>
+      <div class="stat-item fade-in-up">
+        <span class="stat-number" data-target="13">0</span>
+        <span class="stat-label">River Basins</span>
+      </div>
+      <div class="stat-item fade-in-up">
+        <span class="stat-number" data-target="2">0</span>
+        <span class="stat-label">Data Sources</span>
+      </div>
     </div>
   </section>
 
-  <!-- Section 2: Info -->
-  <section class="info-section">
-    <div class="info-container">
-      <div class="info-text fade-in-up">
-        <h2>Protecting Our Lifelines</h2>
-        <p>The Cordillera Administrative Region serves as the watershed cradle of Northern Philippines, supplying vital water resources to the lowlands. The Department of Environment and Natural Resources' mandate is to monitor, protect, and sustain these ecological boundaries that support millions of Filipinos across Regions I, II, and III.</p>
-        <p>A watershed is an area of land where all water drains to a common outlet such as a river, lake, or sea. Healthy watersheds mean clean water, productive fisheries, and resilient communities. Through systematic monitoring, we track changes in land use, water quality, and biodiversity across CAR's major river basins.</p>
+  <!-- Info Section -->
+  <section class="info-section" id="about">
+    <div class="info-text fade-in-up">
+      <div class="section-label">
+        <span class="section-label-line"></span>
+        <span>About the Region</span>
       </div>
-      <div class="info-image fade-in-up">
-        <img src="assets/images/istockphoto-1308633310-612x612.jpg" alt="Ambuklao Dam — a vital watershed infrastructure in Benguet">
+      <h2>Protecting Our <span class="text-accent">Lifelines</span></h2>
+      <p>The Cordillera Administrative Region serves as the watershed cradle of Northern Philippines, supplying vital water resources to the lowlands. The Department of Environment and Natural Resources' mandate is to monitor, protect, and sustain these ecological boundaries that support millions of Filipinos across Regions I, II, and III.</p>
+      <p>A watershed is an area of land where all water drains to a common outlet such as a river, lake, or sea. Healthy watersheds mean clean water, productive fisheries, and resilient communities. Through systematic monitoring, we track changes in land use, water quality, and biodiversity across CAR's major river basins.</p>
+    </div>
+    <div class="info-image-wrap fade-in-up">
+      <div class="image-glow"></div>
+      <img src="assets/images/istockphoto-1308633310-612x612.jpg" alt="Ambuklao Dam — a vital watershed infrastructure in Benguet" class="info-image">
+      <div class="image-float-badge">
+        <div class="float-badge-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+        </div>
+        <div class="float-badge-text">
+          <span class="float-badge-number">13</span>
+          <span class="float-badge-label">River Basins</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Section 3: River Basins Grid -->
+  <!-- River Basins Section -->
   <section class="basins-section" id="basins">
-    <div class="basins-container">
-      <div class="basins-header fade-in-up">
-        <h2>Major River Basins of CAR</h2>
-        <p>The Cordillera Administrative Region hosts 13 major river basins — the Watershed Cradle of Northern Luzon.</p>
+    <div class="basins-header fade-in-up">
+      <div class="section-label">
+        <span class="section-label-line"></span>
+        <span>Watershed Geography</span>
+        <span class="section-label-line"></span>
       </div>
+      <h2>Major River Basins of <span class="text-accent">CAR</span></h2>
+      <p>The Cordillera Administrative Region hosts 13 major river basins — the Watershed Cradle of Northern Luzon.</p>
+    </div>
 
-      <div class="basins-grid" id="basins-grid">
-
-        <!-- 1 -->
-        <div class="basin-card" style="background-image: url('assets/images/basin-1.jpg');">
-          <div class="basin-overlay"></div>
-          <div class="basin-content">
-            <h3>Agno River Basin</h3>
-            <p>Originates in Benguet, supports the Ambuklao, Binga, and San Roque hydroelectric plants, and supplies irrigation for Pangasinan.</p>
-          </div>
-        </div>
-
-        <!-- 2 -->
-        <div class="basin-card" style="background-image: url('assets/images/basin-2.jpg');">
-          <div class="basin-overlay"></div>
-          <div class="basin-content">
-            <h3>Chico River Basin</h3>
-            <p>Headwaters in Benguet, Mountain Province, and Kalinga. Supports mini-hydro plants and irrigates Kalinga, Apayao, Cagayan, and Isabela.</p>
-          </div>
-        </div>
-
-        <!-- 3 -->
-        <div class="basin-card" style="background-image: url('assets/images/basin-3.jpg');">
-          <div class="basin-overlay"></div>
-          <div class="basin-content">
-            <h3>Abra River Basin</h3>
-            <p>Originates from Abra, Mountain Province, and Benguet. One of the five major rivers in the Philippines, irrigating Ilocos Sur.</p>
-          </div>
-        </div>
-
-        <!-- 4 -->
-        <div class="basin-card" style="background-image: url('assets/images/basin-4.jpg');">
-          <div class="basin-overlay"></div>
-          <div class="basin-content">
-            <h3>Abulog River Basin</h3>
-            <p>Headwaters in Apayao, irrigates Cagayan Province, and exits via the Cagayan River to the Babuyan Channel.</p>
-          </div>
-        </div>
-
-        <!-- Hidden cards -->
-        <div class="basins-extra" id="basins-extra">
-
-          <!-- 5 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-5.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Amburayan River Basin</h3>
-              <p>Emanates in Benguet, flows to the Luzon Sea at La Union, and supplies irrigation water for the Province of La Union.</p>
-            </div>
-          </div>
-
-          <!-- 6 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-6.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Aringay River Basin</h3>
-              <p>Originates from Benguet and Baguio City. A source of irrigation for La Union Province, exiting at the Luzon Sea.</p>
-            </div>
-          </div>
-
-          <!-- 7 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-7.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Naguilian River Basin</h3>
-              <p>Headwaters in Benguet, irrigates La Union, and exits at the Luzon Sea.</p>
-            </div>
-          </div>
-
-          <!-- 8 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-8.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Magat River Basin</h3>
-              <p>Originates from Ifugao, supports Magat Dam hydroelectric plant, and irrigates Isabela, Nueva Vizcaya, and Quirino.</p>
-            </div>
-          </div>
-
-          <!-- 9 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-9.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Siffu-Mallig River Basin</h3>
-              <p>Headwaters in Ifugao and Mountain Province, flows towards the Cagayan River, and irrigates Isabela.</p>
-            </div>
-          </div>
-
-          <!-- 10 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-10.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Cabicungan River Basin</h3>
-              <p>Situated in Apayao, irrigates farmers in Cagayan Province and exits towards Claveria.</p>
-            </div>
-          </div>
-
-          <!-- 11 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-11.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Zumiqui-Ziwanan River Basin</h3>
-              <p>Emanates in Apayao, irrigates Cagayan, and exits towards the Pamplona River.</p>
-            </div>
-          </div>
-
-          <!-- 12 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-12.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Silag River Basin</h3>
-              <p>Located in Abra, supports irrigation, fishing, and potable water, exiting at the Luzon Sea in Ilocos Sur.</p>
-            </div>
-          </div>
-
-          <!-- 13 -->
-          <div class="basin-card" style="background-image: url('assets/images/basin-13.jpg');">
-            <div class="basin-overlay"></div>
-            <div class="basin-content">
-              <h3>Upper Cagayan River Basin</h3>
-              <p>The headwaters of one of the largest river systems in the country, gathering from the eastern slopes of the Cordillera through the Cagayan Valley.</p>
-            </div>
-          </div>
-
+    <!-- Container 1: First 4 Basins (always visible, 4-column grid) -->
+    <div class="basins-grid" id="basins-grid-first">
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-1.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 01</span>
+          <h3>Agno River Basin</h3>
+          <p>Originates in Benguet, supports the Ambuklao, Binga, and San Roque hydroelectric plants, and supplies irrigation for Pangasinan.</p>
         </div>
       </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-2.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 02</span>
+          <h3>Chico River Basin</h3>
+          <p>Headwaters in Benguet, Mountain Province, and Kalinga. Supports mini-hydro plants and irrigates Kalinga, Apayao, Cagayan, and Isabela.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-3.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 03</span>
+          <h3>Abra River Basin</h3>
+          <p>Originates from Abra, Mountain Province, and Benguet. One of the five major rivers in the Philippines, irrigating Ilocos Sur.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-4.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 04</span>
+          <h3>Abulog River Basin</h3>
+          <p>Headwaters in Apayao, irrigates Cagayan Province, and exits via the Cagayan River to the Babuyan Channel.</p>
+        </div>
+      </div>
+    </div>
 
-      <button class="basins-toggle" id="basins-toggle">View All 13 River Basins</button>
+    <!-- Container 2: Remaining 9 Basins (hidden by default, 3-column grid) -->
+    <div class="basins-extra-grid hidden" id="basins-extra-grid">
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-5.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 05</span>
+          <h3>Amburayan River Basin</h3>
+          <p>Emanates in Benguet, flows to the Luzon Sea at La Union, and supplies irrigation water for the Province of La Union.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-6.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 06</span>
+          <h3>Aringay River Basin</h3>
+          <p>Originates from Benguet and Baguio City. A source of irrigation for La Union Province, exiting at the Luzon Sea.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-7.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 07</span>
+          <h3>Naguilian River Basin</h3>
+          <p>Headwaters in Benguet, irrigates La Union, and exits at the Luzon Sea.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-8.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 08</span>
+          <h3>Magat River Basin</h3>
+          <p>Originates from Ifugao, supports Magat Dam hydroelectric plant, and irrigates Isabela, Nueva Vizcaya, and Quirino.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-9.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 09</span>
+          <h3>Siffu-Mallig River Basin</h3>
+          <p>Headwaters in Ifugao and Mountain Province, flows towards the Cagayan River, and irrigates Isabela.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-10.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 10</span>
+          <h3>Cabicungan River Basin</h3>
+          <p>Situated in Apayao, irrigates farmers in Cagayan Province and exits towards Claveria.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-11.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 11</span>
+          <h3>Zumiqui-Ziwanan River Basin</h3>
+          <p>Emanates in Apayao, irrigates Cagayan, and exits towards the Pamplona River.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-12.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 12</span>
+          <h3>Silag River Basin</h3>
+          <p>Located in Abra, supports irrigation, fishing, and potable water, exiting at the Luzon Sea in Ilocos Sur.</p>
+        </div>
+      </div>
+      <div class="basin-card fade-in-up" style="background-image: url('assets/images/basin-13.jpg');">
+        <div class="basin-overlay"></div>
+        <div class="basin-content">
+          <div class="basin-line"></div>
+          <span class="basin-index">Basin 13</span>
+          <h3>Upper Cagayan River Basin</h3>
+          <p>The headwaters of one of the largest river systems in the country, gathering from the eastern slopes of the Cordillera through the Cagayan Valley.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-all-container">
+      <button class="view-all-btn" id="basins-toggle">
+        <span id="basins-toggle-text">View All 13 River Basins</span>
+        <svg class="view-all-icon" id="basins-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
     </div>
   </section>
 
-  <!-- Section 4: CTA -->
-  <section class="cta-section">
-    <div class="cta-bg" style="background-image: url('assets/images/Outcrop_along_the_riverside_of_the_Dalupirip_section_of_the_Agno_River,_Lower_Agno_Watershed_Forest_Reserve,_Itogon,_Benguet,_Philippines.jpg');"></div>
+  <!-- CTA Section -->
+  <section class="cta-section" id="cta">
+    <div class="cta-bg">
+      <img src="assets/images/Outcrop_along_the_riverside_of_the_Dalupirip_section_of_the_Agno_River,_Lower_Agno_Watershed_Forest_Reserve,_Itogon,_Benguet,_Philippines.jpg" alt="Agno River Outcrop">
+    </div>
     <div class="cta-overlay"></div>
     <div class="cta-content fade-in-up">
+      <div class="section-label" style="justify-content:center;color:rgba(255,255,255,0.8);">
+        <span class="section-label-line"></span>
+        <span>Explore</span>
+        <span class="section-label-line"></span>
+      </div>
       <h2>Interactive Geographic Dashboard</h2>
       <p>Dive into the data. Explore administrative boundaries, river networks, and geological profiles across the Cordillera Administrative Region.</p>
-      <a href="map.html" class="cta-button">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="10" r="3"/>
-          <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
-        </svg>
-        Explore the Map
+      <a href="map.html" class="cta-explore-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>
+        <span>Explore the Map</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
     </div>
   </section>
 
-  <!-- Section 5: Footer -->
+  <!-- Footer -->
   <footer class="denr-footer">
-    <div class="footer-container">
-      <div class="footer-brand">
-        <div class="footer-logo-wrap">
-          <img src="assets/img/denr-logo.svg" alt="DENR Logo" class="footer-logo">
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <div class="footer-logo-group">
+          <img src="assets/img/denr-logo.svg" alt="DENR" class="footer-logo">
+          <span class="footer-brand-name">DENR CAR</span>
         </div>
-        <div class="footer-brand-body">
-          <h3>DENR-CAR Watershed Monitoring</h3>
-          <p>Department of Environment and Natural Resources<br>Cordillera Administrative Region</p>
-          <p>DENR Compound, Gibraltar Road,<br>Baguio City, Benguet, 2600</p>
-        </div>
+        <p class="footer-address">Department of Environment and Natural Resources — Cordillera Administrative Region, PPI Building, South Drive, Baguio City, Benguet 2600, Philippines</p>
       </div>
-      <div class="footer-contact">
-        <h4>Directory &amp; Contact</h4>
-        <ul>
-          <li><strong>Trunkline:</strong> (074) 665-2905</li>
-          <li><strong>Telefax:</strong> (074) 442-4531</li>
-          <li><strong>Email:</strong> car@denr.gov.ph</li>
-          <li><strong>Website:</strong> car.denr.gov.ph</li>
+
+      <div>
+        <h4 class="footer-heading">Quick Links</h4>
+        <ul class="footer-links">
+          <li><a href="map.html" class="footer-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Interactive Map
+          </a></li>
+          <li><a href="https://car.denr.gov.ph" target="_blank" rel="noopener noreferrer" class="footer-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            DENR CAR Website
+          </a></li>
+          <li><a href="https://www.slu.edu.ph" target="_blank" rel="noopener noreferrer" class="footer-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            SLU Website
+          </a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-heading">Contact</h4>
+        <ul class="footer-links">
+          <li><span class="footer-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            (074) 442-7374
+          </span></li>
+          <li><span class="footer-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            car@denr.gov.ph
+          </span></li>
+          <li><span class="footer-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16 9 21 12 14 22 8 15 2 12 9 2 16Z"/><line x1="12" y1="9" x2="19" y2="2"/></svg>
+            Watershed Division
+          </span></li>
         </ul>
       </div>
     </div>
-    <div class="footer-credits">
-      <p>&copy; 2026 Department of Environment and Natural Resources - CAR &amp; Saint Louis University Computer Science. All Rights Reserved.</p>
+
+    <div class="footer-bottom">
+      <p class="footer-copyright">&copy; 2026 DENR-CAR &amp; SLU Computer Science. All rights reserved.</p>
+      <div class="footer-logos">
+        <img src="assets/img/denr-logo.svg" alt="DENR" class="footer-small-logo">
+        <img src="assets/img/slu-logo.png" alt="SLU" class="footer-small-logo">
+      </div>
     </div>
   </footer>
 
