@@ -153,3 +153,26 @@
   });
 
 })();
+
+  /* ── Basin Card Click-to-Focus ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    var basinCards = document.querySelectorAll('.basin-card');
+    basinCards.forEach(function(card) {
+      card.addEventListener('click', function() {
+        // Toggle the focus state on this card
+        this.classList.toggle('basin-card-focus');
+        
+        // Optionally remove focus from other cards if we only want one active
+        basinCards.forEach(function(otherCard) {
+          if (otherCard !== card) {
+            otherCard.classList.remove('basin-card-focus');
+          }
+        });
+      });
+      
+      // Also close focus if mouse leaves? Maybe not, click to toggle is fine.
+      card.addEventListener('mouseleave', function() {
+        this.classList.remove('basin-card-focus');
+      });
+    });
+  });
