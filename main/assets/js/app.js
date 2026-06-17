@@ -263,7 +263,7 @@ const APP = {
       /* Fly into the selected feature with smooth animation */
       if (leafletLayer && leafletLayer.getBounds) {
         this.state.map.flyToBounds(leafletLayer.getBounds(), {
-          padding: [40, 40],
+          ...this._getPaddingOpts(),
           duration: 0.8,
           easeLinearity: 0.25,
         });
@@ -311,7 +311,7 @@ const APP = {
         /* Jump back to CAR bounds without animation */
         if (this.state.layers[0]) {
           this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
-            padding: [40, 40],
+            ...this._getPaddingOpts(),
             duration: 0.8,
             easeLinearity: 0.25
           });
@@ -358,7 +358,7 @@ const APP = {
             if (lf.feature === lastItem.feature) {
               const targetBounds = lf.getBounds();
               this.state.map.flyToBounds(targetBounds, {
-                padding: [40, 40],
+                ...this._getPaddingOpts(),
                 duration: 0.8,
                 easeLinearity: 0.25
               });
@@ -369,7 +369,7 @@ const APP = {
         /* Jump to region reset */
         const regionBounds = this.state.layers[0].getBounds();
         this.state.map.flyToBounds(regionBounds, {
-          padding: [40, 40],
+          ...this._getPaddingOpts(),
           duration: 0.8,
           easeLinearity: 0.25
         });
@@ -528,6 +528,15 @@ const APP = {
     const parentId = parentFeature.properties._id;
     if (!parentId) return { ...data, features: [] };
     return { ...data, features: data.features.filter(f => f.properties._parentId === parentId) };
+  },
+
+  /* ── Dynamic map padding to avoid panel ── */
+  _getPaddingOpts() {
+    const isMobile = window.innerWidth <= 640;
+    return {
+      paddingTopLeft: [isMobile ? 40 : 420, 40],
+      paddingBottomRight: [40, isMobile ? (window.innerHeight * 0.4 + 40) : 40]
+    };
   },
 
   /* ── Feature name resolution ─────────────── */
@@ -720,7 +729,7 @@ const APP = {
     this.state.currentLevel = 1;
     if (this.state.layers[0]) {
       this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
-        padding: [40, 40],
+        ...this._getPaddingOpts(),
         duration: 0.8,
         easeLinearity: 0.25,
       });
