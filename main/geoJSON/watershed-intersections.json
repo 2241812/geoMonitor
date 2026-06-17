@@ -1,0 +1,45 @@
+{
+  "abra": [
+    "Abra River Watershed",
+    "Abulug River Watershed",
+    "Santa Maria River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "apayao": [
+    "Abra River Watershed",
+    "Abulug River Watershed",
+    "Cabicungan River Watershed",
+    "Upper Chico River Watershed",
+    "Zumigui-Ziwanan River Watershed"
+  ],
+  "benguet": [
+    "Abra River Watershed",
+    "Agno River Watershed",
+    "Bayogao River Watershed",
+    "Aringay River Watershed",
+    "Bued River Watershed",
+    "Naguilian River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "ifugao": [
+    "Abra River Watershed",
+    "Agno River Watershed",
+    "Siffu River Watershed",
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "kalinga": [
+    "Abra River Watershed",
+    "Mallig River Watershed",
+    "Siffu River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "mountain-province": [
+    "Abra River Watershed",
+    "Agno River Watershed",
+    "Mallig River Watershed",
+    "Siffu River Watershed",
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ]
+}
