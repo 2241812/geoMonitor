@@ -92,7 +92,14 @@ const APP = {
       "Abra River Watershed": "The Abra River Watershed is the largest river basin in the Ilocos Region, originating from the slopes of Mount Data in the Cordillera Central. It carves a deep valley westward before emptying into the West Philippine Sea.",
       "Naguilian River Watershed": "The Naguilian River Watershed flows westward from the mountains of Benguet, directly draining into the West Philippine Sea. It is a smaller but essential basin supporting local municipalities along the La Union coast.",
       "Aringay River Watershed": "Originating from the rugged terrains of Benguet, the Aringay River Watershed runs westward into the Lingayen Gulf. The basin is characterized by varied topography and supports diverse local ecosystems.",
-      "Zumiqui-Ziwanan River Watershed": "Pamplona River"
+      "Zumiqui-Ziwanan River Watershed": "Pamplona River",
+      "Abulug River Watershed": "The Abulug River Watershed is the second largest river system in the Cagayan Valley region, originating from the Apayao highlands and draining northward into the Babuyan Channel. It plays a critical role in supporting diverse ecosystems and local agricultural irrigation.",
+      "Agno River Watershed": "Originating from the slopes of Mount Data, the Agno River Watershed is one of the largest river systems in Luzon. It flows southward through the Cordillera mountains before winding its way across the plains of Pangasinan to drain into the Lingayen Gulf, providing vital hydroelectric power and irrigation.",
+      "Amburayan River Watershed": "The Amburayan River flows from the tri-boundary of Benguet, La Union, and Ilocos Sur, serving as a historic natural boundary. It empties into the South China Sea and is essential for the region's agricultural plains and surrounding communities.",
+      "Bayogao River Watershed": "The Bayogao River Watershed is a coastal basin situated along the western slopes of the Cordillera mountains, draining directly into the South China Sea. It provides critical water resources for local coastal municipalities.",
+      "Bued River Watershed": "The Bued River Watershed originates in the mountains of Baguio City and flows down through Benguet and Pangasinan to the Lingayen Gulf. The basin is characterized by steep slopes and is a key water source for surrounding urban and rural areas.",
+      "Cabicungan River Watershed": "The Cabicungan River Watershed spans the northern territories of Apayao, draining towards the Babuyan Channel. It supports dense forest cover and rich biodiversity in the northernmost reaches of the Cordillera.",
+      "Santa Maria River Watershed": "The Santa Maria River Watershed flows through the western slopes of the Cordilleras and into the Ilocos region, discharging into the West Philippine Sea. It sustains the agricultural livelihoods of downstream communities."
     },
 
     baseMaps: {
@@ -282,6 +289,7 @@ const APP = {
   async drillDown(feature, leafletLayer) {
     if (this.state._drilling) return;
     this.state._drilling = true;
+    this._hideHoverLabel();
     try {
       const currentLevel = this.state.currentLevel;
       if (currentLevel >= this._src().maxLevel) return;
@@ -348,6 +356,7 @@ const APP = {
   async drillUp(targetLevel) {
     if (this.state._drilling) return;
     this.state._drilling = true;
+    this._hideHoverLabel();
     try {
       if (typeof targetLevel !== 'number' || targetLevel < 0) targetLevel = 0;
 
@@ -719,6 +728,7 @@ const APP = {
 
   /* ── Clear selection ──────────────────────────── */
   _clearSelection() {
+    this._hideHoverLabel();
     if (this.state._selectedLevel != null) {
       this._resetLevelStyle(this.state._selectedLevel);
       this.state._selectedFeature = null;
@@ -955,6 +965,18 @@ const APP = {
       interactive: level >= this.state.currentLevel,
       style: { color: '#1e293b', weight: 1.5, opacity: 0.6, fillOpacity: 0 },
       onEachFeature(feature, layer) {
+        const name = self._featureName(feature, level);
+        
+        layer.on('mouseover', function () {
+          if (level < self.state.currentLevel) return;
+          self._showHoverLabel(name, level);
+        });
+
+        layer.on('mouseout', function () {
+          if (level < self.state.currentLevel) return;
+          self._hideHoverLabel();
+        });
+
         layer.on('click', function (e) {
           L.DomEvent.stopPropagation(e);
           if (self.state._drilling) return;
