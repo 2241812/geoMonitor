@@ -510,10 +510,67 @@ body.panel-open.panel-expanded .bottom-left-controls {
   transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.basemap-options.show {
+.basemap-options.show,
+.watershed-options.show {
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;
+}
+
+.watershed-switcher {
+  position: relative;
+}
+
+.watershed-options {
+  position: absolute;
+  bottom: 0;
+  left: 52px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  max-height: 300px;
+  min-width: 200px;
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 8px 0;
+}
+
+.watershed-options-header {
+  padding: 4px 14px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 4px;
+}
+
+.watershed-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  transition: background 0.12s;
+}
+
+.watershed-option:hover {
+  background: #f8fafc;
+}
+
+.watershed-option input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #2563eb;
 }
 
 .basemap-option {
@@ -994,8 +1051,10 @@ body.panel-open.panel-expanded .bottom-left-controls {
     height: 16px;
   }
 
-  .basemap-options {
+  .basemap-options,
+  .watershed-options {
     bottom: 44px;
+    left: 0;
     min-width: 140px;
   }
 
