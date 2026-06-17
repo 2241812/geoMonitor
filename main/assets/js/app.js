@@ -1357,71 +1357,83 @@ const APP = {
 
     // Initial load if needed
     if (!this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
-      try {
-        const response = await fetch('geoJSON/CAR Watersheds.geojson');
-        const data = await response.json();
-        this.state.rawData['watershed'] = data;
-        
-        this.state.watershedLayer = L.geoJSON(data, {
-          style: this.config.colors.watershed,
-          filter: (feature) => {
-            const name = feature.properties.Name || feature.properties.Old_Name || '';
-            return this.state.activeWatershedIds.includes(name);
-          },
-          onEachFeature: (feature, layer) => {
-            layer.on({
-              mouseover: (e) => {
-                if (this.state._outlineHighlight === e.target) return;
-                const style = Object.assign({}, this.config.colors.watershedHighlight);
-                style.weight = 3;
-                e.target.setStyle(style);
-                const p = feature.properties;
-                const name = p.Name || p.Old_Name || 'Unknown Watershed';
-                const lbl = document.getElementById('map-hover-label');
-                if (lbl) {
-                  lbl.textContent = name;
-                  lbl.style.display = 'block';
-                  lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
-                  lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
-                }
+      if (this.state._fetchingWatersheds) {
+        await this.state._fetchingWatersheds;
+        // Fall through to the else-if block now that the layer exists
+      } else {
+        this.state._fetchingWatersheds = (async () => {
+          try {
+            const response = await fetch('geoJSON/CAR Watersheds.geojson');
+            const data = await response.json();
+            this.state.rawData['watershed'] = data;
+            
+            this.state.watershedLayer = L.geoJSON(data, {
+              style: this.config.colors.watershed,
+              filter: (feature) => {
+                const name = feature.properties.Name || feature.properties.Old_Name || '';
+                return this.state.activeWatershedIds.includes(name);
               },
-              mousemove: (e) => {
-                const lbl = document.getElementById('map-hover-label');
-                if (lbl) {
-                  lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
-                  lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
-                }
-              },
-              mouseout: (e) => {
-                if (this.state._outlineHighlight === e.target) return;
-                this.state.watershedLayer.resetStyle(e.target);
-                const lbl = document.getElementById('map-hover-label');
-                if (lbl) lbl.style.display = 'none';
-              },
-              click: (e) => {
-                L.DomEvent.stopPropagation(e);
-                if (this.state._outlineHighlight) {
-                  this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
-                }
-                this.state._outlineHighlight = e.target;
-                e.target.setStyle(this.config.colors.watershedHighlight);
-                this.state.map.flyToBounds(e.target.getBounds(), {
-                  ...this._getPaddingOpts(),
-                  duration: 0.6,
-                  easeLinearity: 0.25
+              onEachFeature: (feature, layer) => {
+                layer.on({
+                  mouseover: (e) => {
+                    if (this.state._outlineHighlight === e.target) return;
+                    const style = Object.assign({}, this.config.colors.watershedHighlight);
+                    style.weight = 3;
+                    e.target.setStyle(style);
+                    const p = feature.properties;
+                    const name = p.Name || p.Old_Name || 'Unknown Watershed';
+                    const lbl = document.getElementById('map-hover-label');
+                    if (lbl) {
+                      lbl.textContent = name;
+                      lbl.style.display = 'block';
+                      lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
+                      lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
+                    }
+                  },
+                  mousemove: (e) => {
+                    const lbl = document.getElementById('map-hover-label');
+                    if (lbl) {
+                      lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
+                      lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
+                    }
+                  },
+                  mouseout: (e) => {
+                    if (this.state._outlineHighlight === e.target) return;
+                    this.state.watershedLayer.resetStyle(e.target);
+                    const lbl = document.getElementById('map-hover-label');
+                    if (lbl) lbl.style.display = 'none';
+                  },
+                  click: (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    if (this.state._outlineHighlight) {
+                      this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
+                    }
+                    this.state._outlineHighlight = e.target;
+                    e.target.setStyle(this.config.colors.watershedHighlight);
+                    this.state.map.flyToBounds(e.target.getBounds(), {
+                      ...this._getPaddingOpts(),
+                      duration: 0.6,
+                      easeLinearity: 0.25
+                    });
+                    this._openWatershedPanel(feature);
+                  }
                 });
-                this._openWatershedPanel(feature);
               }
             });
+            
+            this.state.map.addLayer(this.state.watershedLayer);
+            this.state.watershedLayer.bringToFront();
+          } catch (err) {
+            console.error("Failed to load watersheds:", err);
           }
-        });
-        
-        this.state.map.addLayer(this.state.watershedLayer);
-        this.state.watershedLayer.bringToFront();
-      } catch (err) {
-        console.error("Failed to load watersheds:", err);
+        })();
+        await this.state._fetchingWatersheds;
+        this.state._fetchingWatersheds = null;
+        return; // First fetch handles rendering via filter, no need to clearLayers
       }
-    } else if (this.state.watershedLayer) {
+    }
+    
+    if (this.state.watershedLayer) {
       this.state.watershedLayer.clearLayers();
       if (this.state.activeWatershedIds.length > 0) {
         if (!this.state.map.hasLayer(this.state.watershedLayer)) {
