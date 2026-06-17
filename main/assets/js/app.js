@@ -235,17 +235,7 @@ const APP = {
     this.state.outlineLayers = {};
     const wasOpen = this.state.panelState === 'open' || this.state.panelState === 'peek';
 
-    /* Reset watershed selections to prevent bugs when switching sources */
-    this.state.activeWatershedIds = [];
-    if (this.state.watershedLayer) {
-      this.state.map.removeLayer(this.state.watershedLayer);
-      this.state.watershedLayer = null;
-    }
-    const wsBtn = document.getElementById('watershed-btn');
-    if (wsBtn) wsBtn.classList.remove('active');
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.checked = false;
-    });
+    this._resetWatershedState();
     
     this.state.activeSource = name;
     this._loadHierarchy();
@@ -317,6 +307,8 @@ const APP = {
       this.state._selectedLevel = null;
       this.state._selectedLeafletLayer = null;
 
+      this._resetWatershedState();
+
       this.state.currentLevel = nextLevel;
 
       /* Parent context → thin dashed outline ("you are inside this boundary") */
@@ -376,6 +368,8 @@ const APP = {
       this.state._selectedFeature = null;
       this.state._selectedLevel = null;
       this.state._selectedLeafletLayer = null;
+
+      this._resetWatershedState();
 
       if (targetLevel === 0) {
         this._updateSmartFilters(null);
@@ -1426,6 +1420,19 @@ const APP = {
     const opts = document.getElementById('watershed-options');
     if (!opts) return;
     opts.classList.toggle('show');
+  },
+
+  _resetWatershedState() {
+    this.state.activeWatershedIds = [];
+    if (this.state.watershedLayer) {
+      this.state.map.removeLayer(this.state.watershedLayer);
+      this.state.watershedLayer = null;
+    }
+    const wsBtn = document.getElementById('watershed-btn');
+    if (wsBtn) wsBtn.classList.remove('active');
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
   },
 
   async updateWatersheds(checkbox) {
