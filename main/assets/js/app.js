@@ -1257,14 +1257,13 @@ const APP = {
     opts.classList.toggle('show');
   },
 
-  async updateWatersheds(checkbox) {
-    const val = checkbox.value;
-    if (checkbox.checked) {
-      if (!this.state.activeWatershedIds.includes(val)) {
-        this.state.activeWatershedIds.push(val);
-      }
+  async updateWatersheds(radio) {
+    const val = radio.value;
+    
+    if (val === 'none') {
+      this.state.activeWatershedIds = [];
     } else {
-      this.state.activeWatershedIds = this.state.activeWatershedIds.filter(id => id !== val);
+      this.state.activeWatershedIds = [val];
     }
     
     const btn = document.getElementById('watershed-btn');
