@@ -1057,10 +1057,10 @@ const APP = {
           <div class="watershed-list">
             ${intersectingWs.map(ws => `
               <div class="watershed-list-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path>
-                </svg>
-                ${this._escHtml(ws)}
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
+                  <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${this.state.activeWatershedIds && this.state.activeWatershedIds.includes(ws) ? 'checked' : ''} style="accent-color: #0284c7; width: 16px; height: 16px;">
+                  <span style="font-weight: 500;">${this._escHtml(ws)}</span>
+                </label>
               </div>
             `).join('')}
           </div>
@@ -1177,16 +1177,36 @@ const APP = {
     if (!panel) return;
     const isExpanded = panel.classList.contains('expanded');
     
+    const panelCheckboxes = panel.querySelectorAll('.panel-ws-checkbox');
+
     if (isExpanded) {
       panel.classList.remove('expanded');
       document.body.classList.remove('panel-expanded');
       if (btn) btn.innerText = 'Show More';
       if (this.state.map) this.state.map.panBy([58, 0], {animate: true, duration: 0.3});
+      
+      /* Turn off auto-checked watersheds */
+      panelCheckboxes.forEach(cb => {
+        if (cb.dataset.autoChecked === 'true') {
+          cb.checked = false;
+          cb.dataset.autoChecked = 'false';
+          this.updateWatersheds(cb);
+        }
+      });
     } else {
       panel.classList.add('expanded');
       document.body.classList.add('panel-expanded');
       if (btn) btn.innerText = 'Show Less';
       if (this.state.map) this.state.map.panBy([-58, 0], {animate: true, duration: 0.3});
+      
+      /* Turn on all unchecked watersheds */
+      panelCheckboxes.forEach(cb => {
+        if (!cb.checked) {
+          cb.checked = true;
+          cb.dataset.autoChecked = 'true';
+          this.updateWatersheds(cb);
+        }
+      });
     }
   },
 
@@ -1320,6 +1340,11 @@ const APP = {
 
   async updateWatersheds(checkbox) {
     const val = checkbox.value;
+    
+    /* Sync all checkboxes with this value across the DOM */
+    document.querySelectorAll(`input[type="checkbox"][value="${val}"]`).forEach(cb => {
+      if (cb !== checkbox) cb.checked = checkbox.checked;
+    });
     
     if (checkbox.checked) {
       if (!this.state.activeWatershedIds.includes(val)) {
