@@ -1138,17 +1138,23 @@ const APP = {
     const panel = document.getElementById('info-panel');
     if (!panel) return;
     
+    /* If it was expanded, reset to non-expanded without panning */
+    if (panel.classList.contains('expanded')) {
+      this.toggleExpandedPanel(true);
+    }
+    
     document.body.classList.remove('panel-open', 'panel-expanded');
     panel.classList.remove('open', 'peek', 'expanded');
     this.state.panelState = 'closed';
     
-    // Also reset the "Show More" button text if it exists
-    const btn = document.querySelector('.show-more-btn');
-    if (btn) btn.innerText = 'Show More';
-    
     /* Show toggle tab */
     const tab = document.getElementById('panel-toggle-tab');
     if (tab) tab.classList.remove('hidden');
+    
+    if (this.state._chart) {
+      this.state._chart.destroy();
+      this.state._chart = null;
+    }
   },
 
   togglePanel() {
