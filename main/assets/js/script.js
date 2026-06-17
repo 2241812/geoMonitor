@@ -126,28 +126,6 @@
     }, { passive: true });
   });
 
-  /* ── Snap Toggle ── */
-  document.addEventListener('DOMContentLoaded', function () {
-    var snapToggle = document.getElementById('snap-toggle');
-    var snapToggleText = document.querySelector('.snap-toggle-text');
-    var isSnapEnabled = false;
-
-    if (snapToggle) {
-      snapToggle.addEventListener('click', function() {
-        isSnapEnabled = !isSnapEnabled;
-        if (isSnapEnabled) {
-          document.documentElement.classList.add('snap-enabled');
-          snapToggle.classList.add('active');
-          if (snapToggleText) snapToggleText.textContent = 'Snap: On';
-        } else {
-          document.documentElement.classList.remove('snap-enabled');
-          snapToggle.classList.remove('active');
-          if (snapToggleText) snapToggleText.textContent = 'Snap: Off';
-        }
-      });
-    }
-  });
-
   /* ── River basins expand/collapse ── */
   document.addEventListener('DOMContentLoaded', function () {
     var toggleBtn = document.getElementById('basins-toggle');
