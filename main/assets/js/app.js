@@ -234,6 +234,18 @@ const APP = {
     });
     this.state.outlineLayers = {};
     const wasOpen = this.state.panelState === 'open' || this.state.panelState === 'peek';
+
+    /* Reset watershed selections to prevent bugs when switching sources */
+    this.state.activeWatershedIds = [];
+    if (this.state.watershedLayer) {
+      this.state.map.removeLayer(this.state.watershedLayer);
+      this.state.watershedLayer = null;
+    }
+    const wsBtn = document.getElementById('watershed-btn');
+    if (wsBtn) wsBtn.classList.remove('active');
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
     
     this.state.activeSource = name;
     this._loadHierarchy();
