@@ -17,6 +17,7 @@ const APP = {
     activeOutline: null,
     _outlineHighlight: null,
     activeWatershedIds: [],
+    watershedIntersections: null,
     hierarchy: null,
     activeSource: 'namria',
     activeMode: 'explore',
@@ -131,6 +132,11 @@ const APP = {
 
     /* Load hierarchy for active source */
     this._loadHierarchy();
+    
+    fetch('geoJSON/watershed-intersections.json')
+      .then(r => r.json())
+      .then(w => { this.state.watershedIntersections = w; })
+      .catch(() => {});
 
     /* Mouse move → update hover label position (throttled via RAF) */
     let _hoverX = 0, _hoverY = 0, _hoverPending = false;
@@ -264,6 +270,10 @@ const APP = {
 
       /* Parent context → thin dashed outline ("you are inside this boundary") */
       if (currentLevel > 0 && this.state.layers[currentLevel]) {
+        if (currentLevel === 1) {
+          this._updateSmartFilters(feature.properties._id);
+        }
+        
         const cfg = this.config.colors[currentLevel];
         this.state.layers[currentLevel].eachLayer(function(lf) {
           if (lf.feature === feature) {
@@ -316,6 +326,7 @@ const APP = {
       this.state._selectedLeafletLayer = null;
 
       if (targetLevel === 0) {
+        this._updateSmartFilters(null);
         for (let lvl = this._src().maxLevel; lvl > 1; lvl--) {
           if (this.state.layers[lvl]) {
             this.state.map.removeLayer(this.state.layers[lvl]);
@@ -360,6 +371,13 @@ const APP = {
       }
 
       /* Restore context layer style (was dimmed during drillDown) */
+      if (targetLevel <= 1) {
+        this._updateSmartFilters(null);
+      } else {
+        const provItem = this.state.selectedPath.find(i => i.level === 1);
+        if (provItem) this._updateSmartFilters(provItem.feature.properties._id);
+      }
+
       if (targetLevel > 0 && this.state.layers[targetLevel]) {
         this._resetLevelStyle(targetLevel);
         this.state.layers[targetLevel]._hiddenByDrill = false;
@@ -1364,6 +1382,34 @@ const APP = {
         this.closePanel();
       }
     }
+  },
+
+  _updateSmartFilters(provinceId) {
+    if (!this.state.watershedIntersections) return;
+    let allowed = null;
+    if (provinceId && this.state.watershedIntersections[provinceId]) {
+      allowed = this.state.watershedIntersections[provinceId];
+    }
+    
+    const options = document.querySelectorAll('.watershed-option');
+    options.forEach(opt => {
+      const checkbox = opt.querySelector('input');
+      if (!checkbox) return;
+      
+      if (allowed) {
+        if (allowed.includes(checkbox.value)) {
+          opt.classList.remove('dimmed');
+        } else {
+          opt.classList.add('dimmed');
+          if (checkbox.checked) {
+            checkbox.checked = false;
+            this.updateWatersheds(checkbox);
+          }
+        }
+      } else {
+        opt.classList.remove('dimmed');
+      }
+    });
   },
 
   _openWatershedPanel(feature) {

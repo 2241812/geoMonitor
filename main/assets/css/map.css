@@ -585,6 +585,11 @@ body.panel-open.panel-expanded .bottom-left-controls {
   accent-color: #2563eb;
 }
 
+.watershed-option.dimmed {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .basemap-option {
   display: flex;
   align-items: center;
