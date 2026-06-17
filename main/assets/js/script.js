@@ -1,6 +1,12 @@
 (function () {
   'use strict';
 
+  /* ── Scroll to Top on Refresh ── */
+  if (history.scrollRestoration) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
+
   /* ── Lenis Smooth Scroll ── */
   if (typeof Lenis !== 'undefined') {
     var lenis = new Lenis({
