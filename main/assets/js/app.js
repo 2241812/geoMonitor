@@ -19,6 +19,8 @@ const APP = {
     hierarchy: null,
     activeSource: 'namria',
     activeMode: 'explore',
+    watershedsActive: false,
+    watershedLayer: null,
   },
 
   config: {
@@ -57,6 +59,25 @@ const APP = {
       1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
       2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
       highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
+      watershed: { fill: '#0284c7', stroke: '#0ea5e9', weight: 2, fillOpacity: 0.2 },
+      watershedHighlight: { fill: '#0284c7', stroke: '#0284c7', weight: 3, fillOpacity: 0.5 },
+    },
+
+    watershedConnections: {
+      "Abra River Watershed": "West Philippine Sea",
+      "Abulug River Watershed": "Babuyan Channel",
+      "Agno River Watershed": "Lingayen Gulf",
+      "Amburayan River Watershed": "South China Sea",
+      "Aringay River Watershed": "Lingayen Gulf",
+      "Bued River Watershed": "Lingayen Gulf",
+      "Cabicungan River Watershed": "Babuyan Channel",
+      "Mallig River Watershed": "Cagayan River",
+      "Naguilian River Watershed": "South China Sea",
+      "Santa Maria River Watershed": "West Philippine Sea",
+      "Siffu River Watershed": "Cagayan River",
+      "Upper Chico River Watershed": "Cagayan River",
+      "Upper Magat River Watershed": "Cagayan River",
+      "Zumiqui-Ziwanan River Watershed": "Pamplona River"
     },
 
     baseMaps: {
@@ -1215,6 +1236,169 @@ const APP = {
     };
     document.addEventListener('fullscreenchange', updateIcon, { once: true });
     setTimeout(updateIcon, 100);
+  },
+
+  /* ── Watershed Overlay Toggle ───────────── */
+  async toggleWatersheds() {
+    this.state.watershedsActive = !this.state.watershedsActive;
+    const btn = document.getElementById('watershed-btn');
+    if (btn) btn.classList.toggle('active', this.state.watershedsActive);
+
+    if (this.state.watershedsActive) {
+      if (!this.state.watershedLayer) {
+        try {
+          const resp = await fetch('geoJSON/CAR Watersheds.geojson');
+          const data = await resp.json();
+          this.state.watershedLayer = L.geoJSON(data, {
+            style: () => this.config.colors.watershed,
+            onEachFeature: (feature, layer) => {
+              layer.on({
+                mouseover: (e) => {
+                  const props = feature.properties;
+                  const l = e.target;
+                  l.setStyle(this.config.colors.watershedHighlight);
+                  const lbl = document.getElementById('map-hover-label');
+                  if (lbl) {
+                    lbl.textContent = props.Name || props.Old_Name || 'Unknown Watershed';
+                    lbl.style.display = 'block';
+                    lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
+                    lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
+                  }
+                },
+                mousemove: (e) => {
+                  const lbl = document.getElementById('map-hover-label');
+                  if (lbl) {
+                    lbl.style.left = (e.originalEvent.pageX + 10) + 'px';
+                    lbl.style.top = (e.originalEvent.pageY + 10) + 'px';
+                  }
+                },
+                mouseout: (e) => {
+                  const l = e.target;
+                  if (this.state._outlineHighlight !== l) {
+                    l.setStyle(this.config.colors.watershed);
+                  }
+                  const lbl = document.getElementById('map-hover-label');
+                  if (lbl) lbl.style.display = 'none';
+                },
+                click: (e) => {
+                  L.DomEvent.stopPropagation(e);
+                  if (this.state._outlineHighlight) {
+                    this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
+                  }
+                  this.state._outlineHighlight = e.target;
+                  e.target.setStyle(this.config.colors.watershedHighlight);
+                  this.state.map.flyToBounds(e.target.getBounds(), {
+                    ...this._getPaddingOpts(),
+                    duration: 0.6,
+                    easeLinearity: 0.25
+                  });
+                  this._openWatershedPanel(feature);
+                }
+              });
+            }
+          });
+        } catch (err) {
+          console.error("Failed to load watersheds:", err);
+          this.state.watershedsActive = false;
+          if (btn) btn.classList.remove('active');
+          return;
+        }
+      }
+      this.state.map.addLayer(this.state.watershedLayer);
+      this.state.watershedLayer.bringToFront();
+      
+      this.state.map.flyToBounds(this.state.watershedLayer.getBounds(), {
+        ...this._getPaddingOpts(),
+        duration: 0.6,
+        easeLinearity: 0.25
+      });
+    } else {
+      if (this.state.watershedLayer) {
+        this.state.map.removeLayer(this.state.watershedLayer);
+      }
+      this.closePanel();
+      if (this.state.layers[0]) {
+        this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
+          ...this._getPaddingOpts(),
+          duration: 0.6,
+          easeLinearity: 0.25
+        });
+      }
+    }
+  },
+
+  _openWatershedPanel(feature) {
+    const p = feature.properties;
+    const name = p.Name || p.Old_Name || 'Unknown Watershed';
+    const id = p.WSID || p.UNQ_ID || '';
+    const connectsTo = this.config.watershedConnections[name] || 'Unknown';
+    
+    // Store in global state for chart
+    this.state.lastViewed = feature;
+    
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    
+    const html = `
+      <div class="panel-hero">
+        <div class="panel-badge-row">
+          <span class="panel-badge">Watershed</span>
+          <span class="panel-id-code">${this._escHtml(id)}</span>
+        </div>
+        <h2 class="panel-title">${this._escHtml(name)}</h2>
+        <p class="panel-subtitle">Hydrological Boundary</p>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">Connectivity</div>
+        <div class="stat-grid" style="grid-template-columns: 1fr;">
+          <div class="stat-box" style="background: #eff6ff; border-color: #bfdbfe;">
+            <div class="stat-label" style="color: #1e40af;">Connects To / Outflow</div>
+            <div class="stat-value" style="color: #1e3a8a; font-size: 1.1rem;">${this._escHtml(connectsTo)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">Details</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">Area (Ha)</div>
+            <div class="stat-value">${p.Area_Ha ? p.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:2}) : 'N/A'}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Size Category</div>
+            <div class="stat-value" style="font-size: 0.85rem; line-height: 1.2;">${this._escHtml(p.SIZE_W || 'N/A')}</div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 0.9rem; color: #4b5563;">
+          <strong>Regions Spanned:</strong> ${this._escHtml(p.Region || 'N/A')}
+        </div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-section-title">Measurements</div>
+        <div class="chart-container">
+          <canvas id="measurements-chart"></canvas>
+        </div>
+      </div>
+    `;
+
+    content.innerHTML = html;
+    
+    if (panel.classList.contains('closed')) {
+      if (window.innerWidth <= 640) {
+        panel.classList.remove('closed');
+        panel.classList.add('peek');
+        this.state.panelState = 'peek';
+      } else {
+        panel.classList.remove('closed');
+        panel.classList.add('open');
+        this.state.panelState = 'open';
+      }
+    }
+
+    this._renderChart(feature);
   },
 };
 
