@@ -154,25 +154,43 @@
 
 })();
 
-  /* ── Basin Card Click-to-Focus ── */
+  /* ── Basin Card Lightbox ── */
   document.addEventListener('DOMContentLoaded', function () {
     var basinCards = document.querySelectorAll('.basin-card');
+    var lightbox = document.getElementById('basin-lightbox');
+    if (!lightbox) return;
+
+    var lightboxImg = document.getElementById('basin-lightbox-img');
+    var lightboxIndex = document.getElementById('basin-lightbox-index');
+    var lightboxName = document.getElementById('basin-lightbox-name');
+    var lightboxDesc = document.getElementById('basin-lightbox-desc');
+    var lightboxClose = document.getElementById('basin-lightbox-close');
+    var lightboxBg = document.querySelector('.basin-lightbox-bg');
+
     basinCards.forEach(function(card) {
       card.addEventListener('click', function() {
-        // Toggle the focus state on this card
-        this.classList.toggle('basin-card-focus');
-        
-        // Optionally remove focus from other cards if we only want one active
-        basinCards.forEach(function(otherCard) {
-          if (otherCard !== card) {
-            otherCard.classList.remove('basin-card-focus');
-          }
-        });
-      });
-      
-      // Also close focus if mouse leaves? Maybe not, click to toggle is fine.
-      card.addEventListener('mouseleave', function() {
-        this.classList.remove('basin-card-focus');
+        var img = this.querySelector('.basin-card-image');
+        var index = this.querySelector('.basin-card-index');
+        var name = this.querySelector('.basin-card-name');
+        var desc = this.querySelector('.basin-card-desc');
+
+        if (img) lightboxImg.src = img.src;
+        if (img) lightboxImg.alt = img.alt;
+        if (index) lightboxIndex.textContent = index.textContent;
+        if (name) lightboxName.textContent = name.textContent;
+        if (desc) lightboxDesc.textContent = desc.textContent;
+
+        lightbox.classList.add('active');
+        // Disable body scroll when lightbox is open
+        document.body.style.overflow = 'hidden';
       });
     });
+
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+    if (lightboxBg) lightboxBg.addEventListener('click', closeLightbox);
   });
