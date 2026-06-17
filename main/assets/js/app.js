@@ -308,9 +308,10 @@ const APP = {
         /* Zoom to CAR bounds */
         /* Jump back to CAR bounds without animation */
         if (this.state.layers[0]) {
-          this.state.map.fitBounds(this.state.layers[0].getBounds(), {
+          this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
             padding: [40, 40],
-            animate: false
+            duration: 0.8,
+            easeLinearity: 0.25
           });
         }
         /* Show CAR info in panel */
@@ -354,9 +355,10 @@ const APP = {
           levelLayer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
               const targetBounds = lf.getBounds();
-              this.state.map.fitBounds(targetBounds, {
+              this.state.map.flyToBounds(targetBounds, {
                 padding: [40, 40],
-                animate: false
+                duration: 0.8,
+                easeLinearity: 0.25
               });
             }
           });
@@ -364,9 +366,10 @@ const APP = {
       } else if (targetLevel === 0 && this.state.layers[0]) {
         /* Jump to region reset */
         const regionBounds = this.state.layers[0].getBounds();
-        this.state.map.fitBounds(regionBounds, {
+        this.state.map.flyToBounds(regionBounds, {
           padding: [40, 40],
-          animate: false
+          duration: 0.8,
+          easeLinearity: 0.25
         });
       }
 
