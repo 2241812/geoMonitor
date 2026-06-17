@@ -33,17 +33,7 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
     </a>
 
-    <!-- Dataset Source Switcher — top-left -->
-    <div class="source-toggle-control" id="source-toggle-control">
-      <button class="source-toggle-btn active" id="btn-namria" onclick="APP.switchSource('namria')" title="Switch to NAMRIA Data">NAMRIA</button>
-      <button class="source-toggle-btn" id="btn-cad" onclick="APP.switchSource('cad')" title="Switch to CAD Data">CAD</button>
-    </div>
 
-    <!-- Reset to CAR overview pill — top-right -->
-    <button class="reset-view-btn map-pill-btn" onclick="APP.drillUp(0)" title="Reset to CAR overview">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-      Home
-    </button>
 
     <!-- Fullscreen toggle — top-right -->
     <button class="map-fullscreen-btn map-icon-btn" id="map-fullscreen-btn" onclick="APP.toggleFullscreen()" title="Enter fullscreen">
@@ -53,8 +43,16 @@
     <!-- Outline toggle buttons (rendered dynamically) -->
     <div class="outline-toggles" id="outline-toggles"></div>
 
-    <!-- Bottom-center: Breadcrumb nav bar (rendered dynamically by APP._updateBreadcrumb) -->
-    <div class="map-breadcrumb" id="map-breadcrumb"></div>
+    <!-- Bottom-center controls -->
+    <div class="bottom-center-controls">
+      <!-- Dataset Source Switcher -->
+      <div class="source-toggle-control" id="source-toggle-control">
+        <button class="source-toggle-btn active" id="btn-namria" onclick="APP.switchSource('namria')" title="Switch to NAMRIA Data">NAMRIA</button>
+        <button class="source-toggle-btn" id="btn-cad" onclick="APP.switchSource('cad')" title="Switch to CAD Data">CAD</button>
+      </div>
+      <!-- Breadcrumb nav bar -->
+      <div class="map-breadcrumb" id="map-breadcrumb"></div>
+    </div>
 
     <!-- Bottom-left Controls wrapper -->
     <div class="bottom-left-controls" id="bottom-left-controls">
