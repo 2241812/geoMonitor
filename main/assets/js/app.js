@@ -221,6 +221,14 @@ const APP = {
     this.state.activeSource = name;
     this._loadHierarchy();
     this._updateBreadcrumb();
+    
+    document.querySelectorAll('.source-toggle-btn').forEach(btn => {
+      if (btn.id === `btn-${name}`) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
 
     window.initLayers().then(() => {
       if (wasOpen) {
@@ -992,18 +1000,10 @@ const APP = {
 
     let html = '';
 
-    const namriaActive = this.state.activeSource === 'namria' ? 'active' : '';
-    const cadActive = this.state.activeSource === 'cad' ? 'active' : '';
-
     html += `<div class="panel-hero">
       <div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
       <h2 class="panel-title">${this._escHtml(name)}</h2>
       <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>
-      
-      <div class="panel-source-switch">
-        <button class="source-switch-btn ${namriaActive}" onclick="APP.switchSource('namria')">NAMRIA</button>
-        <button class="source-switch-btn ${cadActive}" onclick="APP.switchSource('cad')">CAD</button>
-      </div>
     </div>`;
 
     if (level < src.maxLevel) {
@@ -1052,6 +1052,7 @@ const APP = {
       if (intersectingWs.length > 0) {
         expandedHtml = `<div class="expanded-content">
           <div class="panel-section-title">Intersecting Watersheds</div>
+          <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">The following watersheds have been highlighted on the map:</p>
           <div class="watershed-list">
             ${intersectingWs.map(ws => `
               <div class="watershed-list-item">
@@ -1066,10 +1067,11 @@ const APP = {
       }
     }
 
-    if (expandedHtml || chartData.values.length > 0) {
+    if (expandedHtml) {
       html += `<div class="panel-show-more">
-        <button class="show-more-btn" onclick="APP.toggleExpandedPanel()">
-          Show More
+        <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          View Watersheds on Map
         </button>
       </div>`;
       html += expandedHtml;
@@ -1180,7 +1182,7 @@ const APP = {
     if (isExpanded) {
       panel.classList.remove('expanded');
       document.body.classList.remove('panel-expanded');
-      if (btn) btn.innerText = 'Show More';
+      if (btn) btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> View Watersheds on Map`;
       
       /* Turn off auto-checked watersheds */
       const promises = [];
@@ -1206,7 +1208,7 @@ const APP = {
     } else {
       panel.classList.add('expanded');
       document.body.classList.add('panel-expanded');
-      if (btn) btn.innerText = 'Show Less';
+      if (btn) btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hide Watersheds`;
       
       /* Turn on all unchecked watersheds */
       const promises = [];
@@ -1548,17 +1550,17 @@ const APP = {
     let backButtonHTML = '';
     if (this.state.selectedPath && this.state.selectedPath.length > 0) {
       const lastBoundary = this.state.selectedPath[this.state.selectedPath.length - 1];
-      backButtonHTML = `<button onclick="APP._clearWatershedHighlightAndReturn(${lastBoundary.level})" style="background:none;border:none;color:#0ea5e9;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;gap:4px;padding:0;margin-left:auto;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to ${this._escHtml(lastBoundary.name)}
+      backButtonHTML = `<button onclick="APP._clearWatershedHighlightAndReturn(${lastBoundary.level})" style="background:none;border:none;color:#0ea5e9;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;gap:4px;padding:0;margin-bottom:12px;font-weight:500;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to ${this._escHtml(lastBoundary.name)}
       </button>`;
     }
     
     const html = `
       <div class="panel-hero">
+        ${backButtonHTML}
         <div class="panel-badge-row" style="display:flex; align-items:center;">
           <span class="panel-badge">Watershed</span>
           <span class="panel-id-code" style="margin-left:8px;">${this._escHtml(id)}</span>
-          ${backButtonHTML}
         </div>
         <h2 class="panel-title">${this._escHtml(name)}</h2>
         <p class="panel-subtitle">Hydrological Boundary</p>
@@ -1591,12 +1593,7 @@ const APP = {
         </div>
       </div>
       
-      <div class="panel-show-more">
-        <button class="show-more-btn" onclick="APP.toggleExpandedPanel()">
-          Show More
-        </button>
-      </div>
-      <div class="expanded-content" style="font-size: 0.95rem; color: #374151; line-height: 1.6;">
+      <div class="panel-section" style="font-size: 0.95rem; color: #374151; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 16px;">
         <div class="panel-section-title">Basin Overview</div>
         <p>${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
       </div>
