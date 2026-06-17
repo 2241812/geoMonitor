@@ -41,5 +41,306 @@
     "Siffu River Watershed",
     "Upper Chico River Watershed",
     "Upper Magat River Watershed"
+  ],
+  "apayao:calanasan": [
+    "Abulug River Watershed",
+    "Cabicungan River Watershed",
+    "Zumigui-Ziwanan River Watershed"
+  ],
+  "apayao:luna": [
+    "Abulug River Watershed",
+    "Cabicungan River Watershed",
+    "Zumigui-Ziwanan River Watershed"
+  ],
+  "apayao:santa-marcela": [
+    "Abulug River Watershed"
+  ],
+  "apayao:flora": [
+    "Abulug River Watershed"
+  ],
+  "apayao:pudtol": [
+    "Abulug River Watershed",
+    "Zumigui-Ziwanan River Watershed"
+  ],
+  "apayao:kabugao": [
+    "Abra River Watershed",
+    "Abulug River Watershed",
+    "Upper Chico River Watershed",
+    "Zumigui-Ziwanan River Watershed"
+  ],
+  "abra:tineg": [
+    "Abra River Watershed",
+    "Abulug River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "apayao:conner": [
+    "Abra River Watershed",
+    "Abulug River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:lagayan": [
+    "Abra River Watershed"
+  ],
+  "abra:danglas": [
+    "Abra River Watershed"
+  ],
+  "abra:san-juan": [
+    "Abra River Watershed"
+  ],
+  "abra:bangued": [
+    "Abra River Watershed"
+  ],
+  "abra:lacub": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:lagiden": [
+    "Abra River Watershed"
+  ],
+  "abra:la-paz": [
+    "Abra River Watershed"
+  ],
+  "abra:lagangilang": [
+    "Abra River Watershed"
+  ],
+  "kalinga:pinukpuk": [
+    "Upper Chico River Watershed"
+  ],
+  "kalinga:balbalan": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:dolores": [
+    "Abra River Watershed"
+  ],
+  "abra:baay-licuan": [
+    "Abra River Watershed"
+  ],
+  "abra:malibcong": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:tayum": [
+    "Abra River Watershed"
+  ],
+  "abra:bucay": [
+    "Abra River Watershed"
+  ],
+  "abra:pidigan": [
+    "Abra River Watershed"
+  ],
+  "abra:penarrubia": [
+    "Abra River Watershed"
+  ],
+  "kalinga:rizal-liwan": [
+    "Upper Chico River Watershed"
+  ],
+  "abra:san-quintin": [
+    "Abra River Watershed"
+  ],
+  "kalinga:tabuk": [
+    "Mallig River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:sallapadan": [
+    "Abra River Watershed"
+  ],
+  "abra:daguioman": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:san-isidro": [
+    "Abra River Watershed"
+  ],
+  "abra:bucloc": [
+    "Abra River Watershed"
+  ],
+  "abra:villaviciosa": [
+    "Abra River Watershed",
+    "Santa Maria River Watershed"
+  ],
+  "abra:manabo": [
+    "Abra River Watershed"
+  ],
+  "abra:pilar": [
+    "Abra River Watershed",
+    "Santa Maria River Watershed"
+  ],
+  "kalinga:pasil": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:boliney": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:luba": [
+    "Abra River Watershed",
+    "Santa Maria River Watershed"
+  ],
+  "kalinga:tanudan": [
+    "Mallig River Watershed",
+    "Siffu River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "kalinga:lubuagan": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "abra:tubo": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "kalinga:tinglayan": [
+    "Upper Chico River Watershed"
+  ],
+  "mountain-province:paracelis": [
+    "Mallig River Watershed",
+    "Siffu River Watershed"
+  ],
+  "mountain-province:sadanga": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "mountain-province:natonin": [
+    "Mallig River Watershed",
+    "Siffu River Watershed",
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "mountain-province:bontoc": [
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "mountain-province:besao": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "mountain-province:sagada": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "mountain-province:barlig": [
+    "Siffu River Watershed",
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "ifugao:alfonso-lista": [
+    "Siffu River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "ifugao:aguinaldo": [
+    "Siffu River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "mountain-province:tadian": [
+    "Abra River Watershed",
+    "Upper Chico River Watershed"
+  ],
+  "mountain-province:bauko": [
+    "Abra River Watershed",
+    "Agno River Watershed",
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "ifugao:mayoyao": [
+    "Siffu River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "mountain-province:sabangan": [
+    "Upper Chico River Watershed"
+  ],
+  "ifugao:banaue": [
+    "Siffu River Watershed",
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "ifugao:hungduan": [
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "benguet:mankayan": [
+    "Abra River Watershed",
+    "Agno River Watershed"
+  ],
+  "benguet:bakun": [
+    "Abra River Watershed",
+    "Bayogao River Watershed"
+  ],
+  "ifugao:hingyon": [
+    "Upper Magat River Watershed"
+  ],
+  "ifugao:lagawe": [
+    "Upper Magat River Watershed"
+  ],
+  "ifugao:tinoc": [
+    "Abra River Watershed",
+    "Agno River Watershed",
+    "Upper Chico River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "benguet:buguias": [
+    "Abra River Watershed",
+    "Agno River Watershed",
+    "Bayogao River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "ifugao:kiangan": [
+    "Upper Magat River Watershed"
+  ],
+  "benguet:kibungan": [
+    "Bayogao River Watershed"
+  ],
+  "ifugao:lamut": [
+    "Upper Magat River Watershed"
+  ],
+  "benguet:kapangan": [
+    "Bayogao River Watershed",
+    "Naguilian River Watershed"
+  ],
+  "benguet:kabayan": [
+    "Agno River Watershed",
+    "Bayogao River Watershed"
+  ],
+  "benguet:atok": [
+    "Agno River Watershed",
+    "Bayogao River Watershed"
+  ],
+  "benguet:bokod": [
+    "Agno River Watershed",
+    "Bayogao River Watershed",
+    "Upper Magat River Watershed"
+  ],
+  "benguet:sablan": [
+    "Aringay River Watershed",
+    "Naguilian River Watershed"
+  ],
+  "benguet:tublay": [
+    "Agno River Watershed",
+    "Bayogao River Watershed",
+    "Naguilian River Watershed"
+  ],
+  "benguet:la-trinidad": [
+    "Agno River Watershed",
+    "Aringay River Watershed",
+    "Naguilian River Watershed"
+  ],
+  "benguet:itogon": [
+    "Agno River Watershed",
+    "Bued River Watershed"
+  ],
+  "benguet:tuba": [
+    "Agno River Watershed",
+    "Aringay River Watershed",
+    "Bued River Watershed"
+  ],
+  "benguet:baguio": [
+    "Agno River Watershed",
+    "Aringay River Watershed",
+    "Bued River Watershed",
+    "Naguilian River Watershed"
+  ],
+  "ifugao:asipulo": [
+    "Upper Magat River Watershed"
   ]
 }

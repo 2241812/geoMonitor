@@ -71,14 +71,27 @@ const APP = {
       "Agno River Watershed": "Lingayen Gulf",
       "Amburayan River Watershed": "South China Sea",
       "Aringay River Watershed": "Lingayen Gulf",
+      "Bayogao River Watershed": "South China Sea",
       "Bued River Watershed": "Lingayen Gulf",
       "Cabicungan River Watershed": "Babuyan Channel",
       "Mallig River Watershed": "Cagayan River",
-      "Naguilian River Watershed": "South China Sea",
+      "Naguilian River Watershed": "West Philippine Sea",
       "Santa Maria River Watershed": "West Philippine Sea",
       "Siffu River Watershed": "Cagayan River",
       "Upper Chico River Watershed": "Cagayan River",
       "Upper Magat River Watershed": "Cagayan River",
+      "Zumigui-Ziwanan River Watershed": "Babuyan Channel"
+    },
+
+    watershedDescriptions: {
+      "Upper Chico River Watershed": "The Upper Chico River Watershed is a major headwater system for the Chico River, flowing through the Cordillera mountains and primarily draining into the Cagayan River Basin. It plays a critical role in supporting local agriculture and the region's indigenous communities.",
+      "Upper Magat River Watershed": "This watershed forms the upper reaches of the Magat River, a vital tributary of the Cagayan River. It is characterized by steep mountainous terrain and is essential for supplying water to the Magat Dam, which supports large-scale irrigation and hydroelectric power generation.",
+      "Siffu River Watershed": "The Siffu River Watershed spans the eastern slopes of the Cordillera Central, eventually draining into the Magat River. It serves as an important agricultural water source for the surrounding lowland communities.",
+      "Mallig River Watershed": "A significant sub-basin of the Cagayan River system, the Mallig River Watershed covers portions of Kalinga and Mountain Province, delivering vital surface water to the agricultural plains below.",
+      "Zumigui-Ziwanan River Watershed": "Also known as the Pamplona or Manucotae watershed, this river system primarily drains northward towards the Babuyan Channel. It features dense forest cover and is critical for maintaining the region's hydrological balance.",
+      "Abra River Watershed": "The Abra River Watershed is the largest river basin in the Ilocos Region, originating from the slopes of Mount Data in the Cordillera Central. It carves a deep valley westward before emptying into the West Philippine Sea.",
+      "Naguilian River Watershed": "The Naguilian River Watershed flows westward from the mountains of Benguet, directly draining into the West Philippine Sea. It is a smaller but essential basin supporting local municipalities along the La Union coast.",
+      "Aringay River Watershed": "Originating from the rugged terrains of Benguet, the Aringay River Watershed runs westward into the Lingayen Gulf. The basin is characterized by varied topography and supports diverse local ecosystems.",
       "Zumiqui-Ziwanan River Watershed": "Pamplona River"
     },
 
@@ -1033,12 +1046,36 @@ const APP = {
       </div>
     </div>`;
 
-    /* Add Show More Button */
-    html += `<div class="panel-show-more">
-      <button class="show-more-btn" onclick="APP.toggleExpandedPanel()">
-        Show More
-      </button>
-    </div>`;
+    /* Add Show More Button and Expanded Content */
+    let expandedHtml = '';
+    const id = props._id;
+    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+      const intersectingWs = this.state.watershedIntersections[id];
+      if (intersectingWs.length > 0) {
+        expandedHtml = `<div class="expanded-content">
+          <div class="panel-section-title">Intersecting Watersheds</div>
+          <div class="watershed-list">
+            ${intersectingWs.map(ws => `
+              <div class="watershed-list-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path>
+                </svg>
+                ${this._escHtml(ws)}
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }
+    }
+
+    if (expandedHtml || chartData.values.length > 0) {
+      html += `<div class="panel-show-more">
+        <button class="show-more-btn" onclick="APP.toggleExpandedPanel()">
+          Show More
+        </button>
+      </div>`;
+      html += expandedHtml;
+    }
 
     content.innerHTML = html;
     panel.classList.remove('open');
@@ -1459,6 +1496,16 @@ const APP = {
         <div style="margin-top: 12px; font-size: 0.9rem; color: #4b5563;">
           <strong>Regions Spanned:</strong> ${this._escHtml(p.Region || 'N/A')}
         </div>
+      </div>
+      
+      <div class="panel-show-more">
+        <button class="show-more-btn" onclick="APP.toggleExpandedPanel()">
+          Show More
+        </button>
+      </div>
+      <div class="expanded-content" style="font-size: 0.95rem; color: #374151; line-height: 1.6;">
+        <div class="panel-section-title">Basin Overview</div>
+        <p>${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
       </div>
     `;
 
