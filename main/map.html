@@ -74,12 +74,29 @@
       </div>
       
       <!-- Watershed toggle -->
-      <div class="watershed-toggle-wrapper">
-        <button class="map-icon-btn watershed-btn" id="watershed-btn" onclick="APP.toggleWatersheds()" title="Toggle Watershed Boundaries">
+      <div class="watershed-switcher" id="watershed-switcher">
+        <button class="map-icon-btn watershed-btn" id="watershed-btn" onclick="APP.toggleWatershedMenu()" title="Toggle Watershed Layers">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path>
           </svg>
         </button>
+        <div class="watershed-options" id="watershed-options">
+          <div class="watershed-options-header">Select Watersheds</div>
+          <label class="watershed-option"><input type="checkbox" value="Abra River Watershed" onchange="APP.updateWatersheds(this)"> Abra River Watershed</label>
+          <label class="watershed-option"><input type="checkbox" value="Abulug River Watershed" onchange="APP.updateWatersheds(this)"> Abulug River Watershed</label>
+          <label class="watershed-option"><input type="checkbox" value="Agno River Watershed" onchange="APP.updateWatersheds(this)"> Agno River Watershed</label>
+          <label class="watershed-option"><input type="checkbox" value="Amburayan River Watershed" onchange="APP.updateWatersheds(this)"> Amburayan River Watershed</label>
+          <label class="watershed-option"><input type="checkbox" value="Aringay River Watershed" onchange="APP.updateWatersheds(this)"> Aringay River Watershed</label>
+          <label class="watershed-option"><input type="checkbox" value="Bued River Watershed" onchange="APP.updateWatersheds(this)"> Bued River Watershed</label>
+          <label class="watershed-option"><input type="checkbox" value="Cabicungan River Watershed" onchange="APP.updateWatersheds(this)"> Cabicungan River</label>
+          <label class="watershed-option"><input type="checkbox" value="Mallig River Watershed" onchange="APP.updateWatersheds(this)"> Mallig River</label>
+          <label class="watershed-option"><input type="checkbox" value="Naguilian River Watershed" onchange="APP.updateWatersheds(this)"> Naguilian River</label>
+          <label class="watershed-option"><input type="checkbox" value="Santa Maria River Watershed" onchange="APP.updateWatersheds(this)"> Santa Maria River</label>
+          <label class="watershed-option"><input type="checkbox" value="Siffu River Watershed" onchange="APP.updateWatersheds(this)"> Siffu River</label>
+          <label class="watershed-option"><input type="checkbox" value="Upper Chico River Watershed" onchange="APP.updateWatersheds(this)"> Upper Chico River</label>
+          <label class="watershed-option"><input type="checkbox" value="Upper Magat River Watershed" onchange="APP.updateWatersheds(this)"> Upper Magat River</label>
+          <label class="watershed-option"><input type="checkbox" value="Zumiqui-Ziwanan River Watershed" onchange="APP.updateWatersheds(this)"> Zumiqui-Ziwanan</label>
+        </div>
       </div>
     </div>
 
