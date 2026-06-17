@@ -1181,28 +1181,55 @@ const APP = {
       panel.classList.remove('expanded');
       document.body.classList.remove('panel-expanded');
       if (btn) btn.innerText = 'Show More';
-      if (this.state.map) this.state.map.panBy([58, 0], {animate: true, duration: 0.3});
       
       /* Turn off auto-checked watersheds */
+      const promises = [];
       panelCheckboxes.forEach(cb => {
         if (cb.dataset.autoChecked === 'true') {
           cb.checked = false;
           cb.dataset.autoChecked = 'false';
-          this.updateWatersheds(cb);
+          promises.push(this.updateWatersheds(cb));
+        }
+      });
+      
+      Promise.all(promises).then(() => {
+        if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
+          this.state.map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), {
+            ...this._getPaddingOpts(),
+            duration: 0.8,
+            easeLinearity: 0.25
+          });
+        } else if (this.state.map) {
+          this.state.map.panBy([58, 0], {animate: true, duration: 0.3});
         }
       });
     } else {
       panel.classList.add('expanded');
       document.body.classList.add('panel-expanded');
       if (btn) btn.innerText = 'Show Less';
-      if (this.state.map) this.state.map.panBy([-58, 0], {animate: true, duration: 0.3});
       
       /* Turn on all unchecked watersheds */
+      const promises = [];
       panelCheckboxes.forEach(cb => {
         if (!cb.checked) {
           cb.checked = true;
           cb.dataset.autoChecked = 'true';
-          this.updateWatersheds(cb);
+          promises.push(this.updateWatersheds(cb));
+        }
+      });
+      
+      Promise.all(promises).then(() => {
+        if (this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
+          const bounds = this.state.watershedLayer.getBounds();
+          if (bounds && bounds.isValid()) {
+            this.state.map.flyToBounds(bounds, {
+              ...this._getPaddingOpts(),
+              duration: 0.8,
+              easeLinearity: 0.25
+            });
+          }
+        } else if (this.state.map) {
+          this.state.map.panBy([-58, 0], {animate: true, duration: 0.3});
         }
       });
     }
