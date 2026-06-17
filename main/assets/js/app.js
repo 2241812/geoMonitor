@@ -268,7 +268,7 @@ const APP = {
       }
 
       /* Delayed child reveal: render children after zoom starts settling */
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 800));
       await this._showLevel(nextLevel, feature, currentLevel);
 
       this._updateOutlines();
@@ -306,12 +306,11 @@ const APP = {
         if (!this.state.layers[1]) await this._showLevel(1, null, null);
         this.state.currentLevel = 1;
         /* Zoom to CAR bounds */
-        /* Fly back to CAR bounds with smooth animation */
+        /* Jump back to CAR bounds without animation */
         if (this.state.layers[0]) {
-          this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
+          this.state.map.fitBounds(this.state.layers[0].getBounds(), {
             padding: [40, 40],
-            duration: 0.8,
-            easeLinearity: 0.25,
+            animate: false
           });
         }
         /* Show CAR info in panel */
@@ -347,7 +346,7 @@ const APP = {
       this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
       this.state.currentLevel = targetLevel;
 
-      /* Zoom-out-then-in: briefly zoom wider, then ease to the target */
+      /* Jump to target without animation */
       if (targetLevel > 0 && this.state.selectedPath.length > 0) {
         const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
         const levelLayer = this.state.layers[targetLevel];
@@ -355,38 +354,20 @@ const APP = {
           levelLayer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
               const targetBounds = lf.getBounds();
-              /* Step 1: zoom out wider */
-              this.state.map.flyToBounds(targetBounds.pad(0.5), {
-                padding: [60, 60],
-                duration: 0.4,
-                easeLinearity: 0.5,
+              this.state.map.fitBounds(targetBounds, {
+                padding: [40, 40],
+                animate: false
               });
-              /* Step 2: ease back in to the actual target */
-              setTimeout(() => {
-                this.state.map.flyToBounds(targetBounds, {
-                  padding: [40, 40],
-                  duration: 0.5,
-                  easeLinearity: 0.25,
-                });
-              }, 420);
             }
           });
         }
       } else if (targetLevel === 0 && this.state.layers[0]) {
-        /* Zoom-out-then-in for region reset */
+        /* Jump to region reset */
         const regionBounds = this.state.layers[0].getBounds();
-        this.state.map.flyToBounds(regionBounds.pad(0.3), {
+        this.state.map.fitBounds(regionBounds, {
           padding: [40, 40],
-          duration: 0.4,
-          easeLinearity: 0.5,
+          animate: false
         });
-        setTimeout(() => {
-          this.state.map.flyToBounds(regionBounds, {
-            padding: [40, 40],
-            duration: 0.5,
-            easeLinearity: 0.25,
-          });
-        }, 420);
       }
 
       /* Show the feature at target level in panel and KEEP IT HIGHLIGHTED */
@@ -457,6 +438,7 @@ const APP = {
         color: styleConfig.stroke,
         weight: styleConfig.weight,
         opacity: 0.9,
+        className: 'fade-in-path',
         dashArray: null,
       }),
 
