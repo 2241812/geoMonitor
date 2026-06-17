@@ -59,8 +59,8 @@ const APP = {
       1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
       2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
       highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
-      watershed: { fill: '#0284c7', stroke: '#0ea5e9', weight: 2, fillOpacity: 0.2 },
-      watershedHighlight: { fill: '#0284c7', stroke: '#0284c7', weight: 3, fillOpacity: 0.5 },
+      watershed: { fill: '#0ea5e9', stroke: '#0ea5e9', weight: 2, fillOpacity: 0 },
+      watershedHighlight: { fill: '#0ea5e9', stroke: '#0284c7', weight: 4, fillOpacity: 0.1 },
     },
 
     watershedConnections: {
@@ -1295,11 +1295,6 @@ const APP = {
                   }
                   this.state._outlineHighlight = e.target;
                   e.target.setStyle(this.config.colors.watershedHighlight);
-                  this.state.map.flyToBounds(e.target.getBounds(), {
-                    ...this._getPaddingOpts(),
-                    duration: 0.6,
-                    easeLinearity: 0.25
-                  });
                   this._openWatershedPanel(feature);
                 }
               });
