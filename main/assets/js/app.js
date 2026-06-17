@@ -1511,6 +1511,26 @@ const APP = {
     });
   },
 
+  _clearWatershedHighlightAndReturn(level) {
+    if (this.state._outlineHighlight && this.state.watershedLayer) {
+      this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
+      this.state._outlineHighlight = null;
+    }
+    const lastBoundary = this.state.selectedPath.find(p => p.level === level);
+    if (lastBoundary) {
+      this.openPanel(lastBoundary.feature, lastBoundary.level);
+      if (this.state._wasExpandedBeforeWatershed) {
+        this.toggleExpandedPanel();
+      } else if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
+        this.state.map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), {
+          ...this._getPaddingOpts(),
+          duration: 0.8,
+          easeLinearity: 0.25
+        });
+      }
+    }
+  },
+
   _openWatershedPanel(feature) {
     const p = feature.properties;
     const name = p.Name || p.Old_Name || 'Unknown Watershed';
@@ -1523,11 +1543,22 @@ const APP = {
     const panel = document.getElementById('info-panel');
     const content = document.getElementById('info-panel-content');
     
+    this.state._wasExpandedBeforeWatershed = panel.classList.contains('expanded');
+    
+    let backButtonHTML = '';
+    if (this.state.selectedPath && this.state.selectedPath.length > 0) {
+      const lastBoundary = this.state.selectedPath[this.state.selectedPath.length - 1];
+      backButtonHTML = `<button onclick="APP._clearWatershedHighlightAndReturn(${lastBoundary.level})" style="background:none;border:none;color:#0ea5e9;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;gap:4px;padding:0;margin-left:auto;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to ${this._escHtml(lastBoundary.name)}
+      </button>`;
+    }
+    
     const html = `
       <div class="panel-hero">
-        <div class="panel-badge-row">
+        <div class="panel-badge-row" style="display:flex; align-items:center;">
           <span class="panel-badge">Watershed</span>
-          <span class="panel-id-code">${this._escHtml(id)}</span>
+          <span class="panel-id-code" style="margin-left:8px;">${this._escHtml(id)}</span>
+          ${backButtonHTML}
         </div>
         <h2 class="panel-title">${this._escHtml(name)}</h2>
         <p class="panel-subtitle">Hydrological Boundary</p>
