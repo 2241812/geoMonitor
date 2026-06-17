@@ -1496,6 +1496,6 @@ html.lenis, html.lenis body { height: auto; }
   to { opacity: 0.9; }
 }
 .fade-in-path {
-  animation: mapFadeIn 0.2s ease-in-out forwards;
+  animation: mapFadeIn 0.05s ease-in-out forwards;
 }
 
