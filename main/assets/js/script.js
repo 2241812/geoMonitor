@@ -109,7 +109,43 @@
           ctaBg.style.transform = 'translateY(' + (ctaProgress * 25) + '%)';
         }
       }
+
+      // Hide scroll arrow near dashboard section
+      var scrollArrow = document.querySelector('.scroll-arrow');
+      var dashboardSection = document.getElementById('dashboard-section');
+      if (scrollArrow && dashboardSection) {
+        var dashRect = dashboardSection.getBoundingClientRect();
+        if (dashRect.top <= window.innerHeight * 0.8) {
+          scrollArrow.classList.add('scroll-arrow-hidden');
+          scrollArrow.classList.remove('scroll-arrow-visible');
+        } else {
+          scrollArrow.classList.add('scroll-arrow-visible');
+          scrollArrow.classList.remove('scroll-arrow-hidden');
+        }
+      }
     }, { passive: true });
+  });
+
+  /* ── Snap Toggle ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    var snapToggle = document.getElementById('snap-toggle');
+    var snapToggleText = document.querySelector('.snap-toggle-text');
+    var isSnapEnabled = false;
+
+    if (snapToggle) {
+      snapToggle.addEventListener('click', function() {
+        isSnapEnabled = !isSnapEnabled;
+        if (isSnapEnabled) {
+          document.documentElement.classList.add('snap-enabled');
+          snapToggle.classList.add('active');
+          if (snapToggleText) snapToggleText.textContent = 'Snap: On';
+        } else {
+          document.documentElement.classList.remove('snap-enabled');
+          snapToggle.classList.remove('active');
+          if (snapToggleText) snapToggleText.textContent = 'Snap: Off';
+        }
+      });
+    }
   });
 
   /* ── River basins expand/collapse ── */
