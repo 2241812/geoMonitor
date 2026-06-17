@@ -74,9 +74,18 @@
       </div>
     </section>
 
-    <a href="#dashboard-section" class="scroll-arrow scroll-arrow-visible fade-in-up">
-      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </a>
+    <div class="hero-bottom-controls fade-in-up">
+      <button id="snap-toggle" class="snap-toggle" title="Toggle Scroll Snapping">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 8h16M4 16h16M8 3v5M16 3v5M8 16v5M16 16v5"/>
+        </svg>
+        <span class="snap-toggle-text">Snap: Off</span>
+      </button>
+
+      <a href="#dashboard-section" class="scroll-arrow scroll-arrow-visible">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </a>
+    </div>
 
     <!-- ═══════════ STATS ═══════════ -->
     <section class="stats-section" id="stats-section">

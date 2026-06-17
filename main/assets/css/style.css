@@ -358,11 +358,51 @@ img {
     0 0 0 3px rgba(6, 95, 70, 0.1);
 }
 
-.scroll-arrow {
+.hero-bottom-controls {
   position: fixed;
   bottom: 48px;
   right: 48px;
   z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.snap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.3s ease;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.snap-toggle:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(74, 222, 128, 0.5);
+  color: #4ade80;
+}
+
+.snap-toggle.active {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+.scroll-arrow {
+  position: relative;
   cursor: pointer;
   color: #4ade80;
   filter: drop-shadow(0 0 20px rgba(74, 222, 128, 0.5)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
@@ -394,7 +434,7 @@ img {
 }
 
 @media (max-width: 768px) {
-  .scroll-arrow {
+  .hero-bottom-controls {
     right: 24px;
     bottom: 24px;
   }
@@ -1330,3 +1370,11 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-stopped { overflow: hidden; }
 .lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* ============ Scroll Snapping ============ */
+html.snap-enabled {
+  scroll-snap-type: y mandatory;
+}
+html.snap-enabled section {
+  scroll-snap-align: start;
+}
