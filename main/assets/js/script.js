@@ -92,8 +92,8 @@
     window.addEventListener('scroll', function () {
       var scrollY = window.scrollY;
       
-      // Header sticky state
-      if (scrollY > 60) {
+      // Header transparent state (threshold: 50px)
+      if (scrollY > 50) {
         header.classList.add('scrolled');
       } else {
         header.classList.remove('scrolled');
@@ -110,26 +110,54 @@
       if (ctaBg) {
         var ctaRect = document.getElementById('dashboard-section').getBoundingClientRect();
         if (ctaRect.top < window.innerHeight && ctaRect.bottom > 0) {
-          // Calculate progress from 0 (just appeared) to 1 (fully scrolled past)
           var ctaProgress = 1 - (ctaRect.bottom / (window.innerHeight + ctaRect.height));
           ctaBg.style.transform = 'translateY(' + (ctaProgress * 25) + '%)';
         }
       }
 
-      // Hide scroll arrow near dashboard section
-      var scrollArrow = document.querySelector('.scroll-arrow');
+      // 3-state navigation arrows
+      var downArrow = document.getElementById('nav-arrow-down');
+      var upArrow = document.getElementById('nav-arrow-up');
       var dashboardSection = document.getElementById('dashboard-section');
-      if (scrollArrow && dashboardSection) {
+      if (downArrow && upArrow && dashboardSection) {
         var dashRect = dashboardSection.getBoundingClientRect();
-        if (dashRect.top <= window.innerHeight * 0.8) {
-          scrollArrow.classList.add('scroll-arrow-hidden');
-          scrollArrow.classList.remove('scroll-arrow-visible');
+        var isAtBottom = dashRect.top <= window.innerHeight - 100;
+
+        if (isAtBottom) {
+          downArrow.classList.add('nav-arrow-hidden');
+          downArrow.classList.remove('nav-arrow-visible');
         } else {
-          scrollArrow.classList.add('scroll-arrow-visible');
-          scrollArrow.classList.remove('scroll-arrow-hidden');
+          downArrow.classList.add('nav-arrow-visible');
+          downArrow.classList.remove('nav-arrow-hidden');
+        }
+
+        if (scrollY > 50 || isAtBottom) {
+          upArrow.classList.add('nav-arrow-visible');
+          upArrow.classList.remove('nav-arrow-hidden');
+        } else {
+          upArrow.classList.add('nav-arrow-hidden');
+          upArrow.classList.remove('nav-arrow-visible');
         }
       }
     }, { passive: true });
+  });
+
+  /* ── Navigation arrows click handlers ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    var downArrow = document.getElementById('nav-arrow-down');
+    var upArrow = document.getElementById('nav-arrow-up');
+
+    if (downArrow) {
+      downArrow.addEventListener('click', function () {
+        document.getElementById('dashboard-section').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+
+    if (upArrow) {
+      upArrow.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
   });
 
   /* ── River basins expand/collapse ── */
