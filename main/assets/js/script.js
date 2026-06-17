@@ -193,10 +193,26 @@
     });
 
     function closeLightbox() {
-      lightbox.classList.remove('active');
-      document.body.style.overflow = '';
+      if (lightbox.classList.contains('active')) {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+      }
     }
 
     if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
     if (lightboxBg) lightboxBg.addEventListener('click', closeLightbox);
+
+    // Close on any scroll attempt
+    window.addEventListener('wheel', function() {
+      closeLightbox();
+    }, { passive: true });
+
+    window.addEventListener('touchmove', function() {
+      closeLightbox();
+    }, { passive: true });
+
+    // Close on Escape key
+    window.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeLightbox();
+    });
   });
