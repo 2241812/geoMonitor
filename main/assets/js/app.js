@@ -28,7 +28,7 @@ const APP = {
   config: {
     mapCenter: [17.3, 121.0],
     mapZoom: 8,
-    minZoom: 7,
+    minZoom: 5,
     maxZoom: 18,
     maxBounds: [[4.0, 116.0], [21.5, 128.0]],
 
@@ -349,13 +349,13 @@ const APP = {
       if (leafletLayer && leafletLayer.getBounds) {
         this.state.map.flyToBounds(leafletLayer.getBounds(), {
           ...this._getPaddingOpts(),
-          duration: 0.8,
+          duration: 0.45,
           easeLinearity: 0.25,
         });
       }
 
       /* Delayed child reveal: render children after zoom starts settling */
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 450));
       await this._showLevel(nextLevel, feature, currentLevel);
 
       this._updateOutlines();
@@ -399,7 +399,7 @@ const APP = {
         if (this.state.layers[0]) {
           this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
             ...this._getPaddingOpts(),
-            duration: 0.8,
+            duration: 0.45,
             easeLinearity: 0.25
           });
         }
@@ -453,7 +453,7 @@ const APP = {
               const targetBounds = lf.getBounds();
               this.state.map.flyToBounds(targetBounds, {
                 ...this._getPaddingOpts(),
-                duration: 0.8,
+                duration: 0.45,
                 easeLinearity: 0.25
               });
             }
@@ -464,7 +464,7 @@ const APP = {
         const regionBounds = this.state.layers[0].getBounds();
         this.state.map.flyToBounds(regionBounds, {
           ...this._getPaddingOpts(),
-          duration: 0.8,
+          duration: 0.45,
           easeLinearity: 0.25
         });
       }
@@ -724,7 +724,7 @@ const APP = {
       this.state.map.flyToBounds(leafletLayer.getBounds(), {
         padding: [150, 150],
         maxZoom: 10,
-        duration: 0.8,
+        duration: 0.45,
         easeLinearity: 0.25,
       });
     }
@@ -831,7 +831,7 @@ const APP = {
     if (this.state.layers[0]) {
       this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
         ...this._getPaddingOpts(),
-        duration: 0.8,
+        duration: 0.45,
         easeLinearity: 0.25,
       });
     }
@@ -1006,7 +1006,7 @@ const APP = {
           } else if (layer && layer.getBounds) {
             self.state.map.flyToBounds(layer.getBounds(), {
               padding: [40, 40],
-              duration: 0.8,
+              duration: 0.45,
               easeLinearity: 0.25,
             });
           }
@@ -1268,7 +1268,7 @@ const APP = {
         if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
           this.state.map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), {
             ...this._getPaddingOpts(),
-            duration: 0.8,
+            duration: 0.45,
             easeLinearity: 0.25
           });
         }
@@ -1303,7 +1303,7 @@ const APP = {
           if (activeBounds.isValid()) {
             this.state.map.flyToBounds(activeBounds, {
               ...this._getPaddingOpts(),
-              duration: 0.8,
+              duration: 0.45,
               easeLinearity: 0.25
             });
           }
@@ -1528,7 +1528,7 @@ const APP = {
                     e.target.setStyle(this.config.colors.watershedHighlight);
                     this.state.map.flyToBounds(e.target.getBounds(), {
                       ...this._getPaddingOpts(),
-                      duration: 0.6,
+                      duration: 0.45,
                       easeLinearity: 0.25
                     });
                     this._openWatershedPanel(feature);
@@ -1628,7 +1628,7 @@ const APP = {
       } else if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
         this.state.map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), {
           ...this._getPaddingOpts(),
-          duration: 0.8,
+          duration: 0.45,
           easeLinearity: 0.25
         });
       }
@@ -1639,7 +1639,7 @@ const APP = {
         if (this.state.layers[0]) {
           this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
             ...this._getPaddingOpts(),
-            duration: 0.8,
+            duration: 0.45,
             easeLinearity: 0.25
           });
         }
