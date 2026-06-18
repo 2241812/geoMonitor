@@ -1368,31 +1368,34 @@ img {
 
 @media only screen and (max-width: 768px) {
   .header {
-    height: 70px;
-    padding: 0 clamp(12px, 3vw, 24px);
-    gap: 4px;
+    min-height: 80px;
+    height: auto;
+    padding: 8px clamp(12px, 3vw, 20px);
+    gap: 4px 8px;
+    flex-wrap: wrap;
+    align-content: center;
   }
 
   .logo {
-    height: 32px;
+    height: 30px;
   }
 
   .brand-text {
-    gap: 1px;
+    gap: 0;
   }
 
   .brand-subtitle {
-    font-size: clamp(0.45rem, 1.5vw, 0.6rem);
+    font-size: clamp(0.42rem, 1.4vw, 0.55rem);
     letter-spacing: 0.05em;
   }
 
   .brand-title {
-    font-size: clamp(0.75rem, 2.6vw, 1.1rem);
+    font-size: clamp(0.7rem, 2.4vw, 1rem);
     letter-spacing: 0.01em;
   }
 
   .brand-sub-agency {
-    font-size: clamp(0.5rem, 1.7vw, 0.7rem);
+    font-size: clamp(0.45rem, 1.5vw, 0.65rem);
     letter-spacing: 0.03em;
   }
 
@@ -1402,11 +1405,15 @@ img {
   }
 
   .collab-text-block {
-    display: none;
+    display: flex;
+  }
+
+  .collab-title {
+    font-size: clamp(0.6rem, 2vw, 0.85rem);
   }
 
   .slu-logo {
-    height: 28px;
+    height: 26px;
   }
 
   .hero {
@@ -1446,8 +1453,14 @@ img {
     gap: var(--space-md);
   }
 
+  .basins-collapse {
+    width: 100%;
+    margin: 0;
+  }
+
   .basin-card-tall {
-    height: 240px;
+    height: 200px;
+    min-height: 200px;
   }
 
   .footer-inner {
