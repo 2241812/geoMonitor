@@ -1642,6 +1642,18 @@ const APP = {
           easeLinearity: 0.25
         });
       }
+    } else if (level === 0) {
+      const carData = this.state.rawData[0];
+      if (carData && carData.features && carData.features[0]) {
+        this.openPanel(carData.features[0], 0);
+        if (this.state.layers[0]) {
+          this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
+            ...this._getPaddingOpts(),
+            duration: 0.8,
+            easeLinearity: 0.25
+          });
+        }
+      }
     }
   },
 
