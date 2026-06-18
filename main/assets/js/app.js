@@ -1128,17 +1128,15 @@ const APP = {
             }).join('')}
           </div>
         </div>`;
-      }
-    }
 
-    if (expandedHtml) {
-      html += `<div class="panel-show-more">
-        <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          View Watersheds on Map (${intersectingWs.length})
-        </button>
-      </div>`;
-      html += expandedHtml;
+        html += `<div class="panel-show-more">
+          <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View Watersheds on Map (${intersectingWs.length})
+          </button>
+        </div>`;
+        html += expandedHtml;
+      }
     }
 
     content.innerHTML = html;
