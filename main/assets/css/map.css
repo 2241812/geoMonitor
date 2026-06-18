@@ -1189,8 +1189,10 @@ body.panel-open .bottom-left-controls {
   }
 
   .bottom-left-controls {
-    bottom: 12px;
-    left: 12px;
+    bottom: 100px;
+    left: auto;
+    right: 12px;
+    flex-direction: column;
     gap: 8px;
   }
 
@@ -1207,6 +1209,8 @@ body.panel-open .bottom-left-controls {
   .basemap-options,
   .watershed-options {
     min-width: 140px;
+    left: auto;
+    right: 0;
   }
 
   .basemap-option {
@@ -1220,10 +1224,10 @@ body.panel-open .bottom-left-controls {
   }
 
   .map-breadcrumb {
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: calc(100vw - 60px);
+    max-width: calc(100vw - 24px);
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: center;
     padding: 4px 6px;
     gap: 2px;
   }
