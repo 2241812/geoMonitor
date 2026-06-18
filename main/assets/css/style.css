@@ -1368,12 +1368,14 @@ img {
 
 @media only screen and (max-width: 768px) {
   .header {
-    height: auto;
+    height: auto !important;
+    min-height: 140px !important;
+    padding: 1.25rem 1rem !important;
+    box-sizing: border-box !important;
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;
     gap: 4px;
-    padding: 1rem clamp(12px, 3vw, 20px);
   }
 
   .logo-group {
