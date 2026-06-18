@@ -1479,10 +1479,11 @@ const APP = {
                 layer.on({
                   mouseover: (e) => {
                     if (e.target._isHidden) return; // Ignore hidden layers
-                    if (this.state._outlineHighlight === e.target) return;
-                    const style = Object.assign({}, this.config.colors.watershedHighlight);
-                    style.weight = 3;
-                    e.target.setStyle(style);
+                    if (this.state._outlineHighlight !== e.target) {
+                      const style = Object.assign({}, this.config.colors.watershedHighlight);
+                      style.weight = 3;
+                      e.target.setStyle(style);
+                    }
                     const p = feature.properties;
                     const name = p.Name || p.Old_Name || 'Unknown Watershed';
                     const lbl = document.getElementById('map-hover-label');
@@ -1494,8 +1495,9 @@ const APP = {
                   },
                   mouseout: (e) => {
                     if (e.target._isHidden) return;
-                    if (this.state._outlineHighlight === e.target) return;
-                    this.state.watershedLayer.resetStyle(e.target);
+                    if (this.state._outlineHighlight !== e.target) {
+                      this.state.watershedLayer.resetStyle(e.target);
+                    }
                     const lbl = document.getElementById('map-hover-label');
                     if (lbl) {
                       lbl.classList.remove('visible');
