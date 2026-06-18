@@ -1368,12 +1368,12 @@ img {
 
 @media only screen and (max-width: 768px) {
   .header {
-    height: 110px;
+    height: auto;
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-    gap: 2px;
-    padding: 6px clamp(12px, 3vw, 20px);
+    grid-template-rows: auto auto;
+    gap: 4px;
+    padding: 1rem clamp(12px, 3vw, 20px);
   }
 
   .logo-group {
@@ -1470,6 +1470,30 @@ img {
     height: auto;
     min-height: 180px;
     aspect-ratio: 3 / 2;
+  }
+
+  .basin-lightbox-content {
+    width: 90%;
+    height: 65vh;
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .basin-lightbox-text {
+    padding: 24px 16px 32px;
+  }
+
+  .basin-lightbox-text .basin-card-desc {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    line-height: 1.4;
+  }
+
+  .basin-lightbox-close {
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
   }
 
   .footer-inner {
