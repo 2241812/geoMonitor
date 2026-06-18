@@ -27,7 +27,7 @@ const APP = {
 
   config: {
     mapCenter: [17.3, 121.0],
-    mapZoom: 9,
+    mapZoom: 9.5,
     minZoom: 5,
     maxZoom: 18,
     maxBounds: [[4.0, 116.0], [21.5, 128.0]],
@@ -133,6 +133,7 @@ const APP = {
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
       zoomAnimation: true,
+      zoomSnap: 0.5,
     });
 
     /* Basemaps */
@@ -398,8 +399,7 @@ const APP = {
         this.state.currentLevel = 0;
         /* Jump back to CAR bounds, except when coming from level 1 where bounds are identical */
         if (this.state.layers[0] && previousLevel > 1) {
-          this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
-            ...this._getPaddingOpts(),
+          this.state.map.flyTo(this.config.mapCenter, this.config.mapZoom, {
             duration: 0.45,
             easeLinearity: 0.25
           });
