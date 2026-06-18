@@ -209,8 +209,7 @@ const APP = {
          return;
       }
       
-      if (this.state.currentLevel === 1 && this.state.selectedPath.length === 0) {
-        this.closePanel();
+      if (this.state.currentLevel === 0 && this.state.selectedPath.length === 0) {
         return;
       }
       if (this.state.currentLevel >= 1) {
@@ -382,21 +381,19 @@ const APP = {
 
       if (targetLevel === 0) {
         this._updateSmartFilters(null);
-        for (let lvl = this._src().maxLevel; lvl > 1; lvl--) {
+        for (let lvl = this._src().maxLevel; lvl > 0; lvl--) {
           if (this.state.layers[lvl]) {
             this.state.map.removeLayer(this.state.layers[lvl]);
             this.state.layers[lvl] = null;
           }
         }
-        /* Restore levels 0 and 1 to full style */
-        if (this.state.layers[1]) this._resetLevelStyle(1);
+        /* Restore levels 0 to full style */
         if (this.state.layers[0]) this._resetLevelStyle(0);
         this.state.selectedPath = [];
         this.state.currentLevel = 0;
         /* Only rebuild if layers don't exist yet (avoids visual flicker) */
         if (!this.state.layers[0]) await this._showLevel(0);
-        if (!this.state.layers[1]) await this._showLevel(1, null, null);
-        this.state.currentLevel = 1;
+        this.state.currentLevel = 0;
         /* Zoom to CAR bounds */
         /* Jump back to CAR bounds without animation */
         if (this.state.layers[0]) {
@@ -533,10 +530,10 @@ const APP = {
     const useHover = featureCount <= 300;
 
     const layer = L.geoJSON(data, {
-      interactive: level !== 0,
+      interactive: true,
       style: () => ({
         fillColor: styleConfig.fill,
-        fillOpacity: 0,
+        fillOpacity: level === 0 ? 0.15 : 0,
         color: styleConfig.stroke,
         weight: styleConfig.weight,
         opacity: 0.9,
@@ -545,8 +542,6 @@ const APP = {
       }),
 
       onEachFeature(feature, leafletLayer) {
-        if (level === 0) return;
-
         const name = self._featureName(feature, level);
 
         if (useHover) {
@@ -560,7 +555,7 @@ const APP = {
             /* Do not alter style if this feature is currently selected */
             if (self.state._selectedFeature === feature) return;
 
-            e.target.setStyle({ fillColor: styleConfig.fill, fillOpacity: 0.35, weight: styleConfig.weight + 1, dashArray: null });
+            e.target.setStyle({ fillColor: styleConfig.fill, fillOpacity: level === 0 ? 0.15 : 0.35, weight: styleConfig.weight + 1, dashArray: null });
             e.target.bringToFront();
           });
           leafletLayer.on('mouseout', function (e) {
@@ -575,7 +570,7 @@ const APP = {
 
             e.target.setStyle({
               fillColor: styleConfig.fill,
-              fillOpacity: 0,
+              fillOpacity: level === 0 ? 0.15 : 0,
               color: styleConfig.stroke,
               weight: styleConfig.weight,
               opacity: 0.9,
@@ -825,15 +820,14 @@ const APP = {
     this.state._selectedLeafletLayer = null;
     this.state.selectedPath = [];
     this.state.currentLevel = 0;
-    for (let lvl = this._src().maxLevel; lvl > 1; lvl--) {
+    for (let lvl = this._src().maxLevel; lvl > 0; lvl--) {
       if (this.state.layers[lvl]) {
         this.state.map.removeLayer(this.state.layers[lvl]);
         this.state.layers[lvl] = null;
       }
     }
     this._showLevel(0);
-    this._showLevel(1, null, null);
-    this.state.currentLevel = 1;
+    this.state.currentLevel = 0;
     if (this.state.layers[0]) {
       this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
         ...this._getPaddingOpts(),
@@ -870,7 +864,7 @@ const APP = {
     this.state.activeMode = mode;
     if (mode === 'boundary') {
       this._resetLevelStyle(0);
-      this._resetLevelStyle(1);
+      if (this.state.layers[1]) this._resetLevelStyle(1);
       this.state.currentLevel = 0;
       this.state.selectedPath = [];
       this.drillUp(0);
@@ -884,8 +878,7 @@ const APP = {
       }
       this.state.selectedPath = [];
       this._showLevel(0);
-      this._showLevel(1, null, null);
-      this.state.currentLevel = 1;
+      this.state.currentLevel = 0;
     }
     this._updateBreadcrumb();
   },
@@ -913,6 +906,7 @@ const APP = {
     </button>`;
 
     this.state.selectedPath.forEach((item, idx) => {
+      if (item.level === 0) return; /* Skip level 0, root handles it */
       const isLast = idx === this.state.selectedPath.length - 1;
       html += `<span class="breadcrumb-sep">›</span>`;
       html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.drillUp(${item.level})">${this._escHtml(item.name)}</button>`;
