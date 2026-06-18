@@ -13,6 +13,10 @@ button, input, select, textarea {
   font-family: inherit;
 }
 
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+
 .map-app {
   position: relative;
   width: 100vw;
@@ -455,9 +459,7 @@ body.panel-open .bottom-left-controls {
   transform: translateX(calc(385px + 16px));
 }
 
-body.panel-open.panel-expanded .bottom-left-controls {
-  transform: translateX(calc(500px + 16px));
-}
+
 
 @media (max-width: 640px) {
   body.panel-open .bottom-left-controls,
@@ -742,7 +744,7 @@ body.panel-open.panel-expanded .bottom-left-controls {
 }
 
 .info-panel.expanded {
-  width: 500px;
+  /* removed width: 500px so it stays 385px */
 }
 
 .info-panel.open {
@@ -800,6 +802,17 @@ body.panel-open.panel-expanded .bottom-left-controls {
   border-bottom: 1px solid #f3f4f6;
 }
 
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  letter-spacing: 0.02em;
+}
+
 .info-panel-collapse {
   display: flex;
   align-items: center;
@@ -852,6 +865,30 @@ body.panel-open.panel-expanded .bottom-left-controls {
   padding: 3px 8px;
   border-radius: 5px;
   margin-bottom: 8px;
+}
+
+.panel-badge-row {
+  margin-bottom: 8px;
+}
+
+.panel-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255,255,255,0.2);
+  color: #d1fae5;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+.panel-id-code {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.05em;
 }
 
 .panel-title {
@@ -946,6 +983,36 @@ body.panel-open.panel-expanded .bottom-left-controls {
   color: #111827;
   text-align: right;
   max-width: 55%;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-box {
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.2;
 }
 
 .panel-drill-hint {
