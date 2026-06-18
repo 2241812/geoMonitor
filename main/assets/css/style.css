@@ -1366,13 +1366,51 @@ img {
   }
 }
 
-@media (max-width: 768px) {
+@media only screen and (max-width: 768px) {
   .header {
     height: 70px;
+    padding: 0 clamp(12px, 3vw, 24px);
+    gap: 4px;
+  }
+
+  .logo {
+    height: 32px;
+  }
+
+  .brand-text {
+    gap: 1px;
+  }
+
+  .brand-subtitle {
+    font-size: clamp(0.45rem, 1.5vw, 0.6rem);
+    letter-spacing: 0.05em;
+  }
+
+  .brand-title {
+    font-size: clamp(0.75rem, 2.6vw, 1.1rem);
+    letter-spacing: 0.01em;
+  }
+
+  .brand-sub-agency {
+    font-size: clamp(0.5rem, 1.7vw, 0.7rem);
+    letter-spacing: 0.03em;
   }
 
   .collab-group {
+    display: flex;
+    gap: 4px;
+  }
+
+  .collab-text-block {
     display: none;
+  }
+
+  .slu-logo {
+    height: 28px;
+  }
+
+  .hero {
+    height: 100vh;
   }
 
   .hero-title {
