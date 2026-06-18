@@ -27,7 +27,7 @@ const APP = {
 
   config: {
     mapCenter: [17.3, 121.0],
-    mapZoom: 9.5,
+    mapZoom: 9.7,
     minZoom: 5,
     maxZoom: 18,
     maxBounds: [[4.0, 116.0], [21.5, 128.0]],
@@ -133,7 +133,7 @@ const APP = {
       maxZoom: this.config.maxZoom,
       maxBounds: this.config.maxBounds,
       zoomAnimation: true,
-      zoomSnap: 0.5,
+      zoomSnap: 0.1,
     });
 
     /* Basemaps */
