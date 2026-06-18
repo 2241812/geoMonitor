@@ -57,7 +57,7 @@ const APP = {
     },
 
     colors: {
-      0: { fill: '#059669', stroke: '#000000', weight: 3 },
+      0: { fill: '#059669', stroke: '#0f172a', weight: 4.5 },
       1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
       2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
       highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
@@ -342,11 +342,7 @@ const APP = {
         this.state.layers[currentLevel]._hiddenByDrill = true;
       }
 
-      /* At max level: remove level 0 (CAR boundary) so it doesn't clutter */
-      if (nextLevel >= this._src().maxLevel && this.state.layers[0]) {
-        this.state.map.removeLayer(this.state.layers[0]);
-        this.state.layers[0] = null;
-      }
+      /* Ensure level 0 stays visible to frame the region at all levels */
 
       this._updateBreadcrumb();
 
