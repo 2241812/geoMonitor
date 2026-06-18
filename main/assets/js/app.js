@@ -27,7 +27,7 @@ const APP = {
 
   config: {
     mapCenter: [17.3, 121.0],
-    mapZoom: 8,
+    mapZoom: 9,
     minZoom: 5,
     maxZoom: 18,
     maxBounds: [[4.0, 116.0], [21.5, 128.0]],
