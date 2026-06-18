@@ -1103,7 +1103,7 @@ const APP = {
       const intersectingWs = this.state.watershedIntersections[id];
       if (intersectingWs.length > 0) {
         expandedHtml = `<div class="expanded-content">
-          <div class="panel-section-title">Intersecting Watersheds</div>
+          <div class="panel-section-title">Intersecting Watersheds <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${intersectingWs.length}</span></div>
           <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">The following watersheds have been highlighted on the map:</p>
           <div class="watershed-list">
             ${intersectingWs.map(ws => {
@@ -1135,7 +1135,7 @@ const APP = {
       html += `<div class="panel-show-more">
         <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          View Watersheds on Map
+          View Watersheds on Map (${intersectingWs.length})
         </button>
       </div>`;
       html += expandedHtml;
