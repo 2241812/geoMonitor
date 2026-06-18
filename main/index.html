@@ -86,10 +86,13 @@
       </div>
     </section>
 
-    <div class="hero-bottom-controls fade-in-up">
-      <a href="#dashboard-section" class="scroll-arrow scroll-arrow-visible">
-        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-      </a>
+    <div class="hero-bottom-controls">
+      <div class="nav-arrow nav-arrow-up nav-arrow-hidden" id="nav-arrow-up" title="Back to top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="nav-arrow nav-arrow-down nav-arrow-visible" id="nav-arrow-down" title="Scroll to dashboard">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
     </div>
 
     <!-- ═══════════ STATS ═══════════ -->
@@ -153,7 +156,7 @@
 
         <div class="info-image-wrap scale-in">
           <div class="image-glow"></div>
-          <img src="assets/images/istockphoto-1308633310-612x612.jpg" alt="Ambuklao Dam — a vital watershed infrastructure in Benguet" class="info-image">
+          <img src="assets/images/banaue.jpg" alt="Ambuklao Dam — a vital watershed infrastructure in Benguet" class="info-image">
           <div class="image-float-badge">
             <div class="float-badge-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
@@ -180,29 +183,29 @@
             Major River Basins of <span class="section-title-accent">CAR</span>
           </h2>
           <p class="basins-header-desc">
-            The Cordillera Administrative Region hosts 13 major river basins — the Watershed Cradle of Northern Luzon.
+            The Cordillera Administrative Region hosts a vast network of major river basins and watersheds — the Watershed Cradle of Northern Luzon. Explore our featured systems below, or expand the view to see all critical networks.
           </p>
         </div>
 
         <!-- Container 1: First 4 Basins -->
         <div class="basins-grid fade-in-up">
               <div class="basin-card basin-card-tall fade-in-up delay-1">
-                <img src="assets/images/basin-1.jpg" alt="Agno River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-1.jpg" alt="Agno River Watershed" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 01</span>
-                  <h3 class="basin-card-name">Agno River Basin</h3>
+                  <h3 class="basin-card-name">Agno River Watershed</h3>
                   <p class="basin-card-desc">Originates in the Cordillera mountains of Benguet, specifically Mount Data. It is the fifth largest river system in the Philippines and a vital resource for Northern Luzon. It supports three major hydroelectric plants: Ambuklao, Binga, and San Roque. The basin supplies extensive irrigation for the agricultural plains of Pangasinan, serving as the lifeblood for local farming communities, fisheries, and regional power generation.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up delay-2">
-                <img src="assets/images/basin-2.jpg" alt="Chico River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-2.jpg" alt="Upper Chico River" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 02</span>
-                  <h3 class="basin-card-name">Chico River Basin</h3>
+                  <h3 class="basin-card-name">Upper Chico River</h3>
                   <p class="basin-card-desc">Headwaters are located in the mountains of Benguet, Mountain Province, and Kalinga. Known as the 'River of Life' for the Kalinga people, it spans a vast area before merging with the Cagayan River. It supports numerous mini-hydro power plants and provides essential irrigation for rice terraces and farmlands across Kalinga, Apayao, Cagayan, and Isabela.</p>
                 </div>
               </div>
@@ -212,18 +215,18 @@
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 03</span>
-                  <h3 class="basin-card-name">Abra River Basin</h3>
+                  <h3 class="basin-card-name">Abra River Watershed</h3>
                   <p class="basin-card-desc">Originates from the slopes of Mount Data in Benguet and runs through Mountain Province and Abra before emptying into the West Philippine Sea. It is one of the five largest river systems in the Philippines, featuring deep gorges and wide valleys. The basin provides crucial irrigation for Ilocos Sur and Abra, supporting local agriculture and inland fisheries.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up delay-4">
-                <img src="assets/images/basin-4.jpg" alt="Abulog River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-4.jpg" alt="Abulog River" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 04</span>
-                  <h3 class="basin-card-name">Abulog River Basin</h3>
-                  <p class="basin-card-desc">Also known as the Abulug-Apayao River Basin, its headwaters lie deep within the mountainous province of Apayao. It is characterized by pristine forest cover and a wide river channel that flows down to the Babuyan Channel. It serves as a critical source of irrigation for the plains of northern Cagayan Province and sustains local aquatic biodiversity.</p>
+                  <h3 class="basin-card-name">Abulog River Watershed</h3>
+                  <p class="basin-card-desc">Also known as the Abulug-Apayao River Watershed, its headwaters lie deep within the mountainous province of Apayao. It is characterized by pristine forest cover and a wide river channel that flows down to the Babuyan Channel. It serves as a critical source of irrigation for the plains of northern Cagayan Province and sustains local aquatic biodiversity.</p>
                 </div>
               </div>
         </div>
@@ -237,7 +240,7 @@
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 05</span>
-                  <h3 class="basin-card-name">Amburayan River Basin</h3>
+                  <h3 class="basin-card-name">Amburayan River</h3>
                   <p class="basin-card-desc">Emanates in Benguet, flows to the Luzon Sea at La Union, and supplies irrigation water for the Province of La Union.</p>
                 </div>
               </div>
@@ -247,27 +250,27 @@
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 06</span>
-                  <h3 class="basin-card-name">Aringay River Basin</h3>
+                  <h3 class="basin-card-name">Aringay River</h3>
                   <p class="basin-card-desc">Originates from Benguet and Baguio City. A source of irrigation for La Union Province, exiting at the Luzon Sea.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up">
-                <img src="assets/images/basin-7.jpg" alt="Naguilian River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-7.jpg" alt="Naguilian River" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 07</span>
-                  <h3 class="basin-card-name">Naguilian River Basin</h3>
+                  <h3 class="basin-card-name">Naguilian River</h3>
                   <p class="basin-card-desc">Headwaters in Benguet, irrigates La Union, and exits at the Luzon Sea.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up">
-                <img src="assets/images/basin-8.jpg" alt="Magat River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-8.jpg" alt="Upper Magat River" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 08</span>
-                  <h3 class="basin-card-name">Magat River Basin</h3>
+                  <h3 class="basin-card-name">Upper Magat River</h3>
                   <p class="basin-card-desc">Originates from Ifugao, supports Magat Dam hydroelectric plant, and irrigates Isabela, Nueva Vizcaya, and Quirino.</p>
                 </div>
               </div>
@@ -277,48 +280,48 @@
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 09</span>
-                  <h3 class="basin-card-name">Siffu-Mallig River Basin</h3>
-                  <p class="basin-card-desc">Headwaters in Ifugao and Mountain Province, flows towards the Cagayan River, and irrigates Isabela.</p>
+                  <h3 class="basin-card-name">Siffu-Mallig River</h3>
+                  <p class="basin-card-desc">Headwaters originating from eastern Ifugao and Mountain Province, flowing as a merged network towards the Cagayan River to irrigate major agricultural areas in Isabela.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up">
-                <img src="assets/images/basin-10.jpg" alt="Cabicungan River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-10.jpg" alt="Cabicungan River" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 10</span>
-                  <h3 class="basin-card-name">Cabicungan River Basin</h3>
+                  <h3 class="basin-card-name">Cabicungan River</h3>
                   <p class="basin-card-desc">Situated in Apayao, irrigates farmers in Cagayan Province and exits towards Claveria.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up">
-                <img src="assets/images/basin-11.jpg" alt="Zumiqui-Ziwanan River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-11.jpg" alt="Zumigui-Ziwanan River" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 11</span>
-                  <h3 class="basin-card-name">Zumiqui-Ziwanan River Basin</h3>
+                  <h3 class="basin-card-name">Zumigui-Ziwanan River</h3>
                   <p class="basin-card-desc">Emanates in Apayao, irrigates Cagayan, and exits towards the Pamplona River.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up">
-                <img src="assets/images/basin-12.jpg" alt="Silag River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-12.jpg" alt="Santa Maria River" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 12</span>
-                  <h3 class="basin-card-name">Silag River Basin</h3>
-                  <p class="basin-card-desc">Located in Abra, supports irrigation, fishing, and potable water, exiting at the Luzon Sea in Ilocos Sur.</p>
+                  <h3 class="basin-card-name">Santa Maria River</h3>
+                  <p class="basin-card-desc">Draining the western ridges of the Cordillera mountain range, it channels localized headwaters directly into the coastal networks of the West Philippine Sea.</p>
                 </div>
               </div>
               <div class="basin-card basin-card-tall fade-in-up">
-                <img src="assets/images/basin-13.jpg" alt="Upper Cagayan River Basin" class="basin-card-image" loading="lazy">
+                <img src="assets/images/basin-13.jpg" alt="Bued River Watershed" class="basin-card-image" loading="lazy">
                 <div class="basin-card-overlay"></div>
                 <div class="basin-card-content">
                   <div class="basin-card-line"></div>
                   <span class="basin-card-index">Basin 13</span>
-                  <h3 class="basin-card-name">Upper Cagayan River Basin</h3>
-                  <p class="basin-card-desc">The headwaters of one of the largest river systems in the country, gathering from the eastern slopes of the Cordillera through the Cagayan Valley.</p>
+                  <h3 class="basin-card-name">Bued River Watershed</h3>
+                  <p class="basin-card-desc">Gathering from the high-altitude southern slopes of Benguet, it channels critical mountain runoff through steep transit corridors down toward the Lingayen Gulf.</p>
                 </div>
               </div>
           </div>
@@ -374,7 +377,7 @@
             <span class="footer-brand-name">DENR CAR</span>
           </div>
           <p class="footer-address">
-            Department of Environment and Natural Resources — Cordillera Administrative Region, PPI Building, South Drive, Baguio City, Benguet 2600, Philippines
+            Department of Environment and Natural Resources — Cordillera Administrative Region, DENR Compound, Gibraltar Road, Baguio City, Philippines, 2600
           </p>
         </div>
 

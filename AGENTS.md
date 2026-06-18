@@ -1,6 +1,6 @@
 # geoMonitor — DENR CAR Watershed Monitoring
 
-Static HTML/CSS/JS web app. No build system, no package manager, no server.
+Static HTML/CSS/JS web app. No build system, no linter, no tests, no CI.
 
 ## Quick start
 
@@ -8,102 +8,123 @@ Static HTML/CSS/JS web app. No build system, no package manager, no server.
 python3 -m http.server 8000 -d main
 ```
 
-GeoJSON `fetch()` requires a server. Open `http://localhost:8000`.
+Open `http://localhost:8000`. A server is required (GeoJSON `fetch()`).
 
-## Architecture
+## Entrypoints
 
-- **Entrypoints**: `main/index.html` (landing gallery), `main/map.html` (drill-down map + dashboard)
-- **CDN versions** pinned in `map.html`: Leaflet 1.9.4, Chart.js 4.4.7
-- **Script load order** (in `map.html`, do not reorder): `app.js` → `map-layers.js` → `dashboard.js`, then inline `DOMContentLoaded` handler calls `APP.init()` → `initLayers()`
-- **`map-init.js`** exists on disk but is **not loaded** (compatibility shim)
-- **`EVENTS`** object exists in `app.js` but is **unused** (stale legacy code)
-- **Global state**: `APP` object (`app.js`) — all config, state, and methods live on it
-- **`dashboard.js`**: compatibility shim only — delegates to `APP.openPanel`/`APP.closePanel`
-- **Source toggle**: info panel hero has a NAMRIA/CAD toggle button (shows current source label). Switching sources clears all layers, reloads hierarchy, and re-initializes the map synchronously.
-- **NAMRIA**: 3 levels (Region → Province → Municipality)
-- **CAD**: 2 levels (Region → Municipality) — CAD files have `Province` + `Muni_City` properties, no separate province geometry
+| Page | File | Purpose |
+|------|------|---------|
+| Landing | `main/index.html` | Gallery with hero, stats, river basins, CTA |
+| Map | `main/map.html` | Drill-down Leaflet map + Chart.js dashboard |
 
-## Drill-down flow
+## Landing page (`main/index.html`)
 
-Drill levels: 0 = Region (CAR boundary) → 1 = Province → 2 = Municipality
+- **CSS**: `main/assets/css/style.css` (~1540 lines) — all landing page styles
+- **JS**: `main/assets/js/script.js` — Lenis smooth scroll, fade-in observer, counter animation, header/parallax, arrow logic, basin toggle, lightbox
+- **Header**: transparent at top (`scrollY ≤ 50`) with white text + drop-shadow; switches to `rgba(255,255,255,0.95)` + dark text when scrolled. Threshold in JS (`script.js:96`).
+- **Nav arrows**: two circular glass buttons (`w-48`, `bg-white/80`, `backdrop-blur`, green icon). Down arrow floats (`navFloat 2.5s`), hides when dashboard is in view. Up arrow appears when scrolled. Bouncy pop transition via `cubic-bezier(0.34, 1.56, 0.64, 1)`.
+- **Card names**: 13 hardcoded `<h3 class="basin-card-name">` with "River Basin" suffix. GeoJSON source at `main/geoJSON/CAR Watersheds.geojson` has 14 features with `Name` + `Old_Name` properties (suffix "Watershed", not "Basin").
+- **Basin lightbox**: modal triggered by clicking any basin card on desktop.
+
+## Map page (`main/map.html`)
+
+- **CSS**: `main/assets/css/map.css` — all map + dashboard styles
+- **CDN versions**: Leaflet 1.9.4, Chart.js 4.4.7 (pinned in `map.html`)
+- **Script load order** (strict, do not reorder): `app.js` → `map-layers.js` → `dashboard.js`, then inline `DOMContentLoaded` calls `APP.init()` → `initLayers()`
+- **Global state**: `APP` object (`app.js`) — config, state, drill logic, panels, overlays
+- **`map-init.js`** exists but **not loaded** (compatibility shim)
+- **`EVENTS`** object in `app.js` is **unused** (dead legacy code)
+- **`dashboard.js`**: compatibility shim — delegates to `APP.openPanel`/`APP.closePanel`
+
+### Source toggle
+
+Info panel hero has a NAMRIA/CAD toggle button. Switching sources clears all layers, reloads hierarchy, re-initializes the map.
+
+| Source | Levels | Drill path |
+|--------|--------|------------|
+| NAMRIA | 3 | Region → Province → Municipality |
+| CAD | 2 | Region → Municipality |
+
+CAD files have `Province` + `Muni_City` properties; no separate province geometry.
+
+### Drill-down
+
+Levels: 0 = Region (CAR boundary) → 1 = Province → 2 = Municipality
 
 - **`initLayers()`** (`map-layers.js`): calls `APP._showLevel(0)` then `APP._showLevel(1)`, sets `currentLevel = 1`
-- **Level 0** has `interactive: false` so its polygon doesn't swallow clicks on provinces underneath
-- **`drillDown`**: hides parent level (removes from map, marks `_hiddenByDrill`), loads child level filtered to parent via `_filterToParent`, advances `currentLevel` **before** `_showLevel` so click guards work. Max drill level depends on source (NAMRIA: 2, CAD: 1).
-- **`drillUp`**: removes deeper layers, re-adds hidden parent, resets styles, trims `selectedPath`. Calling `drillUp(0)` resets to region-only view.
-- **Deepest level click**: calls `_dimLevel` to isolate selected feature (`fillOpacity: 0` for others, marks with `_hiddenByIsolation = true` to suppress hover/click).
-- **Clicking a hidden feature**: swallows click (no drill-up) — user must click empty space
-- **Map background click**: drills up one level (any level ≥ 1). Clicking empty space at province (level 1) goes to region-only view.
-- **Zoom-to-selection**: `fitBounds` with `padding: [40, 40]` zooms to the selected feature on drill-down and highlight. No animation params — browser defaults.
+- **Level 0**: `interactive: false` — prevents CAR polygon from swallowing province clicks
+- **`drillDown`**: hides parent layer (`_hiddenByDrill`), loads child filtered to parent, advances `currentLevel` **before** `_showLevel` so click guards work. Max level: NAMRIA 2, CAD 1.
+- **`drillUp`**: removes deeper layers, re-adds hidden parent, resets styles, trims `selectedPath`. `drillUp(0)` resets to region-only.
+- **Deepest level click**: calls `_dimLevel` — sets `fillOpacity: 0` on others, marks with `_hiddenByIsolation` to suppress hover/click.
+- **Click hidden feature**: swallowed — user must click empty space.
+- **Map background click**: drills up one level (any level ≥ 1).
+- **Zoom**: `fitBounds` with `padding: [40, 40]`, no animation params.
+- **Re-entrancy guard**: `state._drilling` flag prevents concurrent drill calls.
+- **Hover**: only attached for layers with ≤300 features.
+- **Loading**: levels 0+1 fetched in parallel; deeper levels prefetched; raw GeoJSON cached in `state.rawData`.
 
-### Hierarchy preprocessing
+### Feature name resolution (`_featureName`)
 
-A build-time script (`preprocess-hierarchy.js`) cross-walks all GeoJSON files for both NAMRIA and CAD, computing stable `_id`/`_parentId` for every feature. Outputs `main/geoJSON/hierarchy-namria.json` and `main/geoJSON/hierarchy-cad.json`:
-
-```
-{ parents: { childId → parentId }, children: { parentId → [childId, ...] }, names: { id → displayName } }
-```
-
-Each GeoJSON file is updated in-place with `_id` and `_parentId` added to `feature.properties`. The preprocessor handles:
-- Diacritic stripping (e.g. `PEÑARRUBIA` → `PENARRUBIA`)
-- Manual name map for known dataset mismatches (`LANGIDEN` → `LAGIDEN`, `LICUAN-BAAY` → `BAAY-LICUAN`)
-
-The browser fetches the active source's hierarchy file once on init for name lookup. `_filterToParent` is a one-liner:
-```js
-data.features.filter(f => f.properties._parentId === parentId)
-```
-
-Re-run the preprocessor and re-deploy if GeoJSON source files are updated:
-```sh
-node preprocess-hierarchy.js
-```
-
-Feature name resolution priority (`_featureName`):
 - NAMRIA level 2: `Municipali` > `NAME_2` > candidates
 - NAMRIA level 1: `PROVINCE` > `Province` > `NAME_1` > candidates
 - CAD level 1: `Muni_City`
 - Level 0: hardcoded `'Cordillera Administrative Region'`
 
-## Map
+### Overlay system
 
-- **Default basemap**: Esri World Topo (`'topo'`). Alternatives: OSM (`'osm'`), Esri Satellite (`'satellite'`)
-- **View locked** to Philippines (`maxBounds: [[4, 116], [21.5, 128]]`, `minZoom: 7`) — config in `app.js`
-- **Canvas renderer**: `preferCanvas: true` — faster for many polygons. `L.DomEvent.stopPropagation` on feature click handlers prevents map background click from firing.
-- **Re-entrancy guard**: `state._drilling` flag prevents concurrent drillDown/drillUp calls (e.g. from double-click on map background)
-- **Hover**: only attached for layers with ≤300 features (skipped for barangays, now removed)
-- **Loading**: levels 0 and 1 fetched in parallel on init. Deeper levels prefetched in background. All raw GeoJSON cached in `state.rawData` — subsequent `_showLevel` calls skip fetch and go straight to filter + render.
-- **Boundary overlay system**: Hydrohub-style mutually exclusive radio mode. Only Province **or** Municipality can be active at a time (never both). Overlay toggles (None / Province / Municipality with SVG icons) render in both Explore and Boundary modes.
-- **Boundary overlay layers**: `interactive: true` — clicking a feature on the overlay highlights it using `resetStyle()` to clear the previous highlight, opens the info panel, and triggers `drillDown()` **only in Boundary mode** if the overlay matches the current drill level. The corresponding drill layer is dimmed (`fillOpacity: 0`) when the overlay is active to prevent visual overlap. Municipality overlay shows **all** municipalities (no province filter). Overlays refresh on drill down/up.
-- **UI layout**: Back button (top-left), Fullscreen toggle (top-right), Basemap switcher (bottom-left), Legend (bottom-right), Reset-view pill (above breadcrumb, bottom-center). All use `map-icon-btn` or `map-pill-btn` base classes.
+Mutually exclusive radio mode (None / Province / Municipality). Overlay layers are `interactive: true`. Clicking an overlay feature highlights it, opens info panel, and triggers `drillDown()` **only in Boundary mode** if the overlay matches the current drill level. Drill layer is dimmed (`fillOpacity: 0`) when overlay is active. Municipality overlay shows **all** municipalities (no province filter). Overlays refresh on drill up/down.
 
-Both **NAMRIA** and **CAD** sources are active (switchable via info panel toggle). CAD has 2 levels (Region → Municipality); NAMRIA has 3 levels (Region → Province → Municipality).
+### Dashboard (info panel)
 
-Files in `main/geoJSON/` are single-line JSON (no trailing newline). Six active files:
+- Rendered by `APP.openPanel()` — hero header, Details section, Chart.js bar chart of numeric properties (`Shape_Area`, `Shape_Length`, `AREA`, `Area`, `PERIMETER`, `Hectares`)
+- DOM built via string concatenation + `escapeHtml()`
+- Mobile: bottom sheet with three states — `peek` / `open` / `closed`
 
-| Source | Level | File | Size |
-|--------|-------|------|------|
-| NAMRIA | 0 | `CAR NAMRIA Boundary.geojson` | 80 KB |
-| NAMRIA | 1 | `CAR NAMRIA Provincial Boundary.geojson` | 143 KB |
-| NAMRIA | 2 | `CAR NAMRIA Municipal Boundary.geojson` | 328 KB |
-| CAD | 0 | `CAR CAD Boundary.geojson` | 13 KB |
-| CAD | 1 | `CAR CAD Municipal Boundary.geojson` | 193 KB |
+### Breadcrumb
 
-Coordinate precision: 6 decimal places (~1 m accuracy). CAD `Provincial Boundary.geojson` is identical to Municipal — unused.
+- Rendered by `_updateBreadcrumb()`. Root: "CAR Region" → `drillUp(0)`. Path items call `drillUp(item.level)`. `selectedPath` stores `{level, feature, name}`.
 
-## Dashboard (info panel)
+### UI layout
 
-- Rendered by `APP.openPanel()` — hero header (badge + title + subtitle), Details section, Measurements chart
-- Chart.js bar chart of numeric properties: `Shape_Area`, `Shape_Length`, `AREA`, `Area`, `PERIMETER`, `Hectares`
-- DOM built via string concatenation + `escapeHtml()` helper
-- Mobile: bottom sheet with three states — `peek` (shows hero, `translateY(calc(100% - 130px))`) / `open` (40vh, full content) / `closed`
-- `togglePanel()` cycles through states; triggered by tap on handle bar
+Back button (top-left), Fullscreen toggle (top-right), Basemap switcher (bottom-left), Legend (bottom-right), Reset-view pill (above breadcrumb, bottom-center). All use `map-icon-btn` / `map-pill-btn` base classes.
 
-## Drill breadcrumb
+## GeoJSON
 
-- Rendered by `_updateBreadcrumb()` in `app.js`
-- Root button: "CAR Region" → `drillUp(0)`, active when `selectedPath.length === 0`
-- Each path item shows feature name, calls `drillUp(item.level)`
-- `selectedPath` stores `{level, feature, name}` for each drill step
+Files in `main/geoJSON/` are single-line JSON (no trailing newline).
+
+### Administrative boundaries
+
+| Source | Level | File |
+|--------|-------|------|
+| NAMRIA | 0 | `CAR NAMRIA Boundary.geojson` |
+| NAMRIA | 1 | `CAR NAMRIA Provincial Boundary.geojson` |
+| NAMRIA | 2 | `CAR NAMRIA Municipal Boundary.geojson` |
+| CAD | 0 | `CAR CAD Boundary.geojson` |
+| CAD | 1 | `CAR CAD Municipal Boundary.geojson` |
+
+CAD `Provincial Boundary.geojson` is identical to Municipal — unused. Coordinate precision: 6 decimal places.
+
+### Watersheds
+
+| File | Description |
+|------|-------------|
+| `CAR Watersheds.geojson` | Merged 14 watershed features (merged from individual files by `preprocess-watersheds.js`) |
+| `Watersheds/*.geojson` | Individual watershed boundaries (14 files: ABR, ABU, AGN, AMB, ARI, BUD, CAB, MLG, NAG, SIF, SMR, UCH, UMT, ZUM) |
+| `watershed-intersections.json` | Cross-walk between watersheds and admin boundaries (computed by `preprocess_watersheds.js`) |
+
+## Preprocessing scripts
+
+```sh
+node preprocess-hierarchy.js       # Cross-walks NAMRIA/CAD GeoJSON → hierarchy-*.json + _id/_parentId
+node preprocess-watersheds.js      # Merges Watersheds/*.geojson into CAR Watersheds.geojson
+node preprocess_watersheds.js      # Computes watershed-intersections.json (requires @turf/turf)
+```
+
+The hierarchy script strips diacritics and applies a manual name map (`LANGIDEN`→`LAGIDEN`, `LICUAN-BAAY`→`BAAY-LICUAN`). Run and re-deploy if GeoJSON source files change.
+
+## Patch scripts
+
+`src/mapEngine/patch_app.js` and `src/mapEngine/patch_notify.js` are Node.js scripts that inject `_notify()` calls and state-change callbacks into `app.js`. Run them when extending the APP state model.
 
 ## Deployment
 
@@ -111,15 +132,15 @@ Coordinate precision: 6 decimal places (~1 m accuracy). CAD `Provincial Boundary
 vercel --prod --yes
 ```
 
-Auto-deploys from GitHub at `https://geo-monitor-ten.vercel.app`. Vercel CLI 54.x, Node.js 18.
+- `vercel.json`: `buildCommand: null`, `outputDirectory: "main"`
+- Auto-deploys from GitHub at `https://geo-monitor-ten.vercel.app`
+- Vercel CLI 54.x, Node.js 18
 
-## What NOT to do
+## Do not
 
-- Do not reorder script tags in `map.html`
-- Do not rely on `map-init.js` or `EVENTS` — they are dead code
-- Do not use NAMRIA + CAD GeoJSON together — property schemas are incompatible
-- Do not make level 0 interactive — `interactive: false` on the L.geoJSON layer is required to prevent CAR polygon from blocking province clicks
-- Do not advance `currentLevel` after `_showLevel` — must happen before so click guards work
-- Do not remove `L.DomEvent.stopPropagation` from feature click handlers — prevents map background click from firing after feature click
-
-No tests, CI, linter, or formatter configured. No backend.
+- Reorder script tags in `map.html`
+- Rely on `map-init.js` or `EVENTS` — dead code
+- Use NAMRIA + CAD GeoJSON together (incompatible property schemas)
+- Make level 0 interactive (blocks province clicks)
+- Advance `currentLevel` after `_showLevel` (must be before)
+- Remove `L.DomEvent.stopPropagation` from feature click handlers (prevents map background double-fire)
