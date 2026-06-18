@@ -869,6 +869,30 @@ body.panel-open.panel-expanded .bottom-left-controls {
   margin-bottom: 8px;
 }
 
+.panel-badge-row {
+  margin-bottom: 8px;
+}
+
+.panel-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255,255,255,0.2);
+  color: #d1fae5;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+.panel-id-code {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.05em;
+}
+
 .panel-title {
   font-family: var(--font-display);
   font-size: 20px;
@@ -961,6 +985,36 @@ body.panel-open.panel-expanded .bottom-left-controls {
   color: #111827;
   text-align: right;
   max-width: 55%;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-box {
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.2;
 }
 
 .panel-drill-hint {
