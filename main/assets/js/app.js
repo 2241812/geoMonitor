@@ -345,17 +345,17 @@ const APP = {
 
       this._updateBreadcrumb();
 
-      /* Fly into the selected feature with smooth animation */
-      if (leafletLayer && leafletLayer.getBounds) {
+      /* Fly into the selected feature with smooth animation, except for 0->1 where bounds are identical */
+      if (currentLevel > 0 && leafletLayer && leafletLayer.getBounds) {
         this.state.map.flyToBounds(leafletLayer.getBounds(), {
           ...this._getPaddingOpts(),
           duration: 0.45,
           easeLinearity: 0.25,
         });
+        /* Delayed child reveal: render children after zoom starts settling */
+        await new Promise(r => setTimeout(r, 450));
       }
 
-      /* Delayed child reveal: render children after zoom starts settling */
-      await new Promise(r => setTimeout(r, 450));
       await this._showLevel(nextLevel, feature, currentLevel);
 
       this._updateOutlines();
@@ -370,7 +370,9 @@ const APP = {
     this.state._drilling = true;
     this._hideHoverLabel();
     try {
-      if (typeof targetLevel !== 'number' || targetLevel < 0) targetLevel = 0;
+      const previousLevel = this.state.currentLevel;
+
+      if (targetLevel === this.state.currentLevel) return;
 
       /* Clear selection state */
       this.state._selectedFeature = null;
@@ -394,9 +396,8 @@ const APP = {
         /* Only rebuild if layers don't exist yet (avoids visual flicker) */
         if (!this.state.layers[0]) await this._showLevel(0);
         this.state.currentLevel = 0;
-        /* Zoom to CAR bounds */
-        /* Jump back to CAR bounds without animation */
-        if (this.state.layers[0]) {
+        /* Jump back to CAR bounds, except when coming from level 1 where bounds are identical */
+        if (this.state.layers[0] && previousLevel > 1) {
           this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
             ...this._getPaddingOpts(),
             duration: 0.45,
@@ -413,8 +414,6 @@ const APP = {
         return;
       }
 
-      if (this.state.currentLevel === targetLevel && this.state.selectedPath.length === targetLevel) return;
-
       for (let lvl = this._src().maxLevel; lvl > targetLevel; lvl--) {
         if (this.state.layers[lvl]) {
           this.state.map.removeLayer(this.state.layers[lvl]);
@@ -423,11 +422,11 @@ const APP = {
       }
 
       /* Restore context layer style (was dimmed during drillDown) */
-      if (targetLevel <= 1) {
-        this._updateSmartFilters(null);
-      } else {
-        const provItem = this.state.selectedPath.find(i => i.level === 1);
+      if (targetLevel === 1) {
+        const provItem = this.state.selectedPath[0];
         if (provItem) this._updateSmartFilters(provItem.feature.properties._id);
+      } else {
+        this._updateSmartFilters(null);
       }
 
       if (targetLevel > 0 && this.state.layers[targetLevel]) {
@@ -459,14 +458,6 @@ const APP = {
             }
           });
         }
-      } else if (targetLevel === 0 && this.state.layers[0]) {
-        /* Jump to region reset */
-        const regionBounds = this.state.layers[0].getBounds();
-        this.state.map.flyToBounds(regionBounds, {
-          ...this._getPaddingOpts(),
-          duration: 0.45,
-          easeLinearity: 0.25
-        });
       }
 
       /* Show the feature at target level in panel and KEEP IT HIGHLIGHTED */
