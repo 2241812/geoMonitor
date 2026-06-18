@@ -442,13 +442,15 @@ const APP = {
       this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
       this.state.currentLevel = targetLevel;
 
-      /* Jump to target without animation */
+      /* Jump to target */
       if (targetLevel > 0 && this.state.selectedPath.length > 0) {
         const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
         const levelLayer = this.state.layers[targetLevel];
         if (levelLayer) {
+          let found = false;
           levelLayer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
+              found = true;
               const targetBounds = lf.getBounds();
               this.state.map.flyToBounds(targetBounds, {
                 ...this._getPaddingOpts(),
@@ -457,6 +459,14 @@ const APP = {
               });
             }
           });
+          if (!found) {
+            /* We are at a level (like level 1) where no specific child is selected */
+            this.state.map.flyToBounds(levelLayer.getBounds(), {
+              ...this._getPaddingOpts(),
+              duration: 0.45,
+              easeLinearity: 0.25
+            });
+          }
         }
       }
 
