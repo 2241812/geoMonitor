@@ -20,6 +20,14 @@ async function initLayers() {
   /* Set initial active level to region */
   APP.state.currentLevel = 0;
 
+  /* Dynamically snap the map to perfectly fit the entire CAR region on load */
+  if (APP.state.layers[0]) {
+    APP.state.map.fitBounds(APP.state.layers[0].getBounds(), {
+      ...APP._getPaddingOpts(),
+      animate: false
+    });
+  }
+
   /* Prefetch deeper levels in background */
   for (let lvl = 2; lvl <= src.maxLevel; lvl++) {
     APP._prefetchLevel(lvl);
