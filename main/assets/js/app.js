@@ -57,7 +57,7 @@ const APP = {
     },
 
     colors: {
-      0: { fill: '#059669', stroke: '#0f172a', weight: 4.5 },
+      0: { fill: '#059669', stroke: '#0f172a', weight: 2.5 },
       1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
       2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
       highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
