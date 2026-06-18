@@ -746,7 +746,7 @@ body.panel-open.panel-expanded .bottom-left-controls {
 }
 
 .info-panel.expanded {
-  width: 500px;
+  /* removed width: 500px so it stays 385px */
 }
 
 .info-panel.open {

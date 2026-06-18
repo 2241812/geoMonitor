@@ -157,6 +157,11 @@ const APP = {
       .then(r => r.json())
       .then(w => { this.state.watershedIntersections = w; })
       .catch(() => {});
+      
+    this.state._fetchingWatersheds = fetch('geoJSON/CAR Watersheds.geojson')
+      .then(r => r.json())
+      .then(d => { this.state.rawData['watershed'] = d; })
+      .catch(() => {});
 
     /* Prevent mobile info-panel swipes from moving the map */
     const infoPanel = document.getElementById('info-panel');
@@ -1109,14 +1114,26 @@ const APP = {
           <div class="panel-section-title">Intersecting Watersheds</div>
           <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">The following watersheds have been highlighted on the map:</p>
           <div class="watershed-list">
-            ${intersectingWs.map(ws => `
+            ${intersectingWs.map(ws => {
+              let areaText = '';
+              if (this.state.rawData['watershed']) {
+                const wsFeature = this.state.rawData['watershed'].features.find(f => {
+                  const n = f.properties.Name || f.properties.Old_Name || '';
+                  return n === ws;
+                });
+                if (wsFeature && wsFeature.properties.Area_Ha) {
+                  areaText = `<span style="font-size: 0.8rem; color: #6b7280; margin-left: auto;">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
+                }
+              }
+              return `
               <div class="watershed-list-item">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
                   <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${this.state.activeWatershedIds && this.state.activeWatershedIds.includes(ws) ? 'checked' : ''} style="accent-color: #0284c7; width: 16px; height: 16px;">
                   <span style="font-weight: 500;">${this._escHtml(ws)}</span>
+                  ${areaText}
                 </label>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>
         </div>`;
       }
@@ -1344,7 +1361,7 @@ const APP = {
     
     let hectares = parseFloat(props.Hectares || props.Area || 0);
     if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
-    if (hectares > 0) d['Hectares'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
     
     const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
     if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
