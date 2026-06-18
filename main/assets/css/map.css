@@ -13,6 +13,10 @@ button, input, select, textarea {
   font-family: inherit;
 }
 
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+
 .map-app {
   position: relative;
   width: 100vw;
@@ -798,6 +802,17 @@ body.panel-open.panel-expanded .bottom-left-controls {
   padding: 10px 12px;
   flex-shrink: 0;
   border-bottom: 1px solid #f3f4f6;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  letter-spacing: 0.02em;
 }
 
 .info-panel-collapse {
