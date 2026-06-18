@@ -158,9 +158,10 @@ const APP = {
       .then(w => { this.state.watershedIntersections = w; })
       .catch(() => {});
       
-    this.state._fetchingWatersheds = fetch('geoJSON/CAR Watersheds.geojson')
+    // Prefetch for area lookups, but don't set _fetchingWatersheds to avoid breaking lazy-init
+    fetch('geoJSON/CAR Watersheds.geojson')
       .then(r => r.json())
-      .then(d => { this.state.rawData['watershed'] = d; })
+      .then(d => { if (!this.state.rawData['watershed']) this.state.rawData['watershed'] = d; })
       .catch(() => {});
 
     /* Prevent mobile info-panel swipes from moving the map */
@@ -1280,8 +1281,6 @@ const APP = {
             duration: 0.8,
             easeLinearity: 0.25
           });
-        } else if (this.state.map) {
-          this.state.map.panBy([58, 0], {animate: true, duration: 0.3});
         }
       });
     } else {
@@ -1303,16 +1302,21 @@ const APP = {
       Promise.all(promises).then(() => {
         if (skipPan) return;
         if (this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
-          const bounds = this.state.watershedLayer.getBounds();
-          if (bounds && bounds.isValid()) {
-            this.state.map.flyToBounds(bounds, {
+          let activeBounds = L.latLngBounds([]);
+          this.state.watershedLayer.eachLayer(layer => {
+            const name = layer.feature.properties.Name || layer.feature.properties.Old_Name || '';
+            if (this.state.activeWatershedIds.includes(name)) {
+              activeBounds.extend(layer.getBounds());
+            }
+          });
+          
+          if (activeBounds.isValid()) {
+            this.state.map.flyToBounds(activeBounds, {
               ...this._getPaddingOpts(),
               duration: 0.8,
               easeLinearity: 0.25
             });
           }
-        } else if (this.state.map) {
-          this.state.map.panBy([-58, 0], {animate: true, duration: 0.3});
         }
       });
     }
@@ -1485,9 +1489,12 @@ const APP = {
       } else {
         this.state._fetchingWatersheds = (async () => {
           try {
-            const response = await fetch('geoJSON/CAR Watersheds.geojson');
-            const data = await response.json();
-            this.state.rawData['watershed'] = data;
+            let data = this.state.rawData['watershed'];
+            if (!data) {
+              const response = await fetch('geoJSON/CAR Watersheds.geojson');
+              data = await response.json();
+              this.state.rawData['watershed'] = data;
+            }
 
             // Instantiate all layers once, without a filter
             this.state.watershedLayer = L.geoJSON(data, {
