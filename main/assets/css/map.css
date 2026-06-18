@@ -459,9 +459,7 @@ body.panel-open .bottom-left-controls {
   transform: translateX(calc(385px + 16px));
 }
 
-body.panel-open.panel-expanded .bottom-left-controls {
-  transform: translateX(calc(500px + 16px));
-}
+
 
 @media (max-width: 640px) {
   body.panel-open .bottom-left-controls,
