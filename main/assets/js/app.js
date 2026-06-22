@@ -1894,6 +1894,7 @@ const APP = {
       this.state.map.removeLayer(this.state.hydroAdminOutlineLayer);
       this.state.hydroAdminOutlineLayer = null;
     }
+    this.state.hydroActiveFilterIds = [];
     const btn = document.getElementById('hydro-boundary-btn');
     if (btn) btn.classList.remove('active');
     if (!keepViewMode) {
@@ -2143,24 +2144,21 @@ const APP = {
       }
     }
 
-    /* Match feature: municipality slug is "province:muni", province slug is the province name */
+    /* Match feature by _id — this matches the intersection slug exactly
+       (province: "abra", municipality: "apayao:luna"). _id is set by the
+       hierarchy preprocessing script and is present on all NAMRIA features.
+       Fall back to name matching if _id is missing. */
     let target = null;
     const features = this.state.rawData[level].features || [];
-    if (type === 'province') {
-      const name = this._prettySlug(slug);
+    target = features.find(f => (f.properties || {})._id === slug);
+    if (!target) {
+      /* Fallback: match by normalized name (case-insensitive, hyphens→spaces) */
+      const norm = s => (s || '').toLowerCase().replace(/-/g, ' ').trim();
+      const want = norm(slug.split(':').pop());
       target = features.find(f => {
         const p = f.properties || {};
-        return (p.PROVINCE || p.Province || p.NAME_1 || '') === name;
-      });
-    } else {
-      const [provSlug, muniSlug] = slug.split(':');
-      const provName = this._prettySlug(provSlug);
-      const muniName = this._prettySlug(muniSlug);
-      target = features.find(f => {
-        const p = f.properties || {};
-        const fProv = p.PROVINCE || p.Province || p.NAME_1 || '';
-        const fMuni = p.Municipali || p.NAME_2 || p.Muni_City || '';
-        return fProv === provName && fMuni === muniName;
+        if (type === 'province') return norm(p.PROVINCE || p.Province || p.NAME_1) === want;
+        return norm(p.Municipali || p.NAME_2 || p.Muni_City) === want;
       });
     }
     if (!target) {
