@@ -1849,3 +1849,23 @@ body.panel-open .bottom-left-controls {
   margin: 8px 0 0;
   line-height: 1.3;
 }
+
+/* =============================================
+   LEAFLET POPUP LIGHT MODE
+   ============================================= */
+
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.leaflet-popup-content {
+  color: #111827 !important;
+}

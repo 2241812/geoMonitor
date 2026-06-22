@@ -1004,6 +1004,11 @@ const APP = {
         html += `<span class="breadcrumb-sep">›</span>`;
         const shortName = this.state.hydroSelectedBasin.name.replace(/ River Watershed$/, '');
         html += `<button class="breadcrumb-item active">${this._escHtml(shortName)}</button>`;
+        if (this.state.hydroSelectedZone) {
+          const gc = this.state.hydroSelectedZone.properties.gridcode;
+          html += `<span class="breadcrumb-sep">›</span>`;
+          html += `<button class="breadcrumb-item active">Zone ${gc != null ? gc : '?'}</button>`;
+        }
       }
 
       bc.innerHTML = html;
@@ -2000,6 +2005,10 @@ const APP = {
   /* ── Boundary Overlay Menu ── */
 
   _toggleBoundaryMenu() {
+    const baseOpts = document.getElementById('basemap-options');
+    if (baseOpts) baseOpts.classList.remove('show');
+    const wsOpts = document.getElementById('watershed-options');
+    if (wsOpts) wsOpts.classList.remove('show');
     this.state.boundaryMenuOpen = !this.state.boundaryMenuOpen;
     const menu = document.getElementById('boundary-options');
     if (menu) menu.classList.toggle('show', this.state.boundaryMenuOpen);
