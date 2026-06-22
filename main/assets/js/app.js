@@ -1565,11 +1565,14 @@ const APP = {
     const btn = document.getElementById(btnId);
     if (btn) btn.classList.add('active');
 
+    const header = document.querySelector('.info-panel-header');
+
     if (mode === 'watersheds') {
       /* Enter hydro mode: hide admin layers, show basins */
       this._clearHydroState(true); /* keep viewMode */
       this._clearSelection();
       this.closePanel();
+      if (header) header.style.display = 'none';
       /* Remove all admin boundary layers */
       for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
         if (this.state.layers[lvl]) {
@@ -1586,6 +1589,7 @@ const APP = {
       this._clearHydroState(true);
       this._resetWatershedState();
       this.state.currentLevel = 0;
+      if (header) header.style.display = '';
       this._showLevel(0).then(() => {
         this.state.currentLevel = 0;
         const carData = this.state.rawData[0];
