@@ -2027,9 +2027,9 @@ const APP = {
     const data = this.state.rawData[lvl];
     if (!data) return;
     const styleMap = {
-      region: { color: '#059669', weight: 2.5, fillOpacity: 0, opacity: 0.7 },
-      province: { color: '#f59e0b', weight: 2, fillOpacity: 0, opacity: 0.7 },
-      municipality: { color: '#8b5cf6', weight: 1.5, fillOpacity: 0, opacity: 0.6 },
+      region: { color: '#1f2937', weight: 2.5, fillOpacity: 0, opacity: 0.85 },
+      province: { color: '#374151', weight: 2, fillOpacity: 0, opacity: 0.85 },
+      municipality: { color: '#4b5563', weight: 1.5, fillOpacity: 0, opacity: 0.75 },
     };
     this.state.adminLayers[type] = L.geoJSON(data, {
       style: styleMap[type],
@@ -2743,10 +2743,13 @@ const APP = {
       ${this.state.hydroDrillLevel === 1 ? `
       <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
         <div class="panel-section-title">Map Overlays</div>
-        <label class="watershed-option">
-          <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
-          <span class="ws-label">Stream Order</span>
-        </label>
+        <div class="toggle-row">
+          <span>Stream Order</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
       </div>` : ''}
 
       <div class="panel-section">
