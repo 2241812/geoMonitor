@@ -35,6 +35,9 @@ const APP = {
     hydroSelectedZone: null, /* currently isolated sub-watershed zone feature */
     hydroSelectedZoneLayer: null, /* leaflet layer of the isolated zone */
     zoneIntersections: null, /* loaded from zone-intersections.json */
+    showStreamOrder: false,
+    adminLayers: {},
+    boundaryMenuOpen: false,
   },
 
   config: {
@@ -260,6 +263,7 @@ const APP = {
       if (opts) opts.classList.remove('show');
       const wsOpts = document.getElementById('watershed-options');
       if (wsOpts) wsOpts.classList.remove('show');
+      this._closeBoundaryMenu();
     });
 
     /* Click empty space → drill up one level (both modes) */
@@ -391,7 +395,8 @@ const APP = {
   _toggleBasemap() {
     const wsOpts = document.getElementById('watershed-options');
     if (wsOpts) wsOpts.classList.remove('show');
-    
+    this._closeBoundaryMenu();
+
     const opts = document.getElementById('basemap-options');
     if (!opts) return;
     opts.classList.toggle('show');
@@ -1863,17 +1868,19 @@ const APP = {
       this._showToast('Sub-watershed data not available for this basin');
     }
 
-    /* Stream order lines */
+    /* Stream order lines — loaded but only added to map if toggled on */
     if (results[1].status === 'fulfilled') {
       this.state.hydroLayers[2] = L.geoJSON(results[1].value, {
-        /* Style by stream order (grid_code): higher order = thicker + darker blue */
         style: (feature) => {
           const order = feature.properties.grid_code || 1;
           const weight = Math.max(1, Math.min(order * 0.8, 3.5));
           return { color: '#1d4ed8', weight, opacity: 0.85 };
         },
-      }).addTo(map);
-      this.state.hydroLayers[2].bringToFront();
+      });
+      if (this.state.showStreamOrder) {
+        this.state.hydroLayers[2].addTo(map);
+        this.state.hydroLayers[2].bringToFront();
+      }
     } else {
       this._showToast('Stream order data not available for this basin');
     }
@@ -1977,6 +1984,68 @@ const APP = {
     };
   },
 
+  /* Toggle stream order overlay on/off */
+  _toggleStreamOrder() {
+    this.state.showStreamOrder = !this.state.showStreamOrder;
+    const sl = this.state.hydroLayers[2];
+    if (!sl) return;
+    if (this.state.showStreamOrder) {
+      this.state.map.addLayer(sl);
+      sl.bringToFront();
+    } else {
+      this.state.map.removeLayer(sl);
+    }
+  },
+
+  /* ── Boundary Overlay Menu ── */
+
+  _toggleBoundaryMenu() {
+    this.state.boundaryMenuOpen = !this.state.boundaryMenuOpen;
+    const menu = document.getElementById('boundary-options');
+    if (menu) menu.classList.toggle('show', this.state.boundaryMenuOpen);
+  },
+
+  _closeBoundaryMenu() {
+    this.state.boundaryMenuOpen = false;
+    const menu = document.getElementById('boundary-options');
+    if (menu) menu.classList.remove('show');
+  },
+
+  _toggleBoundaryLayer(type, checkbox) {
+    if (checkbox.checked) {
+      this._addBoundaryLayer(type);
+    } else {
+      this._removeBoundaryLayer(type);
+    }
+  },
+
+  _addBoundaryLayer(type) {
+    if (this.state.adminLayers[type]) return;
+    const levelMap = { region: 0, province: 1, municipality: 2 };
+    const lvl = levelMap[type];
+    if (lvl === undefined) return;
+    const data = this.state.rawData[lvl];
+    if (!data) return;
+    const styleMap = {
+      region: { color: '#059669', weight: 2.5, fillOpacity: 0, opacity: 0.7 },
+      province: { color: '#f59e0b', weight: 2, fillOpacity: 0, opacity: 0.7 },
+      municipality: { color: '#8b5cf6', weight: 1.5, fillOpacity: 0, opacity: 0.6 },
+    };
+    this.state.adminLayers[type] = L.geoJSON(data, {
+      style: styleMap[type],
+      onEachFeature: (feature, layer) => {
+        layer.bindTooltip(this._featureName(feature, lvl), { sticky: true, direction: 'top' });
+      },
+    }).addTo(this.state.map);
+  },
+
+  _removeBoundaryLayer(type) {
+    if (this.state.adminLayers[type]) {
+      this.state.map.removeLayer(this.state.adminLayers[type]);
+      this.state.adminLayers[type] = null;
+    }
+  },
+
   /* Drill back up to the basins overview */
   _hydroDrillUp(targetLevel) {
     if (this.state._drilling) return;
@@ -2036,7 +2105,6 @@ const APP = {
     this._clearHydroLayers();
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
-    /* Clean up optional overlays */
     if (this.state.hydroBoundaryLayer && this.state.map) {
       this.state.map.removeLayer(this.state.hydroBoundaryLayer);
       this.state.hydroBoundaryLayer = null;
@@ -2045,9 +2113,13 @@ const APP = {
       this.state.map.removeLayer(this.state.hydroAdminOutlineLayer);
       this.state.hydroAdminOutlineLayer = null;
     }
+    Object.values(this.state.adminLayers).forEach(l => {
+      if (l && this.state.map) this.state.map.removeLayer(l);
+    });
+    this.state.adminLayers = {};
+    this._closeBoundaryMenu();
     this.state.hydroActiveFilterIds = [];
-    const btn = document.getElementById('hydro-boundary-btn');
-    if (btn) btn.classList.remove('active');
+    this.state.showStreamOrder = false;
     if (!keepViewMode) {
       this.state.viewMode = 'boundaries';
       this.state.hydroShowBoundary = false;
@@ -2374,7 +2446,8 @@ const APP = {
   toggleWatershedMenu() {
     const baseOpts = document.getElementById('basemap-options');
     if (baseOpts) baseOpts.classList.remove('show');
-    
+    this._closeBoundaryMenu();
+
     const opts = document.getElementById('watershed-options');
     if (!opts) return;
     opts.classList.toggle('show');
@@ -2666,6 +2739,15 @@ const APP = {
       </div>
 
       ${spansHTML}
+
+      ${this.state.hydroDrillLevel === 1 ? `
+      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
+        <div class="panel-section-title">Map Overlays</div>
+        <label class="watershed-option">
+          <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
+          <span class="ws-label">Stream Order</span>
+        </label>
+      </div>` : ''}
 
       <div class="panel-section">
         <div class="panel-section-title">Details</div>

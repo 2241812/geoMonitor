@@ -617,6 +617,98 @@ body.panel-open .bottom-left-controls {
   pointer-events: none;
 }
 
+/* ── Boundary overlay dropdown ── */
+
+.boundary-switcher {
+  position: relative;
+}
+
+.boundary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s;
+  color: #4b5563;
+}
+
+.boundary-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.boundary-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.boundary-options {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  min-width: 170px;
+  opacity: 0;
+  transform: translateY(10px);
+  z-index: 100;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 8px 0;
+}
+
+.boundary-options.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.boundary-options-header {
+  padding: 4px 14px 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 4px;
+}
+
+.boundary-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  transition: background 0.12s;
+}
+
+.boundary-option:hover {
+  background: #f8fafc;
+}
+
+.boundary-option input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
 .basemap-option {
   display: flex;
   align-items: center;
@@ -1211,7 +1303,8 @@ body.panel-open .bottom-left-controls {
   }
 
   .basemap-btn,
-  .watershed-btn {
+  .watershed-btn,
+  .boundary-btn {
     width: 36px;
     height: 36px;
   }
@@ -1221,7 +1314,8 @@ body.panel-open .bottom-left-controls {
   }
 
   .basemap-options,
-  .watershed-options {
+  .watershed-options,
+  .boundary-options {
     min-width: 140px;
     left: auto;
     right: 0;
@@ -1620,13 +1714,6 @@ body.panel-open .bottom-left-controls {
 /* ── Hydro breadcrumb: water-drop icon ──────── */
 .breadcrumb-item svg path {
   fill: currentColor;
-}
-
-/* ── Hydro mode: CAR Boundary toggle button active state ── */
-#hydro-boundary-btn.active {
-  background: #065f46;
-  color: #fff;
-  box-shadow: 0 2px 6px rgba(6, 95, 70, 0.3);
 }
 
 /* ── Spans: watershed ↔ admin cross-reference chips ── */
