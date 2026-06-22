@@ -6,7 +6,9 @@
 
 async function initLayers() {
   const src = APP._src();
-  /* Fetch level 0 and 1 GeoJSON in parallel */
+  const isWatersheds = APP.state.viewMode === 'watersheds';
+
+  /* Fetch level 0 and 1 GeoJSON in parallel (cache for boundaries mode) */
   const [geo0, geo1] = await Promise.all([
     fetch(src.geoJSON[0]).then(r => r.json()),
     fetch(src.geoJSON[1]).then(r => r.json()),
@@ -14,22 +16,22 @@ async function initLayers() {
   APP.state.rawData[0] = geo0;
   APP.state.rawData[1] = geo1;
 
-  /* Render only level 0 initially */
-  await APP._showLevel(0, null, null);
+  if (!isWatersheds) {
+    /* Boundaries mode — render CAR boundary and open panel */
+    await APP._showLevel(0, null, null);
+    APP.state.currentLevel = 0;
 
-  /* Set initial active level to region */
-  APP.state.currentLevel = 0;
+    for (let lvl = 2; lvl <= src.maxLevel; lvl++) {
+      APP._prefetchLevel(lvl);
+    }
+    APP._updateBreadcrumb();
 
-  /* Prefetch deeper levels in background */
-  for (let lvl = 2; lvl <= src.maxLevel; lvl++) {
-    APP._prefetchLevel(lvl);
-  }
-
-  /* Update breadcrumb to reflect initial state */
-  APP._updateBreadcrumb();
-
-  /* Open CAR panel by default */
-  if (geo0 && geo0.features && geo0.features[0]) {
-    APP.openPanel(geo0.features[0], 0);
+    if (geo0 && geo0.features && geo0.features[0]) {
+      APP.openPanel(geo0.features[0], 0);
+    }
+  } else {
+    /* Watersheds mode — hide admin panel header, skip CAR boundary */
+    const header = document.querySelector('.info-panel-header');
+    if (header) header.style.display = 'none';
   }
 }
