@@ -116,3 +116,5 @@ Auto-deploys from GitHub via Vercel CLI (v54.x, Node.js 18).
 - `EVENTS` object in `app.js` is **unused** (dead legacy code)
 - `dashboard.js` is a **compatibility shim** — all real logic is in `app.js`
 - No tests, CI, linter, or formatter configured
+
+<!-- git config test -->
