@@ -1368,16 +1368,35 @@ img {
 
 @media only screen and (max-width: 768px) {
   .header {
-    min-height: 80px;
-    height: auto;
-    padding: 8px clamp(12px, 3vw, 20px);
-    gap: 4px 8px;
-    flex-wrap: wrap;
-    align-content: center;
+    height: auto !important;
+    min-height: 140px !important;
+    padding: 1.25rem 1rem !important;
+    box-sizing: border-box !important;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 4px;
+  }
+
+  .logo-group {
+    align-self: start;
+    justify-self: start;
+    gap: 8px;
+  }
+
+  .collab-group {
+    display: flex;
+    align-self: end;
+    justify-self: end;
+    gap: 3px;
+  }
+
+  .collab-text-block {
+    display: flex;
   }
 
   .logo {
-    height: 30px;
+    height: 28px;
   }
 
   .brand-text {
@@ -1385,35 +1404,26 @@ img {
   }
 
   .brand-subtitle {
-    font-size: clamp(0.42rem, 1.4vw, 0.55rem);
-    letter-spacing: 0.05em;
+    font-size: clamp(0.4rem, 1.3vw, 0.5rem);
+    letter-spacing: 0.04em;
   }
 
   .brand-title {
-    font-size: clamp(0.7rem, 2.4vw, 1rem);
+    font-size: clamp(0.65rem, 2.2vw, 0.9rem);
     letter-spacing: 0.01em;
   }
 
   .brand-sub-agency {
-    font-size: clamp(0.45rem, 1.5vw, 0.65rem);
+    font-size: clamp(0.42rem, 1.4vw, 0.55rem);
     letter-spacing: 0.03em;
   }
 
-  .collab-group {
-    display: flex;
-    gap: 4px;
-  }
-
-  .collab-text-block {
-    display: flex;
-  }
-
   .collab-title {
-    font-size: clamp(0.6rem, 2vw, 0.85rem);
+    font-size: clamp(0.55rem, 1.8vw, 0.75rem);
   }
 
   .slu-logo {
-    height: 26px;
+    height: 22px;
   }
 
   .hero {
@@ -1459,8 +1469,33 @@ img {
   }
 
   .basin-card-tall {
-    height: 200px;
-    min-height: 200px;
+    height: auto;
+    min-height: 180px;
+    aspect-ratio: 3 / 2;
+  }
+
+  .basin-lightbox-content {
+    width: 90%;
+    height: 65vh;
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .basin-lightbox-text {
+    padding: 24px 16px 32px;
+  }
+
+  .basin-lightbox-text .basin-card-desc {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    line-height: 1.4;
+  }
+
+  .basin-lightbox-close {
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
   }
 
   .footer-inner {
