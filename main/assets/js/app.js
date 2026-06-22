@@ -2042,6 +2042,29 @@ const APP = {
 
     this.state.lastViewed = { feature, isSubWatershed: true };
 
+    /* Build the Spans section from the parent basin — sub-watersheds inherit
+       their basin's administrative boundary spans. */
+    let spansHTML = '';
+    if (basinName && this.state.viewMode === 'watersheds') {
+      const spans = this._watershedSpans(basinName);
+      if (spans.provinces.length || spans.municipalities.length) {
+        spansHTML = `
+          <div class="panel-section">
+            <div class="panel-section-title">Spans — Administrative Boundaries</div>
+            <div class="span-group">
+              <div class="span-group-label">Provinces (${spans.provinces.length})</div>
+              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+            </div>
+            ${spans.municipalities.length ? `
+            <div class="span-group">
+              <div class="span-group-label">Municipalities (${spans.municipalities.length})</div>
+              <div class="span-chip-row span-muni-scroll">${this._renderSpansChips(spans.municipalities, 'municipality')}</div>
+            </div>` : ''}
+            <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
+          </div>`;
+      }
+    }
+
     const html = `
       <div class="panel-hero">
         <button onclick="APP._backToBasinPanel()" class="panel-back-btn">
@@ -2064,7 +2087,8 @@ const APP = {
             <div class="stat-value">${areaHa.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
           </div>` : ''}
         </div>
-      </div>`;
+      </div>
+      ${spansHTML}`;
 
     content.innerHTML = html;
     document.body.classList.add('panel-open');
