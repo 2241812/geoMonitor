@@ -21,8 +21,10 @@ const APP = {
     hierarchy: null,
     activeSource: 'namria',
     activeMode: 'explore',
+    viewMode: 'watersheds', /* 'watersheds' or 'boundaries' */
     watershedsActive: false,
     watershedLayer: null,
+    watershedBaseLayer: null,
   },
 
   config: {
@@ -162,7 +164,11 @@ const APP = {
     // Prefetch for area lookups, but don't set _fetchingWatersheds to avoid breaking lazy-init
     fetch('geoJSON/CAR Watersheds.geojson')
       .then(r => r.json())
-      .then(d => { if (!this.state.rawData['watershed']) this.state.rawData['watershed'] = d; })
+      .then(d => {
+        if (!this.state.rawData['watershed']) this.state.rawData['watershed'] = d;
+        // Auto-render watershed base layer (subtle, always visible underneath admin layers)
+        this._initWatershedBaseLayer(d);
+      })
       .catch(() => {});
 
     /* Prevent mobile info-panel swipes from moving the map */
@@ -263,6 +269,10 @@ const APP = {
     });
 
     window.initLayers().then(() => {
+      /* Re-show watershed base layer after source switch */
+      if (this.state.viewMode === 'watersheds') {
+        this._showWatershedBaseLayer();
+      }
       if (wasOpen) {
         const carData = this.state.rawData[0];
         if (carData && carData.features && carData.features[0]) {
@@ -625,6 +635,11 @@ const APP = {
 
     layer.addTo(this.state.map);
     this.state.layers[level] = layer;
+
+    /* Keep watershed base layer behind admin layers */
+    if (this.state.watershedBaseLayer && this.state.map.hasLayer(this.state.watershedBaseLayer)) {
+      this.state.watershedBaseLayer.bringToBack();
+    }
   },
 
   /* ── Filter GeoJSON to parent boundary ─────── */
@@ -1093,20 +1108,59 @@ const APP = {
         <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
         <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
         <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
+        <div class="legend-item"><span class="legend-dot watershed-dot"></span>Watershed</div>
       </div>
     </div>`;
 
-    /* Add Show More Button and Expanded Content */
-    let expandedHtml = '';
+    /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
     const id = props._id;
+    let intersectingWs = null;
     if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
-      const intersectingWs = this.state.watershedIntersections[id];
-      if (intersectingWs.length > 0) {
+      intersectingWs = this.state.watershedIntersections[id];
+    } else if (level === 0 && this.state.rawData['watershed']) {
+      /* Show all watersheds for the region */
+      intersectingWs = this.state.rawData['watershed'].features
+        .map(f => f.properties.Name || f.properties.Old_Name)
+        .filter(Boolean);
+    }
+
+    if (intersectingWs && intersectingWs.length > 0) {
+      html += `<div class="panel-section">
+        <div class="panel-section-title">Watersheds <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${intersectingWs.length}</span></div>
+        <div class="watershed-summary-list">
+          ${intersectingWs.slice(0, 5).map(ws => {
+            let areaText = '';
+            let outflowText = '';
+            if (this.state.rawData['watershed']) {
+              const wsFeature = this.state.rawData['watershed'].features.find(f => {
+                const n = f.properties.Name || f.properties.Old_Name || '';
+                return n === ws;
+              });
+              if (wsFeature && wsFeature.properties.Area_Ha) {
+                areaText = `<span class="ws-area">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
+              }
+              outflowText = this.config.watershedConnections[ws] || '';
+            }
+            return `<div class="watershed-summary-item">
+              <div class="ws-summary-name">${this._escHtml(ws)}</div>
+              <div class="ws-summary-meta">${areaText}${outflowText ? `<span class="ws-outflow-inline">→ ${this._escHtml(outflowText)}</span>` : ''}</div>
+            </div>`;
+          }).join('')}
+          ${intersectingWs.length > 5 ? `<div class="watershed-summary-more">+ ${intersectingWs.length - 5} more watersheds</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    /* Add Show More Button and Expanded Content — for drilling into specific admin boundaries */
+    let expandedHtml = '';
+    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+      const wsForCheckboxes = this.state.watershedIntersections[id];
+      if (wsForCheckboxes.length > 0) {
         expandedHtml = `<div class="expanded-content">
-          <div class="panel-section-title">Intersecting Watersheds <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${intersectingWs.length}</span></div>
-          <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">The following watersheds have been highlighted on the map:</p>
+          <div class="panel-section-title">Overlay on Map <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${wsForCheckboxes.length}</span></div>
+          <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">Toggle watersheds to highlight them on the map:</p>
           <div class="watershed-list">
-            ${intersectingWs.map(ws => {
+            ${wsForCheckboxes.map(ws => {
               let areaText = '';
               if (this.state.rawData['watershed']) {
                 const wsFeature = this.state.rawData['watershed'].features.find(f => {
@@ -1132,7 +1186,7 @@ const APP = {
         html += `<div class="panel-show-more">
           <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            View Watersheds on Map (${intersectingWs.length})
+            View Watersheds on Map (${wsForCheckboxes.length})
           </button>
         </div>`;
         html += expandedHtml;
@@ -1427,6 +1481,115 @@ const APP = {
     };
     document.addEventListener('fullscreenchange', updateIcon, { once: true });
     setTimeout(updateIcon, 100);
+  },
+
+  /* ── View Mode Toggle: Watersheds / Boundaries ── */
+  _setViewMode(mode) {
+    if (mode === this.state.viewMode) return;
+    this.state.viewMode = mode;
+
+    document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
+    const btnId = mode === 'watersheds' ? 'btn-view-watersheds' : 'btn-view-boundaries';
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('active');
+
+    if (mode === 'watersheds') {
+      this._showWatershedBaseLayer();
+    } else {
+      this._hideWatershedBaseLayer();
+      /* Also clear any active overlay watershed state */
+      this._resetWatershedState();
+    }
+  },
+
+  _initWatershedBaseLayer(data) {
+    const map = this.state.map;
+    if (!map) return;
+    const self = this;
+
+    this.state.watershedBaseLayer = L.geoJSON(data, {
+      interactive: true,
+      style: { fill: '#0ea5e9', stroke: '#0284c7', weight: 1.2, fillOpacity: 0.12, opacity: 0.5 },
+      onEachFeature(feature, layer) {
+        layer.on({
+          mouseover: function(e) {
+            if (self.state.viewMode !== 'watersheds') return;
+            const style = Object.assign({}, self.config.colors.watershedHighlight);
+            style.weight = 2.5;
+            style.fillOpacity = 0.25;
+            e.target.setStyle(style);
+            const p = feature.properties;
+            const name = p.Name || p.Old_Name || 'Unknown Watershed';
+            const lbl = document.getElementById('map-hover-label');
+            if (lbl) {
+              lbl.innerHTML = `<span class="label-level">Watershed</span>${self._escHtml(name)}`;
+              lbl.classList.add('visible');
+              lbl.style.display = '';
+            }
+          },
+          mouseout: function(e) {
+            if (self.state.viewMode !== 'watersheds') return;
+            if (self.state._outlineHighlight !== e.target) {
+              e.target.setStyle({ fill: '#0ea5e9', stroke: '#0284c7', weight: 1.2, fillOpacity: 0.12, opacity: 0.5 });
+            }
+            const lbl = document.getElementById('map-hover-label');
+            if (lbl) {
+              lbl.classList.remove('visible');
+              lbl.style.display = '';
+            }
+          },
+          click: function(e) {
+            if (self.state.viewMode !== 'watersheds') return;
+            L.DomEvent.stopPropagation(e);
+            if (self.state._drilling) return;
+            /* Reset any previous highlight on the base layer */
+            if (self.state._baseLayerHighlight && self.state.watershedBaseLayer) {
+              self.state.watershedBaseLayer.resetStyle(self.state._baseLayerHighlight);
+            }
+            self.state._baseLayerHighlight = e.target;
+            e.target.setStyle(self.config.colors.watershedHighlight);
+            self.state.map.flyToBounds(e.target.getBounds(), {
+              ...self._getPaddingOpts(),
+              duration: 0.45,
+              easeLinearity: 0.25,
+            });
+            self._openWatershedPanel(feature);
+          }
+        });
+      }
+    });
+
+    if (this.state.viewMode === 'watersheds') {
+      this.state.watershedBaseLayer.addTo(map);
+      /* Insert below admin layers */
+      this.state.watershedBaseLayer.bringToBack();
+    }
+  },
+
+  _showWatershedBaseLayer() {
+    const map = this.state.map;
+    const layer = this.state.watershedBaseLayer;
+    if (!map || !layer) return;
+    if (!map.hasLayer(layer)) {
+      layer.addTo(map);
+      layer.bringToBack();
+    }
+  },
+
+  _hideWatershedBaseLayer() {
+    const map = this.state.map;
+    const layer = this.state.watershedBaseLayer;
+    if (!map || !layer) return;
+    /* Reset any highlight */
+    if (this.state._baseLayerHighlight) {
+      layer.resetStyle(this.state._baseLayerHighlight);
+      this.state._baseLayerHighlight = null;
+    }
+    /* If viewing a watershed panel, clear it */
+    if (this.state.lastViewed && this.state.lastViewed.isWatershed) {
+      this.closePanel();
+    }
+    map.removeLayer(layer);
   },
 
   /* ── Watershed Overlay Toggle ───────────── */

@@ -430,6 +430,7 @@ body.mode-explore .outline-toggles {
 .region-dot   { background: #059669; }
 .province-dot { background: #2563eb; }
 .muni-dot     { background: #d97706; }
+.watershed-dot { background: #0ea5e9; }
 
 /* =============================================
    BASEMAP SWITCHER — bottom-left
@@ -541,8 +542,8 @@ body.panel-open .bottom-left-controls {
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow-y: auto;
-  max-height: 300px;
-  min-width: 200px;
+  max-height: 340px;
+  min-width: 260px;
   opacity: 0;
   transform: translateY(10px);
   z-index: 100;
@@ -578,6 +579,19 @@ body.panel-open .bottom-left-controls {
 
 .watershed-option:hover {
   background: #f8fafc;
+}
+
+.watershed-option .ws-label {
+  font-weight: 500;
+}
+
+.watershed-option .ws-outflow {
+  font-size: 10px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-left: auto;
+  padding-left: 8px;
+  white-space: nowrap;
 }
 
 .watershed-group-title {
@@ -1339,6 +1353,126 @@ body.panel-open .bottom-left-controls {
   background: #ecfdf5;
   color: #065f46;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* =============================================
+   VIEW MODE + SOURCE TOGGLE ROW
+   ============================================= */
+.top-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.view-toggle-control {
+  display: flex;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 99px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.view-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: #374151;
+}
+.view-toggle-btn.active {
+  background: #ecfdf5;
+  color: #065f46;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.view-toggle-btn.active#btn-view-watersheds {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* =============================================
+   WATERSHED SUMMARY LIST (panel)
+   ============================================= */
+.watershed-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.watershed-summary-item {
+  padding: 8px 10px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.watershed-summary-item:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.ws-summary-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0c4a6e;
+  line-height: 1.2;
+}
+
+.ws-summary-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 0.75rem;
+}
+
+.ws-area {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ws-outflow-inline {
+  color: #0ea5e9;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.watershed-summary-more {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  padding: 4px 0;
+}
+
+@media (max-width: 640px) {
+  .top-controls-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .view-toggle-btn,
+  .source-toggle-btn {
+    padding: 6px 10px;
+    font-size: 11.5px;
+  }
 }
 
 
