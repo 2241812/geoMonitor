@@ -32,6 +32,9 @@ const APP = {
     hydroBoundaryLayer: null, /* L.geoJSON layer for the CAR boundary outline */
     hydroAdminOutlineLayer: null, /* L.geoJSON layer for province/muni outline from Spans chips */
     hydroActiveFilterIds: [], /* watershed IDs checked via the checkbox dropdown in hydro mode */
+    hydroSelectedZone: null, /* currently isolated sub-watershed zone feature */
+    hydroSelectedZoneLayer: null, /* leaflet layer of the isolated zone */
+    zoneIntersections: null, /* loaded from zone-intersections.json */
   },
 
   config: {
@@ -211,6 +214,11 @@ const APP = {
       .then(r => r.json())
       .then(w => { this.state.watershedIntersections = w; })
       .catch(() => {});
+
+    fetch('geoJSON/zone-intersections.json')
+      .then(r => r.json())
+      .then(z => { this.state.zoneIntersections = z; })
+      .catch(() => {});
       
     // Prefetch watershed data for area lookups and hydro mode
     fetch('geoJSON/CAR Watersheds.geojson')
@@ -258,8 +266,15 @@ const APP = {
     map.on('click', () => {
       if (this.state._drilling) return;
 
-      /* Hydro mode: clicking empty space drills back to basin overview */
+      /* Hydro mode: clicking empty space deselects isolated zone first, then drills back to basin overview */
       if (this.state.viewMode === 'watersheds' && this.state.hydroDrillLevel >= 1) {
+        if (this.state.hydroSelectedZone) {
+          this._restoreSubWatersheds();
+          this.state.hydroSelectedZone = null;
+          this.state.hydroSelectedZoneLayer = null;
+          this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+          return;
+        }
         this._hydroDrillUp(0);
         return;
       }
@@ -279,6 +294,20 @@ const APP = {
       if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
+    });
+
+    /* Keep the map sized correctly when the viewport changes
+       (mobile address bar show/hide, fullscreen toggle, orientation). */
+    let _resizeTimer = null;
+    window.addEventListener('resize', () => {
+      if (_resizeTimer) clearTimeout(_resizeTimer);
+      _resizeTimer = setTimeout(() => {
+        if (this.state.map) this.state.map.invalidateSize();
+      }, 150);
+    });
+    /* Also invalidate after the loading overlay is hidden */
+    window.addEventListener('load', () => {
+      if (this.state.map) this.state.map.invalidateSize();
     });
   },
 
@@ -1552,6 +1581,8 @@ const APP = {
     };
     document.addEventListener('fullscreenchange', updateIcon, { once: true });
     setTimeout(updateIcon, 100);
+    /* Map needs to recalculate its size after entering/leaving fullscreen */
+    setTimeout(() => { if (this.state.map) this.state.map.invalidateSize(); }, 250);
   },
 
   /* ── View Mode Toggle: Watersheds / Boundaries ── */
@@ -1602,6 +1633,22 @@ const APP = {
 
   /* ── Hydro Mode: enter, render basins ── */
   async _enterHydroMode() {
+    /* Defensive cleanup: ensure no residual admin boundary layers remain */
+    for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+      if (this.state.layers[lvl]) {
+        this.state.map.removeLayer(this.state.layers[lvl]);
+        this.state.layers[lvl] = null;
+      }
+    }
+    Object.values(this.state.outlineLayers).forEach(l => {
+      if (l) this.state.map.removeLayer(l);
+    });
+    this.state.outlineLayers = {};
+    this.state.activeOutline = null;
+    this.state._outlineHighlight = null;
+    this.state.selectedPath = [];
+    this.state.currentLevel = 0;
+
     if (!this.state.rawData['watershed']) {
       try {
         const resp = await fetch('geoJSON/CAR Watersheds.geojson');
@@ -1614,6 +1661,8 @@ const APP = {
     this._renderHydroBasins();
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
+    this.state.hydroSelectedZone = null;
+    this.state.hydroSelectedZoneLayer = null;
     this._updateBreadcrumb();
     this._showBasinPickerPanel();
   },
@@ -1787,6 +1836,7 @@ const APP = {
         style: { fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 },
         onEachFeature(feature, layer) {
           layer.on('mouseover', function(e) {
+            if (layer._hiddenByIsolation) return;
             e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.55, weight: 2.5, opacity: 1 });
             const lbl = document.getElementById('map-hover-label');
             if (lbl) {
@@ -1797,12 +1847,14 @@ const APP = {
             }
           });
           layer.on('mouseout', function(e) {
+            if (layer._hiddenByIsolation) return;
             e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 });
             self._hideHoverLabel();
           });
           layer.on('click', function(e) {
             L.DomEvent.stopPropagation(e);
-            self._openSubWatershedPanel(feature);
+            if (layer._hiddenByIsolation) return;
+            self._selectSubWatershed(feature, layer);
           });
         },
       }).addTo(map);
@@ -1832,6 +1884,99 @@ const APP = {
     }
   },
 
+  /* ── Sub-watershed zone isolation ── */
+
+  /* Select a sub-watershed zone: isolate it visually and open its detail panel */
+  _selectSubWatershed(feature, leafletLayer) {
+    /* If clicking the same zone again, deselect it */
+    if (this.state.hydroSelectedZone === feature) {
+      this._restoreSubWatersheds();
+      this.state.hydroSelectedZone = null;
+      this.state.hydroSelectedZoneLayer = null;
+      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+      return;
+    }
+
+    this._dimSubWatersheds(feature);
+    this.state.hydroSelectedZone = feature;
+    this.state.hydroSelectedZoneLayer = leafletLayer;
+
+    /* Zoom to the selected zone */
+    if (leafletLayer && leafletLayer.getBounds) {
+      this.state.map.flyToBounds(leafletLayer.getBounds(), {
+        padding: [150, 150],
+        maxZoom: 12,
+        duration: 0.45,
+        easeLinearity: 0.25,
+      });
+    }
+
+    this._openSubWatershedPanel(feature);
+  },
+
+  /* Dim all sub-watershed zones except the selected one */
+  _dimSubWatersheds(selectedFeature) {
+    const layer = this.state.hydroLayers[1];
+    if (!layer) return;
+    layer.eachLayer(function(leafletLayer) {
+      if (leafletLayer.feature !== selectedFeature) {
+        leafletLayer._hiddenByIsolation = true;
+        leafletLayer.setStyle({
+          fillOpacity: 0,
+          opacity: 0,
+          weight: 0,
+        });
+      } else {
+        leafletLayer._hiddenByIsolation = false;
+        leafletLayer.setStyle({
+          fillColor: '#0ea5e9',
+          fillOpacity: 0.55,
+          color: '#0369a1',
+          weight: 3,
+          opacity: 1,
+        });
+        leafletLayer.bringToFront();
+      }
+    });
+    /* Keep stream order on top */
+    if (this.state.hydroLayers[2]) this.state.hydroLayers[2].bringToFront();
+  },
+
+  /* Restore all sub-watershed zones to their normal style */
+  _restoreSubWatersheds() {
+    const layer = this.state.hydroLayers[1];
+    if (!layer) return;
+    layer.eachLayer(function(leafletLayer) {
+      delete leafletLayer._hiddenByIsolation;
+      leafletLayer.setStyle({
+        fillColor: '#0ea5e9',
+        fillOpacity: 0.3,
+        color: '#0284c7',
+        weight: 1.2,
+        opacity: 0.8,
+      });
+    });
+  },
+
+  /* ── Zone-level admin boundary spans ── */
+
+  /* Look up zone-specific admin boundary spans from zoneIntersections.
+     Key format: "<basinCode>:<gridcode>" e.g. "AGN:27" */
+  _zoneSpans(basinCode, gridcode) {
+    const data = this.state.zoneIntersections;
+    if (!data) return null;
+    const key = basinCode + ':' + gridcode;
+    const entry = data[key];
+    if (!entry) return null;
+    return {
+      provinces: (entry.provinces || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
+      municipalities: (entry.municipalities || []).map(slug => {
+        const parts = slug.split(':');
+        return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
+      }),
+    };
+  },
+
   /* Drill back up to the basins overview */
   _hydroDrillUp(targetLevel) {
     if (this.state._drilling) return;
@@ -1849,6 +1994,8 @@ const APP = {
 
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
+    this.state.hydroSelectedZone = null;
+    this.state.hydroSelectedZoneLayer = null;
 
     /* Restore basin styles — re-apply checkbox filter if active, else normal overview */
     if (this.state.hydroLayers[0]) {
@@ -2038,16 +2185,25 @@ const APP = {
     const gridcode = p.gridcode != null ? p.gridcode : '?';
     const areaM2 = parseFloat(p.Shape_Area || 0);
     const areaHa = areaM2 > 0 ? (areaM2 / 10000) : 0;
-    const basinName = this.state.hydroSelectedBasin ? this.state.hydroSelectedBasin.name : '';
+    const basin = this.state.hydroSelectedBasin;
+    const basinName = basin ? basin.name : '';
+    const basinCode = basin ? basin.code : '';
 
     this.state.lastViewed = { feature, isSubWatershed: true };
 
-    /* Build the Spans section from the parent basin — sub-watersheds inherit
-       their basin's administrative boundary spans. */
+    /* Build the Spans section — prefer zone-specific spans, fall back to basin spans */
     let spansHTML = '';
-    if (basinName && this.state.viewMode === 'watersheds') {
-      const spans = this._watershedSpans(basinName);
-      if (spans.provinces.length || spans.municipalities.length) {
+    if (this.state.viewMode === 'watersheds') {
+      let spans = null;
+      /* Try zone-specific spans first */
+      if (basinCode && gridcode != null) {
+        spans = this._zoneSpans(basinCode, gridcode);
+      }
+      /* Fall back to basin-level spans if zone data not available */
+      if (!spans && basinName) {
+        spans = this._watershedSpans(basinName);
+      }
+      if (spans && (spans.provinces.length || spans.municipalities.length)) {
         spansHTML = `
           <div class="panel-section">
             <div class="panel-section-title">Spans — Administrative Boundaries</div>
