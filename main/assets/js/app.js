@@ -1906,6 +1906,7 @@ const APP = {
       this.state.hydroSelectedZone = null;
       this.state.hydroSelectedZoneLayer = null;
       this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+      this._updateBreadcrumb();
       return;
     }
 
@@ -1924,6 +1925,7 @@ const APP = {
     }
 
     this._openSubWatershedPanel(feature);
+    this._updateBreadcrumb();
   },
 
   /* Dim all sub-watershed zones except the selected one */
