@@ -1514,6 +1514,9 @@ body.panel-open .bottom-left-controls {
 
 .basin-picker-section {
   padding-top: 4px !important;
+  max-height: calc(60vh - 200px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .basin-picker-group {
@@ -1528,10 +1531,10 @@ body.panel-open .bottom-left-controls {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #94a3b8;
+  color: #64748b;
   padding: 0 2px 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  margin-bottom: 4px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 6px;
 }
 
 .basin-picker-item {
@@ -1539,26 +1542,27 @@ body.panel-open .bottom-left-controls {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 10px 12px;
   cursor: pointer;
-  color: inherit;
+  color: #0f172a;
   text-align: left;
   font-family: inherit;
   font-size: 0.88rem;
-  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
   min-height: 44px;
   -webkit-tap-highlight-color: transparent;
 }
 .basin-picker-item:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.15);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .basin-picker-item:active {
   transform: scale(0.98);
-  background: rgba(255,255,255,0.14);
+  background: #e2e8f0;
 }
 
 .basin-picker-info {
@@ -1571,7 +1575,7 @@ body.panel-open .bottom-left-controls {
 
 .basin-picker-name {
   font-weight: 600;
-  color: #f1f5f9;
+  color: #0f172a;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -1583,13 +1587,13 @@ body.panel-open .bottom-left-controls {
   align-items: center;
   gap: 8px;
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: #64748b;
   line-height: 1;
 }
 
 .basin-size {
-  background: rgba(14,165,233,0.15);
-  color: #7dd3fc;
+  background: #e0f2fe;
+  color: #0369a1;
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
@@ -1599,13 +1603,13 @@ body.panel-open .bottom-left-controls {
 }
 
 .basin-area {
-  color: #64748b;
+  color: #94a3b8;
   font-weight: 500;
 }
 
 .basin-picker-arrow {
   flex-shrink: 0;
-  color: #475569;
+  color: #94a3b8;
   margin-left: 8px;
 }
 
@@ -1619,4 +1623,87 @@ body.panel-open .bottom-left-controls {
 /* ── Hydro breadcrumb: water-drop icon ──────── */
 .breadcrumb-item svg path {
   fill: currentColor;
+}
+
+/* ── Hydro mode: CAR Boundary toggle button active state ── */
+#hydro-boundary-btn.active {
+  background: #065f46;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(6, 95, 70, 0.3);
+}
+
+/* ── Spans: watershed ↔ admin cross-reference chips ── */
+
+.span-group {
+  margin-bottom: 10px;
+}
+.span-group:last-of-type {
+  margin-bottom: 4px;
+}
+
+.span-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.span-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.span-muni-scroll {
+  max-height: 120px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
+}
+
+.span-chip {
+  display: inline-flex;
+  align-items: center;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 32px;
+  line-height: 1.2;
+}
+.span-chip:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+.span-chip:active {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+.span-chip.active {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.25);
+}
+
+.span-empty {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.span-hint {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin: 8px 0 0;
+  line-height: 1.3;
 }

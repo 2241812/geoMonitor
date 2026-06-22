@@ -28,6 +28,10 @@ const APP = {
     hydroDrillLevel: 0, /* 0 = basins overview, 1 = drilled into a basin's sub-watersheds */
     hydroSelectedBasin: null, /* { name, folder, code, feature } */
     hydroLayers: {}, /* key 0 = basins, 1 = sub-watersheds, 2 = stream order */
+    hydroShowBoundary: false, /* whether the CAR outline is toggled on in hydro mode */
+    hydroBoundaryLayer: null, /* L.geoJSON layer for the CAR boundary outline */
+    hydroAdminOutlineLayer: null, /* L.geoJSON layer for province/muni outline from Spans chips */
+    hydroActiveFilterIds: [], /* watershed IDs checked via the checkbox dropdown in hydro mode */
   },
 
   config: {
@@ -1674,6 +1678,40 @@ const APP = {
     }).addTo(map);
   },
 
+  /* Apply checkbox filter to the basin overview layer.
+     - When hydroActiveFilterIds is empty: all basins shown normally.
+     - When non-empty: only checked basins keep full color; others are hidden (fillOpacity 0, faint outline). */
+  _applyHydroFilter() {
+    const layer = this.state.hydroLayers[0];
+    if (!layer) return;
+    const self = this;
+    const filter = this.state.hydroActiveFilterIds;
+    const colors = this.config.hydroLevelColors;
+
+    if (filter.length === 0) {
+      /* Restore normal overview styles (only if not currently drilled in) */
+      if (this.state.hydroDrillLevel === 0) {
+        layer.eachLayer(function(lf) {
+          const idx = self._hydroBasinIndex(lf.feature);
+          const c = colors[idx] || '#6b7280';
+          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+        });
+      }
+      return;
+    }
+
+    layer.eachLayer(function(lf) {
+      const name = lf.feature.properties.Name || lf.feature.properties.Old_Name || '';
+      const idx = self._hydroBasinIndex(lf.feature);
+      const c = colors[idx] || '#6b7280';
+      if (filter.includes(name)) {
+        lf.setStyle({ fillColor: c, fillOpacity: 0.4, color: c, weight: 3, opacity: 1 });
+      } else {
+        lf.setStyle({ fillColor: c, fillOpacity: 0, color: c, weight: 0.5, opacity: 0.15 });
+      }
+    });
+  },
+
   /* Drill into a basin: load sub-watersheds + stream order */
   async _hydroDrillDown(feature, leafletLayer) {
     if (this.state._drilling) return;
@@ -1801,17 +1839,24 @@ const APP = {
     [1, 2].forEach(l => {
       if (self.state.hydroLayers[l]) { map.removeLayer(self.state.hydroLayers[l]); self.state.hydroLayers[l] = null; }
     });
+    /* Remove admin outline overlay if active */
+    if (self.state.hydroAdminOutlineLayer) { map.removeLayer(self.state.hydroAdminOutlineLayer); self.state.hydroAdminOutlineLayer = null; }
+    document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
 
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
 
-    /* Restore all basin styles */
+    /* Restore basin styles — re-apply checkbox filter if active, else normal overview */
     if (this.state.hydroLayers[0]) {
-      this.state.hydroLayers[0].eachLayer(function(lf) {
-        const idx = self._hydroBasinIndex(lf.feature);
-        const c = self.config.hydroLevelColors[idx] || '#6b7280';
-        lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
-      });
+      if (this.state.hydroActiveFilterIds && this.state.hydroActiveFilterIds.length > 0) {
+        this._applyHydroFilter();
+      } else {
+        this.state.hydroLayers[0].eachLayer(function(lf) {
+          const idx = self._hydroBasinIndex(lf.feature);
+          const c = self.config.hydroLevelColors[idx] || '#6b7280';
+          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+        });
+      }
     }
 
     /* Fly back to CAR bounds */
@@ -1840,8 +1885,59 @@ const APP = {
     this._clearHydroLayers();
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
-    if (!keepViewMode) this.state.viewMode = 'boundaries';
+    /* Clean up optional overlays */
+    if (this.state.hydroBoundaryLayer && this.state.map) {
+      this.state.map.removeLayer(this.state.hydroBoundaryLayer);
+      this.state.hydroBoundaryLayer = null;
+    }
+    if (this.state.hydroAdminOutlineLayer && this.state.map) {
+      this.state.map.removeLayer(this.state.hydroAdminOutlineLayer);
+      this.state.hydroAdminOutlineLayer = null;
+    }
+    const btn = document.getElementById('hydro-boundary-btn');
+    if (btn) btn.classList.remove('active');
+    if (!keepViewMode) {
+      this.state.viewMode = 'boundaries';
+      this.state.hydroShowBoundary = false;
+    }
     this._updateBreadcrumb();
+  },
+
+  /* ── Toggle CAR boundary outline in hydro mode ── */
+  async _toggleHydroBoundary() {
+    if (this.state.viewMode !== 'watersheds') return;
+    this.state.hydroShowBoundary = !this.state.hydroShowBoundary;
+    const map = this.state.map;
+    const btn = document.getElementById('hydro-boundary-btn');
+    if (btn) btn.classList.toggle('active', this.state.hydroShowBoundary);
+
+    if (this.state.hydroShowBoundary) {
+      /* Lazily create the boundary layer */
+      if (!this.state.hydroBoundaryLayer) {
+        try {
+          if (!this.state.rawData[0]) {
+            const resp = await fetch('geoJSON/CAR NAMRIA Boundary.geojson');
+            this.state.rawData[0] = await resp.json();
+          }
+          this.state.hydroBoundaryLayer = L.geoJSON(this.state.rawData[0], {
+            interactive: false,
+            style: { color: '#0f172a', weight: 2.5, fillOpacity: 0, dashArray: '6 4', opacity: 0.7 },
+          }).addTo(map);
+          this.state.hydroBoundaryLayer.bringToBack();
+        } catch (_) {
+          this._showToast('Failed to load CAR boundary');
+          this.state.hydroShowBoundary = false;
+          if (btn) btn.classList.remove('active');
+        }
+      } else {
+        map.addLayer(this.state.hydroBoundaryLayer);
+        this.state.hydroBoundaryLayer.bringToBack();
+      }
+    } else {
+      if (this.state.hydroBoundaryLayer) {
+        map.removeLayer(this.state.hydroBoundaryLayer);
+      }
+    }
   },
 
   /* ── Basin Picker Panel (mobile-friendly tappable list) ── */
@@ -1980,6 +2076,117 @@ const APP = {
     }
   },
 
+  /* ── Watershed ↔ boundary cross-reference ── */
+
+  /* Title-case a slug like "baay-licuan" → "Baay-Licuan", preserving known acronyms */
+  _prettySlug(slug) {
+    const acronyms = { car: 'CAR' };
+    return slug.split('-').map(part => {
+      if (acronyms[part]) return acronyms[part];
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    }).join('-');
+  },
+
+  /* Invert watershedIntersections: for the given watershed name, return
+     { provinces: [{slug,label}], municipalities: [{slug,label,province}] } */
+  _watershedSpans(wsName) {
+    const data = this.state.watershedIntersections;
+    if (!data) return { provinces: [], municipalities: [] };
+    const provinces = [];
+    const municipalities = [];
+    Object.keys(data).forEach(key => {
+      if (!Array.isArray(data[key]) || !data[key].includes(wsName)) return;
+      if (key.includes(':')) {
+        const [provSlug, muniSlug] = key.split(':');
+        municipalities.push({ slug: key, province: this._prettySlug(provSlug), label: this._prettySlug(muniSlug) });
+      } else {
+        provinces.push({ slug: key, label: this._prettySlug(key) });
+      }
+    });
+    /* Sort municipalities by province then name for stable display */
+    municipalities.sort((a, b) => a.province === b.province ? a.label.localeCompare(b.label) : a.province.localeCompare(b.province));
+    return { provinces, municipalities };
+  },
+
+  /* Render tappable chip list HTML for the Spans section */
+  _renderSpansChips(items, type) {
+    if (!items.length) return '<span class="span-empty">—</span>';
+    return items.map(it => {
+      const escaped = this._escHtml(it.label).replace(/'/g, '&#39;');
+      return `<button class="span-chip" onclick="APP._outlineAdminUnit('${type}','${this._escHtml(it.slug).replace(/'/g, '&#39;')}')">${escaped}</button>`;
+    }).join('');
+  },
+
+  /* Toggle a province/municipality outline overlay on top of the current hydro view */
+  async _outlineAdminUnit(type, slug) {
+    const map = this.state.map;
+    if (!map) return;
+
+    /* If the same chip is tapped again, remove the outline */
+    const chip = document.querySelector(`.span-chip[onclick*="'${type}','${slug}'"]`);
+    if (this.state.hydroAdminOutlineLayer && chip && chip.classList.contains('active')) {
+      map.removeLayer(this.state.hydroAdminOutlineLayer);
+      this.state.hydroAdminOutlineLayer = null;
+      chip.classList.remove('active');
+      return;
+    }
+
+    const level = type === 'province' ? 1 : 2;
+    /* Use NAMRIA data (has Province + Municipality schemas) */
+    if (!this.state.rawData[level]) {
+      try {
+        const resp = await fetch('geoJSON/CAR NAMRIA ' + (level === 1 ? 'Provincial' : 'Municipal') + ' Boundary.geojson');
+        this.state.rawData[level] = await resp.json();
+      } catch (_) {
+        this._showToast('Failed to load boundary data');
+        return;
+      }
+    }
+
+    /* Match feature: municipality slug is "province:muni", province slug is the province name */
+    let target = null;
+    const features = this.state.rawData[level].features || [];
+    if (type === 'province') {
+      const name = this._prettySlug(slug);
+      target = features.find(f => {
+        const p = f.properties || {};
+        return (p.PROVINCE || p.Province || p.NAME_1 || '') === name;
+      });
+    } else {
+      const [provSlug, muniSlug] = slug.split(':');
+      const provName = this._prettySlug(provSlug);
+      const muniName = this._prettySlug(muniSlug);
+      target = features.find(f => {
+        const p = f.properties || {};
+        const fProv = p.PROVINCE || p.Province || p.NAME_1 || '';
+        const fMuni = p.Municipali || p.NAME_2 || p.Muni_City || '';
+        return fProv === provName && fMuni === muniName;
+      });
+    }
+    if (!target) {
+      this._showToast('Boundary not found for ' + slug);
+      return;
+    }
+
+    /* Remove previous outline */
+    if (this.state.hydroAdminOutlineLayer) {
+      map.removeLayer(this.state.hydroAdminOutlineLayer);
+    }
+    document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+
+    this.state.hydroAdminOutlineLayer = L.geoJSON(target, {
+      interactive: false,
+      style: { color: '#dc2626', weight: 2.5, fillOpacity: 0.06, dashArray: '5 3', opacity: 0.9 },
+    }).addTo(map);
+    this.state.hydroAdminOutlineLayer.bringToFront();
+    if (chip) chip.classList.add('active');
+
+    /* Fly to the outlined unit */
+    try {
+      map.flyToBounds(this.state.hydroAdminOutlineLayer.getBounds(), { ...this._getPaddingOpts(), duration: 0.45, easeLinearity: 0.25 });
+    } catch (_) {}
+  },
+
 
   /* ── Watershed Overlay Toggle ───────────── */
   toggleWatershedMenu() {
@@ -2022,6 +2229,13 @@ const APP = {
 
     const btn = document.getElementById('watershed-btn');
     if (btn) btn.classList.toggle('active', this.state.activeWatershedIds.length > 0);
+
+    /* ── Hydro mode: filter the basin layer to only checked basins ── */
+    if (this.state.viewMode === 'watersheds') {
+      this.state.hydroActiveFilterIds = [...this.state.activeWatershedIds];
+      this._applyHydroFilter();
+      return;
+    }
 
     // Initial load if needed
     if (!this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
@@ -2203,6 +2417,28 @@ const APP = {
     const name = p.Name || p.Old_Name || 'Unknown Watershed';
     const id = p.WSID || p.UNQ_ID || '';
     const connectsTo = this.config.watershedConnections[name] || 'Unknown';
+
+    /* Build the Spans section (only in hydro mode, where it's most useful) */
+    let spansHTML = '';
+    if (this.state.viewMode === 'watersheds') {
+      const spans = this._watershedSpans(name);
+      if (spans.provinces.length || spans.municipalities.length) {
+        spansHTML = `
+          <div class="panel-section">
+            <div class="panel-section-title">Spans — Administrative Boundaries</div>
+            <div class="span-group">
+              <div class="span-group-label">Provinces (${spans.provinces.length})</div>
+              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+            </div>
+            ${spans.municipalities.length ? `
+            <div class="span-group">
+              <div class="span-group-label">Municipalities (${spans.municipalities.length})</div>
+              <div class="span-chip-row span-muni-scroll">${this._renderSpansChips(spans.municipalities, 'municipality')}</div>
+            </div>` : ''}
+            <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
+          </div>`;
+      }
+    }
     
     // Store in global state for chart and panel toggle
     this.state.lastViewed = { feature, isWatershed: true };
@@ -2246,6 +2482,8 @@ const APP = {
           </div>
         </div>
       </div>
+
+      ${spansHTML}
 
       <div class="panel-section">
         <div class="panel-section-title">Details</div>
