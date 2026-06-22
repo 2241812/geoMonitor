@@ -1480,7 +1480,7 @@ body.panel-open .bottom-left-controls {
 .panel-back-btn {
   background: none;
   border: none;
-  color: #0ea5e9;
+  color: #bae6fd;
   cursor: pointer;
   font-size: 0.85rem;
   display: flex;
@@ -1493,7 +1493,7 @@ body.panel-open .bottom-left-controls {
   line-height: 1;
 }
 .panel-back-btn:hover {
-  color: #0284c7;
+  color: #e0f2fe;
 }
 .panel-back-btn svg {
   flex-shrink: 0;
@@ -1703,7 +1703,7 @@ body.panel-open .bottom-left-controls {
 
 .span-hint {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: #6b7280;
   margin: 8px 0 0;
   line-height: 1.3;
 }
