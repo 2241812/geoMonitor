@@ -397,17 +397,19 @@ const APP = {
     });
     this.state.adminLayers = {};
 
+    /* Always clear ALL cached raw admin data — NAMRIA uses levels 0/1/2,
+       CAD uses 0/1. Stale levels from the previous source must not linger
+       (e.g. NAMRIA's rawData[2] must be wiped when switching to CAD), even
+       when no overlay checkbox is currently checked, so that a later Spans
+       chip tap doesn't render the other source's geometry. */
+    this.state.rawData = {};
+
     /* Reload raw admin data for the new source, then re-add checked overlays */
     const checkboxes = document.querySelectorAll('#boundary-options input[type="checkbox"]:checked');
     if (checkboxes.length === 0) return;
 
     const src = this._src();
     const typesToReload = [...new Set([...checkboxes].map(cb => cb.dataset.type).filter(Boolean))];
-
-    /* Clear ALL cached raw admin data — NAMRIA uses levels 0/1/2, CAD uses 0/1.
-       Stale levels from the previous source must not linger (e.g. NAMRIA's
-       rawData[2] must be wiped when switching to CAD). */
-    this.state.rawData = {};
 
     /* Collect the unique set of levels we need to load for the new source */
     const levelsToFetch = new Set();
@@ -2539,35 +2541,28 @@ const APP = {
       return;
     }
 
-    const level = type === 'province' ? 1 : 2;
-    const src = this._src();
-    /* In CAD mode there is no separate province level — province outlines are
-       derived by dissolving the municipal features that share the Province. */
     const useCad = this.state.activeSource === 'cad';
+    /* In CAD mode there is no separate province level — province outlines are
+       derived by dissolving the municipal features that share the Province.
+       CAD municipalities also live at level 1 (maxLevel=1), not level 2.
+       Use a source-prefixed cache key so stale data from the other source is
+       never reused after a source switch in watershed mode. */
+    const adminLvl = useCad ? 1 : (type === 'province' ? 1 : 2);
+    const cacheKey = (useCad ? 'cad:' : 'namria:') + adminLvl;
 
-    /* Use the active source's boundary data */
-    if (useCad) {
-      /* CAD only exposes level 1 (municipal). Province = dissolved municipalities. */
-      if (!this.state.rawData[1]) {
-        try {
-          const resp = await fetch('geoJSON/CAR CAD Municipal Boundary.geojson');
-          this.state.rawData[1] = await resp.json();
-        } catch (_) {
-          this._showToast('Failed to load boundary data');
-          return;
-        }
-      }
-    } else {
-      if (!this.state.rawData[level]) {
-        try {
-          const resp = await fetch('geoJSON/CAR NAMRIA ' + (level === 1 ? 'Provincial' : 'Municipal') + ' Boundary.geojson');
-          this.state.rawData[level] = await resp.json();
-        } catch (_) {
-          this._showToast('Failed to load boundary data');
-          return;
-        }
+    if (!this.state.rawData[cacheKey]) {
+      try {
+        const url = useCad
+          ? 'geoJSON/CAR CAD Municipal Boundary.geojson'
+          : 'geoJSON/CAR NAMRIA ' + (adminLvl === 1 ? 'Provincial' : 'Municipal') + ' Boundary.geojson';
+        const resp = await fetch(url);
+        this.state.rawData[cacheKey] = await resp.json();
+      } catch (_) {
+        this._showToast('Failed to load boundary data');
+        return;
       }
     }
+    const boundaryData = this.state.rawData[cacheKey];
 
     /* Resolve the target feature(s) for the slug. CAD provinces may need
        multiple municipal features dissolved into one outline. */
@@ -2578,13 +2573,13 @@ const APP = {
 
     if (useCad && type === 'province') {
       /* CAD province: gather all municipal features whose Province slug matches */
-      const features = (this.state.rawData[1].features || []).filter(f => {
+      const features = (boundaryData.features || []).filter(f => {
         const provSlug = (f.properties || {}).Province.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         return provSlug === slug;
       });
       if (features.length) targetFeatures = features;
     } else {
-      const features = (this.state.rawData[level].features || []);
+      const features = (boundaryData.features || []);
       targetFeature = features.find(f => (f.properties || {})._id === slug);
       if (!targetFeature) {
         /* Fallback: match by normalized name */
