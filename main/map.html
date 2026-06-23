@@ -101,9 +101,9 @@
         </button>
         <div class="boundary-options" id="boundary-options">
           <div class="boundary-options-header">Boundary Overlays</div>
-          <label class="boundary-option"><input type="checkbox" onchange="APP._toggleBoundaryLayer('region', this)"><span>Region</span></label>
-          <label class="boundary-option"><input type="checkbox" onchange="APP._toggleBoundaryLayer('province', this)"><span>Province</span></label>
-          <label class="boundary-option"><input type="checkbox" onchange="APP._toggleBoundaryLayer('municipality', this)"><span>Municipality</span></label>
+          <label class="boundary-option"><input type="checkbox" data-type="region" onchange="APP._toggleBoundaryLayer('region', this)"><span>Region</span></label>
+          <label class="boundary-option"><input type="checkbox" data-type="province" onchange="APP._toggleBoundaryLayer('province', this)"><span>Province</span></label>
+          <label class="boundary-option"><input type="checkbox" data-type="municipality" onchange="APP._toggleBoundaryLayer('municipality', this)"><span>Municipality</span></label>
         </div>
       </div>
       
