@@ -7,6 +7,17 @@ body {
   padding: 0;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  
+  /* Security Feature: Prevent text/image selection */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Security Feature: Hide content when printing */
+@media print {
+  body {
+    display: none !important;
+  }
 }
 
 button, input, select, textarea {

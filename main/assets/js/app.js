@@ -2807,3 +2807,52 @@ const EVENTS = {
   FEATURE_SELECT: 'feature:select',
   FEATURE_CLEAR: 'feature:clear',
 };
+
+// ==========================================
+// SECURITY FEATURES
+// ==========================================
+
+// Prevent common screenshot shortcuts
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'PrintScreen') {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText('');
+    }
+    alert('Screenshots and screen recording are disabled on this page due to sensitive data.');
+  }
+});
+
+// Prevent Print (Ctrl+P, Cmd+P) and Save (Ctrl+S, Cmd+S)
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+    e.preventDefault();
+    alert('Printing is disabled on this page.');
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+  }
+  
+  // Mac screenshot shortcuts (Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5)
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
+    e.preventDefault();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText('');
+    }
+  }
+});
+
+// Blur the application when it loses focus (mitigates background screen recording)
+window.addEventListener('blur', () => {
+  const mapApp = document.querySelector('.map-app');
+  if (mapApp) {
+    mapApp.style.filter = 'blur(10px)';
+    mapApp.style.transition = 'filter 0.2s';
+  }
+});
+
+window.addEventListener('focus', () => {
+  const mapApp = document.querySelector('.map-app');
+  if (mapApp) {
+    mapApp.style.filter = 'none';
+  }
+});
