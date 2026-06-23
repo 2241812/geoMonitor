@@ -1,16 +1,18 @@
 /**
  * preprocess-zone-intersections.js
  *
- * Computes which NAMRIA administrative boundaries (provinces + municipalities)
- * each sub-watershed zone intersects with.
+ * Computes which NAMRIA and CADASTRE administrative boundaries
+ * (provinces + municipalities) each sub-watershed zone intersects with.
  *
  * Output: main/geoJSON/zone-intersections.json
  *
  * Schema:
  * {
  *   "<basinCode>:<zoneGridcode>": {
- *     "provinces": ["abra", "benguet", ...],
- *     "municipalities": ["benguet:itogon", "benguet:tublay", ...]
+ *     "namria_provinces": ["abra", "benguet", ...],
+ *     "namria_municipalities": ["benguet:itogon", "benguet:tublay", ...],
+ *     "cad_provinces": ["abra", "benguet", ...],
+ *     "cad_municipalities": ["benguet:itogon", "benguet:tublay", ...]
  *   }
  * }
  *
@@ -41,26 +43,69 @@ const basins = {
   ZUM: { folder: 'Zumigui-Ziwanan River', name: 'Zumigui-Ziwanan River Watershed' },
 };
 
+/* Slugify a name for use as a stable ID (matches NAMRIA _id convention) */
+function slugify(name) {
+  return (name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
+/* Test a zone geometry against an array of boundary features, collecting matching IDs */
+function findIntersections(zoneGeom, boundaries) {
+  const hits = new Set();
+  boundaries.forEach(entry => {
+    try {
+      if (turf.booleanIntersects(zoneGeom, entry.feature)) {
+        hits.add(entry.id);
+      }
+    } catch (_) {}
+  });
+  return hits;
+}
+
 function main() {
   console.log('Loading NAMRIA admin boundaries...');
 
-  /* Load provinces (level 1) */
-  const provRaw = JSON.parse(fs.readFileSync(path.join(geoDir, 'CAR NAMRIA Provincial Boundary.geojson'), 'utf8'));
-  const provinces = provRaw.features.map(f => {
+  /* Load NAMRIA provinces (level 1) */
+  const namriaProvRaw = JSON.parse(fs.readFileSync(path.join(geoDir, 'CAR NAMRIA Provincial Boundary.geojson'), 'utf8'));
+  const namriaProvinces = namriaProvRaw.features.map(f => {
     const id = (f.properties || {})._id;
-    const name = (f.properties || {}).PROVINCE || (f.properties || {}).Province || '';
-    return { id, name, feature: f };
+    return { id, feature: f };
   });
-  console.log(`  ${provinces.length} provinces loaded`);
+  console.log(`  ${namriaProvinces.length} NAMRIA provinces loaded`);
 
-  /* Load municipalities (level 2) */
-  const muniRaw = JSON.parse(fs.readFileSync(path.join(geoDir, 'CAR NAMRIA Municipal Boundary.geojson'), 'utf8'));
-  const municipalities = muniRaw.features.map(f => {
+  /* Load NAMRIA municipalities (level 2) */
+  const namriaMuniRaw = JSON.parse(fs.readFileSync(path.join(geoDir, 'CAR NAMRIA Municipal Boundary.geojson'), 'utf8'));
+  const namriaMunicipalities = namriaMuniRaw.features.map(f => {
     const id = (f.properties || {})._id;
-    const name = (f.properties || {}).Municipali || '';
-    return { id, name, feature: f };
+    return { id, feature: f };
   });
-  console.log(`  ${municipalities.length} municipalities loaded`);
+  console.log(`  ${namriaMunicipalities.length} NAMRIA municipalities loaded`);
+
+  console.log('Loading CADASTRE admin boundaries...');
+
+  /* Load CAD municipalities — use Province + Muni_City to derive province slugs.
+     CAD Provincial Boundary is identical to Municipal (per AGENTS.md), so we skip it
+     and derive province lists from the Province property on each municipal feature. */
+  const cadMuniRaw = JSON.parse(fs.readFileSync(path.join(geoDir, 'CAR CAD Municipal Boundary.geojson'), 'utf8'));
+  const cadMunicipalities = cadMuniRaw.features.map(f => {
+    const p = f.properties || {};
+    const provName = p.Province || '';
+    const muniName = p.Muni_City || '';
+    const muniId = slugify(provName) + ':' + slugify(muniName);
+    return { id: muniId, provinceSlug: slugify(provName), feature: f };
+  });
+  console.log(`  ${cadMunicipalities.length} CAD municipalities loaded`);
+
+  /* Derive unique CAD provinces from municipal features */
+  const cadProvinceMap = {};
+  cadMunicipalities.forEach(entry => {
+    cadProvinceMap[entry.provinceSlug] = true;
+  });
+  const cadProvinces = Object.keys(cadProvinceMap).map(slug => {
+    /* Find a representative feature for geometry (first one matching this province) */
+    const entry = cadMunicipalities.find(e => e.provinceSlug === slug);
+    return { id: slug, feature: entry ? entry.feature : null };
+  });
+  console.log(`  ${cadProvinces.length} CAD provinces derived`);
 
   /* Build output */
   const output = {};
@@ -91,38 +136,33 @@ function main() {
       if (gridcode == null) return;
 
       const key = `${code}:${gridcode}`;
-      const hitProvinces = new Set();
-      const hitMunicipalities = new Set();
 
       /* Make zone geometry valid before intersection tests */
       let zoneGeom;
       try {
-        zoneGeom = turf.buffer(zoneFeature, 0); /* auto-fix invalid geometry */
+        zoneGeom = turf.buffer(zoneFeature, 0);
       } catch (_) {
         zoneGeom = zoneFeature;
       }
 
-      /* Test against provinces */
-      provinces.forEach(prov => {
-        try {
-          if (turf.booleanIntersects(zoneGeom, prov.feature)) {
-            hitProvinces.add(prov.id);
-          }
-        } catch (_) {}
-      });
+      /* NAMRIA intersections */
+      const namriaProvHits = findIntersections(zoneGeom, namriaProvinces.filter(p => p.feature));
+      const namriaMuniHits = findIntersections(zoneGeom, namriaMunicipalities);
 
-      /* Test against municipalities */
-      municipalities.forEach(muni => {
-        try {
-          if (turf.booleanIntersects(zoneGeom, muni.feature)) {
-            hitMunicipalities.add(muni.id);
-          }
-        } catch (_) {}
+      /* CAD intersections */
+      const cadMuniHits = findIntersections(zoneGeom, cadMunicipalities);
+      /* Derive CAD province hits from the municipal hits */
+      const cadProvHits = new Set();
+      cadMuniHits.forEach(muniId => {
+        const parts = muniId.split(':');
+        if (parts[0]) cadProvHits.add(parts[0]);
       });
 
       output[key] = {
-        provinces: [...hitProvinces].sort(),
-        municipalities: [...hitMunicipalities].sort(),
+        namria_provinces: [...namriaProvHits].sort(),
+        namria_municipalities: [...namriaMuniHits].sort(),
+        cad_provinces: [...cadProvHits].sort(),
+        cad_municipalities: [...cadMuniHits].sort(),
       };
       totalZones++;
     });

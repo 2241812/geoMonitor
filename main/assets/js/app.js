@@ -273,10 +273,7 @@ const APP = {
       /* Hydro mode: clicking empty space deselects isolated zone first, then drills back to basin overview */
       if (this.state.viewMode === 'watersheds' && this.state.hydroDrillLevel >= 1) {
         if (this.state.hydroSelectedZone) {
-          this._restoreSubWatersheds();
-          this.state.hydroSelectedZone = null;
-          this.state.hydroSelectedZoneLayer = null;
-          this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+          this._deselectSubWatershed();
           return;
         }
         this._hydroDrillUp(0);
@@ -328,7 +325,35 @@ const APP = {
     if (!this.config.sources[name]) return;
     if (this.state._drilling) return;
 
-    /* Clear all layers and cached data */
+    this.state.activeSource = name;
+    this._loadHierarchy();
+    this._updateBreadcrumb();
+
+    /* Update the bottom-center source toggle buttons */
+    document.querySelectorAll('.source-toggle-btn').forEach(btn => {
+      if (btn.id === `btn-${name}`) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    /* In watersheds mode, hydro layers are source-independent (basins +
+       sub-watersheds + stream order don't change between NAMRIA/CAD).
+       Only the Spans chips and boundary overlay layers depend on source,
+       so just refresh the boundary overlays + the current panel. */
+    if (this.state.viewMode === 'watersheds') {
+      this._refreshBoundaryOverlays();
+      /* Re-render the current panel so chips reflect the new source */
+      if (this.state.hydroSelectedZone) {
+        this._openSubWatershedPanel(this.state.hydroSelectedZone);
+      } else if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+        this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+      }
+      return;
+    }
+
+    /* Admin boundaries mode: full reload of layers + cached data */
     Object.values(this.state.layers).forEach(l => {
       if (l) this.state.map.removeLayer(l);
     });
@@ -345,31 +370,56 @@ const APP = {
     const wasOpen = this.state.panelState === 'open' || this.state.panelState === 'peek';
 
     this._resetWatershedState();
-    
-    this.state.activeSource = name;
-    this._loadHierarchy();
-    this._updateBreadcrumb();
-    
-    document.querySelectorAll('.source-toggle-btn').forEach(btn => {
-      if (btn.id === `btn-${name}`) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
 
     window.initLayers().then(() => {
-      /* Re-enter hydro mode after source switch if in watersheds view */
-      if (this.state.viewMode === 'watersheds') {
-        this._enterHydroMode();
-        return;
-      }
       if (wasOpen) {
         const carData = this.state.rawData[0];
         if (carData && carData.features && carData.features[0]) {
           this.openPanel(carData.features[0], 0);
         }
       }
+    });
+  },
+
+  /* Refresh admin boundary overlay layers (bottom-left dropdown) to match
+     the current activeSource. Used after a source switch in watersheds mode. */
+  _refreshBoundaryOverlays() {
+    /* Remove existing boundary overlay layers */
+    Object.values(this.state.adminLayers).forEach(l => {
+      if (l && this.state.map) this.state.map.removeLayer(l);
+    });
+    this.state.adminLayers = {};
+
+    /* Reload raw admin data for the new source, then re-add checked overlays */
+    const checkboxes = document.querySelectorAll('#boundary-options input[type="checkbox"]:checked');
+    if (checkboxes.length === 0) return;
+
+    const src = this._src();
+    const typesToReload = [...new Set([...checkboxes].map(cb => cb.dataset.type).filter(Boolean))];
+
+    /* Compute which source levels we need to fetch for the checked types */
+    const levelsToFetch = new Set();
+    typesToReload.forEach(type => {
+      if (type === 'region') levelsToFetch.add(0);
+      else if (type === 'province' && src.maxLevel >= 2) levelsToFetch.add(1);
+      else if (type === 'municipality') levelsToFetch.add(src.maxLevel);
+    });
+
+    levelsToFetch.forEach(lvl => {
+      if (!src.geoJSON[lvl]) return;
+      /* Clear cached raw data for this level so it re-fetches from the new source */
+      this.state.rawData[lvl] = null;
+      fetch(src.geoJSON[lvl])
+        .then(r => r.json())
+        .then(d => {
+          this.state.rawData[lvl] = d;
+          /* Re-add all checked overlays now that the level data is available */
+          typesToReload.forEach(type => {
+            const cb = document.querySelector(`#boundary-options input[data-type="${type}"]`);
+            if (cb && cb.checked) this._addBoundaryLayer(type);
+          });
+        })
+        .catch(() => {});
     });
   },
 
@@ -1003,7 +1053,8 @@ const APP = {
       if (this.state.hydroDrillLevel >= 1 && this.state.hydroSelectedBasin) {
         html += `<span class="breadcrumb-sep">›</span>`;
         const shortName = this.state.hydroSelectedBasin.name.replace(/ River Watershed$/, '');
-        html += `<button class="breadcrumb-item active">${this._escHtml(shortName)}</button>`;
+        const hasZone = !!this.state.hydroSelectedZone;
+        html += `<button class="breadcrumb-item ${hasZone ? 'clickable' : 'active'}" ${hasZone ? `onclick="APP._deselectSubWatershed()"` : ''}>${this._escHtml(shortName)}</button>`;
         if (this.state.hydroSelectedZone) {
           const gc = this.state.hydroSelectedZone.properties.gridcode;
           html += `<span class="breadcrumb-sep">›</span>`;
@@ -1862,7 +1913,12 @@ const APP = {
             self._hideHoverLabel();
           });
           layer.on('click', function(e) {
-            L.DomEvent.stopPropagation(e);
+            /* Only stop propagation if this zone is visible;
+               dimmed/hidden zones should let the click pass through
+               to the map background handler for drill-up. */
+            if (!layer._hiddenByIsolation) {
+              L.DomEvent.stopPropagation(e);
+            }
             if (layer._hiddenByIsolation) return;
             self._selectSubWatershed(feature, layer);
           });
@@ -1902,11 +1958,7 @@ const APP = {
   _selectSubWatershed(feature, leafletLayer) {
     /* If clicking the same zone again, deselect it */
     if (this.state.hydroSelectedZone === feature) {
-      this._restoreSubWatersheds();
-      this.state.hydroSelectedZone = null;
-      this.state.hydroSelectedZoneLayer = null;
-      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
-      this._updateBreadcrumb();
+      this._deselectSubWatershed();
       return;
     }
 
@@ -1925,6 +1977,18 @@ const APP = {
     }
 
     this._openSubWatershedPanel(feature);
+    this._updateBreadcrumb();
+  },
+
+  /* Deselect the current sub-watershed zone and return to the basin detail panel */
+  _deselectSubWatershed() {
+    if (!this.state.hydroSelectedZone) return;
+    this._restoreSubWatersheds();
+    this.state.hydroSelectedZone = null;
+    this.state.hydroSelectedZoneLayer = null;
+    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+    }
     this._updateBreadcrumb();
   },
 
@@ -1975,16 +2039,18 @@ const APP = {
   /* ── Zone-level admin boundary spans ── */
 
   /* Look up zone-specific admin boundary spans from zoneIntersections.
-     Key format: "<basinCode>:<gridcode>" e.g. "AGN:27" */
+     Key format: "<basinCode>:<gridcode>" e.g. "AGN:27"
+     Uses activeSource ('namria' or 'cad') to pick the right intersection set. */
   _zoneSpans(basinCode, gridcode) {
     const data = this.state.zoneIntersections;
     if (!data) return null;
     const key = basinCode + ':' + gridcode;
     const entry = data[key];
     if (!entry) return null;
+    const prefix = this.state.activeSource === 'cad' ? 'cad_' : 'namria_';
     return {
-      provinces: (entry.provinces || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
-      municipalities: (entry.municipalities || []).map(slug => {
+      provinces: (entry[prefix + 'provinces'] || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
+      municipalities: (entry[prefix + 'municipalities'] || []).map(slug => {
         const parts = slug.split(':');
         return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
       }),
@@ -2032,9 +2098,21 @@ const APP = {
 
   _addBoundaryLayer(type) {
     if (this.state.adminLayers[type]) return;
-    const levelMap = { region: 0, province: 1, municipality: 2 };
-    const lvl = levelMap[type];
-    if (lvl === undefined) return;
+    /* Resolve the raw-data level for this boundary type under the active source.
+       CAD has only 2 levels (region=0, municipality=1); NAMRIA has 3 (0/1/2). */
+    let lvl;
+    const src = this._src();
+    if (type === 'region') {
+      lvl = 0;
+    } else if (type === 'province') {
+      /* CAD has no province geometry */
+      if (src.maxLevel < 2) return;
+      lvl = 1;
+    } else if (type === 'municipality') {
+      lvl = src.maxLevel; /* NAMRIA: 2, CAD: 1 */
+    } else {
+      return;
+    }
     const data = this.state.rawData[lvl];
     if (!data) return;
     const styleMap = {
@@ -2290,6 +2368,7 @@ const APP = {
         spansHTML = `
           <div class="panel-section">
             <div class="panel-section-title">Spans — Administrative Boundaries</div>
+            ${this._renderSourceToggleHTML()}
             <div class="span-group">
               <div class="span-group-label">Provinces (${spans.provinces.length})</div>
               <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
@@ -2356,10 +2435,27 @@ const APP = {
   },
 
   /* Invert watershedIntersections: for the given watershed name, return
-     { provinces: [{slug,label}], municipalities: [{slug,label,province}] } */
+     { provinces: [{slug,label}], municipalities: [{slug,label,province}] }
+     Uses the new namria/cad per-watershed spans sections when available,
+     falling back to the old boundary→watershed inversion for backward compat. */
   _watershedSpans(wsName) {
     const data = this.state.watershedIntersections;
     if (!data) return { provinces: [], municipalities: [] };
+
+    /* Try the new per-watershed spans sections first */
+    const prefix = this.state.activeSource === 'cad' ? 'cad' : 'namria';
+    if (data[prefix] && data[prefix][wsName]) {
+      const entry = data[prefix][wsName];
+      return {
+        provinces: (entry.provinces || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
+        municipalities: (entry.municipalities || []).map(slug => {
+          const parts = slug.split(':');
+          return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
+        }),
+      };
+    }
+
+    /* Fallback: invert the old boundary→watershed arrays */
     const provinces = [];
     const municipalities = [];
     Object.keys(data).forEach(key => {
@@ -2371,7 +2467,6 @@ const APP = {
         provinces.push({ slug: key, label: this._prettySlug(key) });
       }
     });
-    /* Sort municipalities by province then name for stable display */
     municipalities.sort((a, b) => a.province === b.province ? a.label.localeCompare(b.label) : a.province.localeCompare(b.province));
     return { provinces, municipalities };
   },
@@ -2383,6 +2478,23 @@ const APP = {
       const escaped = this._escHtml(it.label).replace(/'/g, '&#39;');
       return `<button class="span-chip" onclick="APP._outlineAdminUnit('${type}','${this._escHtml(it.slug).replace(/'/g, '&#39;')}')">${escaped}</button>`;
     }).join('');
+  },
+
+  /* Render a small NAMRIA/CAD toggle for the side panel Spans section */
+  _renderSourceToggleHTML() {
+    const isNamria = this.state.activeSource === 'namria';
+    return `
+      <div class="span-source-toggle">
+        <button class="source-toggle-pill${isNamria ? ' active' : ''}" onclick="APP._switchPanelSource('namria')">NAMRIA</button>
+        <button class="source-toggle-pill${!isNamria ? ' active' : ''}" onclick="APP._switchPanelSource('cad')">CADASTRE</button>
+      </div>`;
+  },
+
+  /* Switch source from inside the side panel — delegates to switchSource,
+     which in watersheds mode refreshes boundary overlays + chips without
+     resetting the current watershed/sub-watershed selection. */
+  _switchPanelSource(name) {
+    this.switchSource(name);
   },
 
   /* Toggle a province/municipality outline overlay on top of the current hydro view */
@@ -2400,35 +2512,67 @@ const APP = {
     }
 
     const level = type === 'province' ? 1 : 2;
-    /* Use NAMRIA data (has Province + Municipality schemas) */
-    if (!this.state.rawData[level]) {
-      try {
-        const resp = await fetch('geoJSON/CAR NAMRIA ' + (level === 1 ? 'Provincial' : 'Municipal') + ' Boundary.geojson');
-        this.state.rawData[level] = await resp.json();
-      } catch (_) {
-        this._showToast('Failed to load boundary data');
-        return;
+    const src = this._src();
+    /* In CAD mode there is no separate province level — province outlines are
+       derived by dissolving the municipal features that share the Province. */
+    const useCad = this.state.activeSource === 'cad';
+
+    /* Use the active source's boundary data */
+    if (useCad) {
+      /* CAD only exposes level 1 (municipal). Province = dissolved municipalities. */
+      if (!this.state.rawData[1]) {
+        try {
+          const resp = await fetch('geoJSON/CAR CAD Municipal Boundary.geojson');
+          this.state.rawData[1] = await resp.json();
+        } catch (_) {
+          this._showToast('Failed to load boundary data');
+          return;
+        }
+      }
+    } else {
+      if (!this.state.rawData[level]) {
+        try {
+          const resp = await fetch('geoJSON/CAR NAMRIA ' + (level === 1 ? 'Provincial' : 'Municipal') + ' Boundary.geojson');
+          this.state.rawData[level] = await resp.json();
+        } catch (_) {
+          this._showToast('Failed to load boundary data');
+          return;
+        }
       }
     }
 
-    /* Match feature by _id — this matches the intersection slug exactly
-       (province: "abra", municipality: "apayao:luna"). _id is set by the
-       hierarchy preprocessing script and is present on all NAMRIA features.
-       Fall back to name matching if _id is missing. */
-    let target = null;
-    const features = this.state.rawData[level].features || [];
-    target = features.find(f => (f.properties || {})._id === slug);
-    if (!target) {
-      /* Fallback: match by normalized name (case-insensitive, hyphens→spaces) */
-      const norm = s => (s || '').toLowerCase().replace(/-/g, ' ').trim();
-      const want = norm(slug.split(':').pop());
-      target = features.find(f => {
-        const p = f.properties || {};
-        if (type === 'province') return norm(p.PROVINCE || p.Province || p.NAME_1) === want;
-        return norm(p.Municipali || p.NAME_2 || p.Muni_City) === want;
+    /* Resolve the target feature(s) for the slug. CAD provinces may need
+       multiple municipal features dissolved into one outline. */
+    let targetFeature = null;
+    let targetFeatures = null;
+    const norm = s => (s || '').toLowerCase().replace(/-/g, ' ').trim();
+    const wantSlug = type === 'province' ? slug : slug.split(':').pop();
+
+    if (useCad && type === 'province') {
+      /* CAD province: gather all municipal features whose Province slug matches */
+      const features = (this.state.rawData[1].features || []).filter(f => {
+        const provSlug = (f.properties || {}).Province.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        return provSlug === slug;
       });
+      if (features.length) targetFeatures = features;
+    } else {
+      const features = (this.state.rawData[level].features || []);
+      targetFeature = features.find(f => (f.properties || {})._id === slug);
+      if (!targetFeature) {
+        /* Fallback: match by normalized name */
+        const want = norm(wantSlug);
+        targetFeature = features.find(f => {
+          const p = f.properties || {};
+          if (type === 'province') return norm(p.PROVINCE || p.Province || p.NAME_1) === want;
+          return norm(p.Municipali || p.NAME_2 || p.Muni_City) === want;
+        });
+      }
     }
-    if (!target) {
+
+    const outlineData = targetFeatures
+      ? { type: 'FeatureCollection', features: targetFeatures }
+      : (targetFeature ? targetFeature : null);
+    if (!outlineData) {
       this._showToast('Boundary not found for ' + slug);
       return;
     }
@@ -2439,7 +2583,7 @@ const APP = {
     }
     document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
 
-    this.state.hydroAdminOutlineLayer = L.geoJSON(target, {
+    this.state.hydroAdminOutlineLayer = L.geoJSON(outlineData, {
       interactive: false,
       style: { color: '#dc2626', weight: 2.5, fillOpacity: 0.06, dashArray: '5 3', opacity: 0.9 },
     }).addTo(map);
@@ -2692,6 +2836,7 @@ const APP = {
         spansHTML = `
           <div class="panel-section">
             <div class="panel-section-title">Spans — Administrative Boundaries</div>
+            ${this._renderSourceToggleHTML()}
             <div class="span-group">
               <div class="span-group-label">Provinces (${spans.provinces.length})</div>
               <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
