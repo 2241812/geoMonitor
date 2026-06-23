@@ -15,16 +15,7 @@ Open `http://localhost:8000`. A server is required (GeoJSON `fetch()`).
 | Page | File | Purpose |
 |------|------|---------|
 | Landing | `main/index.html` | Gallery with hero, stats, river basins, CTA |
-| Map | `main/map.html` | Drill-down Leaflet map + Chart.js dashboard |
-
-## Landing page (`main/index.html`)
-
-- **CSS**: `main/assets/css/style.css` (~1540 lines) — all landing page styles
-- **JS**: `main/assets/js/script.js` — Lenis smooth scroll, fade-in observer, counter animation, header/parallax, arrow logic, basin toggle, lightbox
-- **Header**: transparent at top (`scrollY ≤ 50`) with white text + drop-shadow; switches to `rgba(255,255,255,0.95)` + dark text when scrolled. Threshold in JS (`script.js:96`).
-- **Nav arrows**: two circular glass buttons (`w-48`, `bg-white/80`, `backdrop-blur`, green icon). Down arrow floats (`navFloat 2.5s`), hides when dashboard is in view. Up arrow appears when scrolled. Bouncy pop transition via `cubic-bezier(0.34, 1.56, 0.64, 1)`.
-- **Card names**: 13 hardcoded `<h3 class="basin-card-name">` with "River Basin" suffix. GeoJSON source at `main/geoJSON/CAR Watersheds.geojson` has 14 features with `Name` + `Old_Name` properties (suffix "Watershed", not "Basin").
-- **Basin lightbox**: modal triggered by clicking any basin card on desktop.
+| Map | `main/map.html` | Dual-mode Leaflet map: Watersheds (default) + Boundaries |
 
 ## Map page (`main/map.html`)
 
@@ -35,33 +26,44 @@ Open `http://localhost:8000`. A server is required (GeoJSON `fetch()`).
 - **`map-init.js`** exists but **not loaded** (compatibility shim)
 - **`EVENTS`** object in `app.js` is **unused** (dead legacy code)
 - **`dashboard.js`**: compatibility shim — delegates to `APP.openPanel`/`APP.closePanel`
+- **`package.json`**: empty `{}` — no npm dependencies
 
-### Source toggle
+## View modes
 
-Info panel hero has a NAMRIA/CAD toggle button. Switching sources clears all layers, reloads hierarchy, re-initializes the map.
+Two mutually exclusive modes controlled by `state.viewMode`.
+
+### Watersheds mode (default)
+
+Renders 14 colored basin polygons. Click a basin → `_hydroDrillDown()` fetches sub-watersheds + stream order from `geoJSON/Watersheds/{folder}/{CODE}_SW.geojson` and `{CODE}_StreamOrder.geojson`. Drill levels: 0 = basins overview, 1 = inside a specific basin. `_enterHydroMode()` starts this flow.
+
+- **Zone isolation**: clicking a sub-watershed polygon calls `_selectSubWatershed()` — dims others, zooms in, opens sub-watershed panel, updates breadcrumb
+- **Map background click** (reverse drill): zone selected → fly to parent basin; at basin level → `_hydroDrillUp(0)` to all basins
+- **Stream Order**: `hydroLayers[2]` loaded per basin but only added to map when `showStreamOrder` toggle is ON (toggle in info panel under "Map Overlays")
+- **Boundary overlays**: dropdown in bottom-left with checkboxes for Region/Province/Municipality; layers stored in `state.adminLayers`
+- **16 new state fields** not present in the original admin-only version: `viewMode`, `activeMode`, `hydroDrillLevel`, `hydroSelectedBasin`, `hydroLayers[0-2]`, `hydroShowBoundary`, `hydroBoundaryLayer`, `hydroAdminOutlineLayer`, `hydroActiveFilterIds`, `hydroSelectedZone`, `hydroSelectedZoneLayer`, `zoneIntersections`, `showStreamOrder`, `adminLayers`, `boundaryMenuOpen`
+- Info panel renders `_openWatershedPanel()` (basin info) or `_openSubWatershedPanel()` (zone detail) — both include Spans chips and overlay toggles
+- Basin picker panel shown at level 0 via `_showBasinPickerPanel()`
+
+### Boundaries mode (admin drill-down)
+
+NAMRIA/CAD source toggle at bottom-center. Switching sources clears all layers, reloads hierarchy, re-inits map.
 
 | Source | Levels | Drill path |
 |--------|--------|------------|
 | NAMRIA | 3 | Region → Province → Municipality |
 | CAD | 2 | Region → Municipality |
 
-CAD files have `Province` + `Muni_City` properties; no separate province geometry.
+CAD files have `Province` + `Muni_City` properties; no separate province geometry. CAD `Provincial Boundary.geojson` is identical to Municipal — unused.
 
-### Drill-down
-
-Levels: 0 = Region (CAR boundary) → 1 = Province → 2 = Municipality
-
-- **`initLayers()`** (`map-layers.js`): calls `APP._showLevel(0)` then `APP._showLevel(1)`, sets `currentLevel = 1`
-- **Level 0**: `interactive: false` — prevents CAR polygon from swallowing province clicks
-- **`drillDown`**: hides parent layer (`_hiddenByDrill`), loads child filtered to parent, advances `currentLevel` **before** `_showLevel` so click guards work. Max level: NAMRIA 2, CAD 1.
-- **`drillUp`**: removes deeper layers, re-adds hidden parent, resets styles, trims `selectedPath`. `drillUp(0)` resets to region-only.
-- **Deepest level click**: calls `_dimLevel` — sets `fillOpacity: 0` on others, marks with `_hiddenByIsolation` to suppress hover/click.
-- **Click hidden feature**: swallowed — user must click empty space.
-- **Map background click**: drills up one level (any level ≥ 1).
-- **Zoom**: `fitBounds` with `padding: [40, 40]`, no animation params.
-- **Re-entrancy guard**: `state._drilling` flag prevents concurrent drill calls.
-- **Hover**: only attached for layers with ≤300 features.
-- **Loading**: levels 0+1 fetched in parallel; deeper levels prefetched; raw GeoJSON cached in `state.rawData`.
+- `initLayers()` (`map-layers.js`): parallel-fetches levels 0+1 into `rawData[0]`/`rawData[1]`; in Boundaries mode calls `_showLevel(0)`, prefetches deeper, opens CAR panel; in Watersheds mode hides admin header and returns early
+- Level 0: `interactive: false` — prevents CAR polygon from swallowing province clicks
+- `drillDown`: hides parent layer (`_hiddenByDrill`), loads child filtered to parent, advances `currentLevel` **before** `_showLevel` so click guards work. Max level: NAMRIA 2, CAD 1.
+- `drillUp`: removes deeper layers, re-adds hidden parent, resets styles, trims `selectedPath`. `drillUp(0)` resets to region-only.
+- Deepest level click: calls `_dimLevel` — sets `fillOpacity: 0` on others, marks with `_hiddenByIsolation` to suppress hover/click.
+- Click hidden feature: swallowed — user must click empty space.
+- Map background click: drills up one level (any level ≥ 1).
+- Re-entrancy guard: `state._drilling` flag prevents concurrent drill calls.
+- Hover: only attached for layers with ≤300 features.
 
 ### Feature name resolution (`_featureName`)
 
@@ -70,23 +72,26 @@ Levels: 0 = Region (CAR boundary) → 1 = Province → 2 = Municipality
 - CAD level 1: `Muni_City`
 - Level 0: hardcoded `'Cordillera Administrative Region'`
 
-### Overlay system
+### Outline toggle system
 
-Mutually exclusive radio mode (None / Province / Municipality). Overlay layers are `interactive: true`. Clicking an overlay feature highlights it, opens info panel, and triggers `drillDown()` **only in Boundary mode** if the overlay matches the current drill level. Drill layer is dimmed (`fillOpacity: 0`) when overlay is active. Municipality overlay shows **all** municipalities (no province filter). Overlays refresh on drill up/down.
-
-### Dashboard (info panel)
-
-- Rendered by `APP.openPanel()` — hero header, Details section, Chart.js bar chart of numeric properties (`Shape_Area`, `Shape_Length`, `AREA`, `Area`, `PERIMETER`, `Hectares`)
-- DOM built via string concatenation + `escapeHtml()`
-- Mobile: bottom sheet with three states — `peek` / `open` / `closed`
+Rendered by `_renderOutlineToggles()` — radio-style toggle (None / Province / Municipality) at top-center. Mutually exclusive. Overlays refresh on drill up/down. Separate from the bottom-left boundary dropdown.
 
 ### Breadcrumb
 
-- Rendered by `_updateBreadcrumb()`. Root: "CAR Region" → `drillUp(0)`. Path items call `drillUp(item.level)`. `selectedPath` stores `{level, feature, name}`.
+Rendered by `_updateBreadcrumb()`. Two code paths:
+- **Hydro mode**: `Watersheds › Basin Name › Zone N`
+- **Boundary mode**: includes Explore/Boundary mode toggle buttons, then `CAR › Province › Municipality`
+
+### Dashboard (info panel)
+
+- Admin mode: `APP.openPanel()` — hero header, Details section, Chart.js bar chart of numeric properties (`Shape_Area`, `Shape_Length`, `AREA`, `Area`, `PERIMETER`, `Hectares`)
+- Hydro mode: `_openWatershedPanel()` or `_openSubWatershedPanel()` — includes connectivity, Spans chips, stream order toggle, basin descriptions
+- DOM built via string concatenation + `escapeHtml()`
+- Mobile: bottom sheet with three states — `peek` / `open` / `closed`
 
 ### UI layout
 
-Back button (top-left), Fullscreen toggle (top-right), Basemap switcher (bottom-left), Legend (bottom-right), Reset-view pill (above breadcrumb, bottom-center). All use `map-icon-btn` / `map-pill-btn` base classes.
+Bottom-left controls (basemap, boundary dropdown, watershed filter), Bottom-center controls (view mode, source, breadcrumb), top-left (back), top-right (fullscreen), legend (bottom-right), reset-view pill (above breadcrumb). Basemap/boundary/watershed dropdowns are mutually exclusive (opening one closes the others).
 
 ## GeoJSON
 
@@ -102,15 +107,20 @@ Files in `main/geoJSON/` are single-line JSON (no trailing newline).
 | CAD | 0 | `CAR CAD Boundary.geojson` |
 | CAD | 1 | `CAR CAD Municipal Boundary.geojson` |
 
-CAD `Provincial Boundary.geojson` is identical to Municipal — unused. Coordinate precision: 6 decimal places.
+Additional files: `CAR CAD Provincial Boundary (Dissolved).geojson` (unused), `CAR NAMRIA Barangay Boundary.geojson` (unused). Coordinate precision: 6 decimal places.
 
 ### Watersheds
 
 | File | Description |
 |------|-------------|
 | `CAR Watersheds.geojson` | Merged 14 watershed features (merged from individual files by `preprocess-watersheds.js`) |
-| `Watersheds/*.geojson` | Individual watershed boundaries (14 files: ABR, ABU, AGN, AMB, ARI, BUD, CAB, MLG, NAG, SIF, SMR, UCH, UMT, ZUM) |
-| `watershed-intersections.json` | Cross-walk between watersheds and admin boundaries (computed by `preprocess_watersheds.js`) |
+| `Watersheds/*.geojson` | Individual watershed boundaries (14 files) |
+| `watershed-intersections.json` | Cross-walk between watersheds and admin boundaries |
+| `zone-intersections.json` | Cross-walk between sub-watershed zones and admin boundaries |
+
+### Missing data
+
+Cabicungan River (`CAB/`) has only `CAB_Boundary.geojson` — no `CAB_SW.geojson` or `CAB_StreamOrder.geojson`. All other 13 basins have all three files.
 
 ## Preprocessing scripts
 
@@ -144,3 +154,4 @@ vercel --prod --yes
 - Make level 0 interactive (blocks province clicks)
 - Advance `currentLevel` after `_showLevel` (must be before)
 - Remove `L.DomEvent.stopPropagation` from feature click handlers (prevents map background double-fire)
+- Delete existing panel data sections to add toggle controls — `_openWatershedPanel()` includes a "Map Overlays" section for this
