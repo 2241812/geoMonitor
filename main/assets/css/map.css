@@ -356,10 +356,21 @@ body.mode-explore .outline-toggles {
    FULLSCREEN BUTTON — top-right
    ============================================= */
 
-.map-fullscreen-btn {
+.top-right-controls {
   position: absolute;
   top: 16px;
   right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 500;
+}
+
+.map-fullscreen-btn {
+  position: relative;
+  top: auto;
+  right: auto;
 }
 
 /* =============================================
@@ -1416,12 +1427,11 @@ body.panel-open .bottom-left-controls {
     font-size: 11px;
   }
 
-  .map-fullscreen-btn,
-  .map-back-btn {
+  .top-right-controls {
     top: 12px;
+    right: 12px;
   }
   .map-back-btn { left: 12px; }
-  .map-fullscreen-btn { right: 12px; }
 
 
   .map-legend {

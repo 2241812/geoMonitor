@@ -997,7 +997,7 @@ const APP = {
     if (this.state.viewMode === 'watersheds') {
       html += `<button class="breadcrumb-item ${this.state.hydroDrillLevel === 0 ? 'active' : 'clickable'}" onclick="APP._hydroDrillUp(0)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-        Watersheds
+        Basins
       </button>`;
 
       if (this.state.hydroDrillLevel >= 1 && this.state.hydroSelectedBasin) {
