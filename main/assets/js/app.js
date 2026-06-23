@@ -404,7 +404,12 @@ const APP = {
     const src = this._src();
     const typesToReload = [...new Set([...checkboxes].map(cb => cb.dataset.type).filter(Boolean))];
 
-    /* Compute which source levels we need to fetch for the checked types */
+    /* Clear ALL cached raw admin data — NAMRIA uses levels 0/1/2, CAD uses 0/1.
+       Stale levels from the previous source must not linger (e.g. NAMRIA's
+       rawData[2] must be wiped when switching to CAD). */
+    this.state.rawData = {};
+
+    /* Collect the unique set of levels we need to load for the new source */
     const levelsToFetch = new Set();
     typesToReload.forEach(type => {
       if (type === 'region') levelsToFetch.add(0);
@@ -412,19 +417,29 @@ const APP = {
       else if (type === 'municipality') levelsToFetch.add(src.maxLevel);
     });
 
-    levelsToFetch.forEach(lvl => {
-      if (!src.geoJSON[lvl]) return;
-      /* Clear cached raw data for this level so it re-fetches from the new source */
-      this.state.rawData[lvl] = null;
+    /* In CAD mode, province has no geometry — uncheck it so it doesn't
+       silently linger and confuse the UI. */
+    if (src.maxLevel < 2) {
+      const provCb = document.querySelector('#boundary-options input[data-type="province"]');
+      if (provCb) provCb.checked = false;
+    }
+
+    /* Fetch each needed level, then re-add overlays once all data is loaded */
+    const pending = [...levelsToFetch].filter(lvl => src.geoJSON[lvl]);
+    let loaded = 0;
+    pending.forEach(lvl => {
       fetch(src.geoJSON[lvl])
         .then(r => r.json())
         .then(d => {
           this.state.rawData[lvl] = d;
-          /* Re-add all checked overlays now that the level data is available */
-          typesToReload.forEach(type => {
-            const cb = document.querySelector(`#boundary-options input[data-type="${type}"]`);
-            if (cb && cb.checked) this._addBoundaryLayer(type);
-          });
+          loaded++;
+          if (loaded === pending.length) {
+            /* All levels loaded — re-add every checked overlay */
+            typesToReload.forEach(type => {
+              if (type === 'province' && src.maxLevel < 2) return;
+              this._addBoundaryLayer(type);
+            });
+          }
         })
         .catch(() => {});
     });
@@ -2478,10 +2493,16 @@ const APP = {
     return { provinces, municipalities };
   },
 
-  /* Render tappable chip list HTML for the Spans section */
+  /* Render tappable chip list HTML for the Spans section.
+     Filters out disputed-area placeholders ("X vs Y") that are not real LGUs. */
   _renderSpansChips(items, type) {
-    if (!items.length) return '<span class="span-empty">—</span>';
-    return items.map(it => {
+    const clean = items.filter(it => {
+      const label = (it.label || '').toLowerCase();
+      const slug = (it.slug || '').toLowerCase();
+      return !slug.includes(' vs ') && !label.includes(' vs ');
+    });
+    if (!clean.length) return '<span class="span-empty">—</span>';
+    return clean.map(it => {
       const escaped = this._escHtml(it.label).replace(/'/g, '&#39;');
       return `<button class="span-chip" onclick="APP._outlineAdminUnit('${type}','${this._escHtml(it.slug).replace(/'/g, '&#39;')}')">${escaped}</button>`;
     }).join('');

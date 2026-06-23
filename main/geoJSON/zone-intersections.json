@@ -205,7 +205,7 @@
     "cad_municipalities": [
       "abra:baay-licuan",
       "abra:bucay",
-      "abra:pearrubia",
+      "abra:penarrubia",
       "abra:sallapadan",
       "abra:san-isidro",
       "abra:villaviciosa"
@@ -229,9 +229,8 @@
       "abra:baay-licuan",
       "abra:bangued",
       "abra:bucay",
-      "abra:bucay-vs-lagangilang",
       "abra:lagangilang",
-      "abra:pearrubia",
+      "abra:penarrubia",
       "abra:sallapadan",
       "abra:tayum"
     ]
@@ -292,8 +291,6 @@
     ],
     "cad_municipalities": [
       "abra:baay-licuan",
-      "abra:baay-licuan-vs-lacub-vs-lagangilang",
-      "abra:baay-licuan-vs-lacub-vs-malibcong",
       "abra:daguioman",
       "abra:dolores",
       "abra:lacub",
@@ -339,11 +336,9 @@
     "cad_municipalities": [
       "abra:baay-licuan",
       "abra:bucay",
-      "abra:bucay-vs-lagangilang",
       "abra:daguioman",
       "abra:lagangilang",
       "abra:malibcong",
-      "abra:malibcong-vs-daguioman",
       "abra:sallapadan"
     ]
   },
@@ -366,7 +361,6 @@
       "kalinga"
     ],
     "cad_municipalities": [
-      "abra:baay-licuan-vs-lacub-vs-malibcong",
       "abra:daguioman",
       "abra:lacub",
       "abra:malibcong",
@@ -442,7 +436,7 @@
       "abra:bucay",
       "abra:la-paz",
       "abra:langiden",
-      "abra:pearrubia",
+      "abra:penarrubia",
       "abra:pidigan",
       "abra:pilar",
       "abra:san-isidro",
@@ -475,7 +469,6 @@
       "abra:daguioman",
       "abra:luba",
       "abra:manabo",
-      "abra:manabo-vs-sallapadan",
       "abra:sallapadan",
       "abra:tubo",
       "kalinga:balbalan"
@@ -3141,11 +3134,9 @@
     ],
     "cad_provinces": [
       "ifugao",
-      "ifugao-vs-mt-province",
       "mountain-province"
     ],
     "cad_municipalities": [
-      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
       "ifugao:aguinaldo",
       "mountain-province:natonin",
       "mountain-province:paracelis"
@@ -3219,11 +3210,9 @@
     ],
     "cad_provinces": [
       "ifugao",
-      "ifugao-vs-mt-province",
       "mountain-province"
     ],
     "cad_municipalities": [
-      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
       "ifugao:aguinaldo",
       "mountain-province:barlig",
       "mountain-province:natonin",
@@ -4357,7 +4346,6 @@
     ],
     "cad_municipalities": [
       "mountain-province:bauko",
-      "mountain-province:bauko-vs-sabangan-vs-sagada",
       "mountain-province:besao",
       "mountain-province:bontoc",
       "mountain-province:sabangan",
@@ -4461,7 +4449,6 @@
       "ifugao:hungduan",
       "ifugao:tinoc",
       "mountain-province:bauko",
-      "mountain-province:bauko-vs-sabangan-vs-sagada",
       "mountain-province:bontoc",
       "mountain-province:sabangan",
       "mountain-province:sagada",
@@ -4580,11 +4567,9 @@
     ],
     "cad_provinces": [
       "ifugao",
-      "ifugao-vs-mt-province",
       "mountain-province"
     ],
     "cad_municipalities": [
-      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
       "ifugao:aguinaldo",
       "mountain-province:paracelis"
     ]
@@ -4656,11 +4641,9 @@
     ],
     "cad_provinces": [
       "ifugao",
-      "ifugao-vs-mt-province",
       "mountain-province"
     ],
     "cad_municipalities": [
-      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
       "ifugao:aguinaldo",
       "mountain-province:barlig"
     ]
@@ -4710,11 +4693,9 @@
     ],
     "cad_provinces": [
       "ifugao",
-      "ifugao-vs-mt-province",
       "mountain-province"
     ],
     "cad_municipalities": [
-      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
       "ifugao:aguinaldo",
       "ifugao:alfonso-lista",
       "mountain-province:paracelis"

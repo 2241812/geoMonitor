@@ -43,9 +43,13 @@ const basins = {
   ZUM: { folder: 'Zumigui-Ziwanan River', name: 'Zumigui-Ziwanan River Watershed' },
 };
 
-/* Slugify a name for use as a stable ID (matches NAMRIA _id convention) */
+/* Slugify a name for use as a stable ID. Must match the slug convention
+   used by preprocess-hierarchy.js (stripDiacritics + lowercase). */
+function stripDiacritics(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 function slugify(name) {
-  return (name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return stripDiacritics(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 /* Test a zone geometry against an array of boundary features, collecting matching IDs */
@@ -84,16 +88,27 @@ function main() {
 
   /* Load CAD municipalities — use Province + Muni_City to derive province slugs.
      CAD Provincial Boundary is identical to Municipal (per AGENTS.md), so we skip it
-     and derive province lists from the Province property on each municipal feature. */
+     and derive province lists from the Province property on each municipal feature.
+     Disputed-area features (e.g. "Baay-Licuan vs Lacub vs Lagangilang",
+     "Ifugao vs Mt Province") are filtered out — they are not real LGUs. */
   const cadMuniRaw = JSON.parse(fs.readFileSync(path.join(geoDir, 'CAR CAD Municipal Boundary.geojson'), 'utf8'));
-  const cadMunicipalities = cadMuniRaw.features.map(f => {
-    const p = f.properties || {};
-    const provName = p.Province || '';
-    const muniName = p.Muni_City || '';
-    const muniId = slugify(provName) + ':' + slugify(muniName);
-    return { id: muniId, provinceSlug: slugify(provName), feature: f };
-  });
-  console.log(`  ${cadMunicipalities.length} CAD municipalities loaded`);
+  const cadMunicipalities = cadMuniRaw.features
+    .filter(f => {
+      const p = f.properties || {};
+      const muniName = p.Muni_City || '';
+      const provName = p.Province || '';
+      /* Drop any feature whose name contains " vs " — these are contested
+         boundary placeholders, not actual municipalities/provinces. */
+      return !muniName.includes(' vs ') && !provName.includes(' vs ');
+    })
+    .map(f => {
+      const p = f.properties || {};
+      const provName = p.Province || '';
+      const muniName = p.Muni_City || '';
+      const muniId = slugify(provName) + ':' + slugify(muniName);
+      return { id: muniId, provinceSlug: slugify(provName), feature: f };
+    });
+  console.log(`  ${cadMunicipalities.length} CAD municipalities loaded (disputed areas filtered)`);
 
   /* Derive unique CAD provinces from municipal features */
   const cadProvinceMap = {};

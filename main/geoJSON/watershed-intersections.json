@@ -618,12 +618,9 @@
       ],
       "municipalities": [
         "abra:baay-licuan",
-        "abra:baay-licuan-vs-lacub-vs-lagangilang",
-        "abra:baay-licuan-vs-lacub-vs-malibcong",
         "abra:bangued",
         "abra:boliney",
         "abra:bucay",
-        "abra:bucay-vs-lagangilang",
         "abra:bucloc",
         "abra:daguioman",
         "abra:danglas",
@@ -635,10 +632,8 @@
         "abra:langiden",
         "abra:luba",
         "abra:malibcong",
-        "abra:malibcong-vs-daguioman",
         "abra:manabo",
-        "abra:manabo-vs-sallapadan",
-        "abra:pearrubia",
+        "abra:penarrubia",
         "abra:pidigan",
         "abra:pilar",
         "abra:sallapadan",
@@ -776,12 +771,10 @@
     "Siffu River Watershed": {
       "provinces": [
         "ifugao",
-        "ifugao-vs-mt-province",
         "kalinga",
         "mountain-province"
       ],
       "municipalities": [
-        "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
         "ifugao:aguinaldo",
         "ifugao:alfonso-lista",
         "ifugao:mayoyao",
@@ -832,7 +825,6 @@
         "kalinga:tinglayan",
         "mountain-province:barlig",
         "mountain-province:bauko",
-        "mountain-province:bauko-vs-sabangan-vs-sagada",
         "mountain-province:besao",
         "mountain-province:bontoc",
         "mountain-province:natonin",
@@ -846,14 +838,12 @@
       "provinces": [
         "benguet",
         "ifugao",
-        "ifugao-vs-mt-province",
         "mountain-province"
       ],
       "municipalities": [
         "benguet:bokod",
         "benguet:buguias",
         "benguet:kabayan",
-        "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
         "ifugao:aguinaldo",
         "ifugao:alfonso-lista",
         "ifugao:asipulo",

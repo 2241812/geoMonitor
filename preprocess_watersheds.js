@@ -33,9 +33,13 @@
 const fs = require('fs');
 const turf = require('@turf/turf');
 
-/* Slugify a name for use as a stable ID (matches NAMRIA _id convention) */
+/* Slugify a name for use as a stable ID. Must match the slug convention
+   used by preprocess-hierarchy.js (stripDiacritics + lowercase). */
+function stripDiacritics(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 function slugify(name) {
-  return (name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return stripDiacritics(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 /* Test a geometry against an array of boundary features, collecting matching IDs */
@@ -80,14 +84,23 @@ function main() {
     feature: f,
   }));
 
-  /* Build CAD boundary entries — derive province slug from Province property */
-  const cadMunicipalities = cadMuniData.features.map(f => {
-    const p = f.properties || {};
-    const provName = p.Province || '';
-    const muniName = p.Muni_City || '';
-    const muniId = slugify(provName) + ':' + slugify(muniName);
-    return { id: muniId, provinceSlug: slugify(provName), feature: f };
-  });
+  /* Build CAD boundary entries — derive province slug from Province property.
+     Disputed-area features (e.g. "Baay-Licuan vs Lacub vs Lagangilang",
+     "Ifugao vs Mt Province") are filtered out — they are not real LGUs. */
+  const cadMunicipalities = cadMuniData.features
+    .filter(f => {
+      const p = f.properties || {};
+      const muniName = p.Muni_City || '';
+      const provName = p.Province || '';
+      return !muniName.includes(' vs ') && !provName.includes(' vs ');
+    })
+    .map(f => {
+      const p = f.properties || {};
+      const provName = p.Province || '';
+      const muniName = p.Muni_City || '';
+      const muniId = slugify(provName) + ':' + slugify(muniName);
+      return { id: muniId, provinceSlug: slugify(provName), feature: f };
+    });
 
   /* Derive unique CAD provinces */
   const cadProvinceSlugs = new Set(cadMunicipalities.map(e => e.provinceSlug));
