@@ -372,8 +372,8 @@ body.mode-explore .outline-toggles {
   top: 16px;
   right: 16px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  align-items: center;
   gap: 8px;
   z-index: 500;
 }
