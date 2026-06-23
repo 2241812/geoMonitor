@@ -343,6 +343,13 @@ const APP = {
        Only the Spans chips and boundary overlay layers depend on source,
        so just refresh the boundary overlays + the current panel. */
     if (this.state.viewMode === 'watersheds') {
+      /* Clear any active admin outline from a spans chip click */
+      if (this.state.hydroAdminOutlineLayer && this.state.map) {
+        this.state.map.removeLayer(this.state.hydroAdminOutlineLayer);
+        this.state.hydroAdminOutlineLayer = null;
+      }
+      document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+
       this._refreshBoundaryOverlays();
       /* Re-render the current panel so chips reflect the new source */
       if (this.state.hydroSelectedZone) {
