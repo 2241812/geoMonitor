@@ -26,9 +26,7 @@ async function initLayers() {
     }
     APP._updateBreadcrumb();
 
-    if (geo0 && geo0.features && geo0.features[0]) {
-      APP.openPanel(geo0.features[0], 0);
-    }
+    APP._showAdminPickerPanel();
   } else {
     /* Watersheds mode — hide admin panel header, skip CAR boundary */
     const header = document.querySelector('.info-panel-header');

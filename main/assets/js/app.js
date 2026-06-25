@@ -28,6 +28,7 @@ const APP = {
     hydroDrillLevel: 0, /* 0 = basins overview, 1 = drilled into a basin's sub-watersheds */
     hydroSelectedBasin: null, /* { name, folder, code, feature } */
     hydroLayers: {}, /* key 0 = basins, 1 = sub-watersheds, 2 = stream order */
+    watershedOutlineLayer: null, /* L.geoJSON for the merged watershed outline (R3) */
     hydroShowBoundary: false, /* whether the CAR outline is toggled on in hydro mode */
     hydroBoundaryLayer: null, /* L.geoJSON layer for the CAR boundary outline */
     hydroAdminOutlineLayer: null, /* L.geoJSON layer for province/muni outline from Spans chips */
@@ -184,6 +185,7 @@ const APP = {
   /* ── Init ────────────────────────────────── */
   init() {
     document.body.classList.add('mode-explore');
+    document.body.classList.add('mode-' + this.state.viewMode); /* R2: initial body class for source-toggle */
 
     const map = L.map('map', {
       center: this.config.mapCenter,
@@ -580,11 +582,7 @@ const APP = {
             easeLinearity: 0.25
           });
         }
-        /* Show CAR info in panel */
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
-        }
+        this._showAdminPickerPanel();
         this._updateBreadcrumb();
         this._updateOutlines();
         return;
@@ -1012,10 +1010,14 @@ const APP = {
         easeLinearity: 0.25,
       });
     }
-    /* Show CAR info in panel */
-    const carData = this.state.rawData[0];
-    if (carData && carData.features && carData.features[0]) {
-      this.openPanel(carData.features[0], 0);
+    /* Show admin picker in boundaries mode, CAR info otherwise */
+    if (this.state.viewMode === 'boundaries') {
+      this._showAdminPickerPanel();
+    } else {
+      const carData = this.state.rawData[0];
+      if (carData && carData.features && carData.features[0]) {
+        this.openPanel(carData.features[0], 0);
+      }
     }
     this._updateBreadcrumb();
     this._updateOutlines();
@@ -1676,6 +1678,10 @@ const APP = {
     if (this.state._drilling) return;
     this.state.viewMode = mode;
 
+    /* Update body class for source-toggle visibility (R2) */
+    document.body.classList.remove('mode-watersheds', 'mode-boundaries');
+    document.body.classList.add('mode-' + mode);
+
     document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
     const btnId = mode === 'watersheds' ? 'btn-view-watersheds' : 'btn-view-boundaries';
     const btn = document.getElementById(btnId);
@@ -1698,7 +1704,7 @@ const APP = {
       }
       this.state.selectedPath = [];
       this.state.currentLevel = 0;
-      /* Ensure watershed data is loaded, then render basins */
+      /* Ensure watershed data is loaded, then enter hydro mode */
       this._enterHydroMode();
     } else {
       /* Exit hydro mode: remove hydro layers, restore admin layers */
@@ -1708,10 +1714,7 @@ const APP = {
       if (header) header.style.display = '';
       this._showLevel(0).then(() => {
         this.state.currentLevel = 0;
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
-        }
+        this._showAdminPickerPanel();
       });
     }
   },
@@ -1743,7 +1746,15 @@ const APP = {
         return;
       }
     }
-    this._renderHydroBasins();
+    /* R3: Load merged watershed outline if not already cached */
+    if (!this.state.rawData['watershedOutline']) {
+      try {
+        const resp = await fetch('geoJSON/CAR Watersheds Outline.geojson');
+        this.state.rawData['watershedOutline'] = await resp.json();
+      } catch (_) {}
+    }
+    /* Show the merged outline (non-interactive, no fill) instead of 14 filled basins */
+    this._showWatershedOutline();
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
     this.state.hydroSelectedZone = null;
@@ -1756,6 +1767,27 @@ const APP = {
   _hydroBasinIndex(feature) {
     const name = feature.properties.Name || feature.properties.Old_Name || '';
     return Object.keys(this.config.hydroBasinFolderMap).indexOf(name);
+  },
+
+  /* ── Watershed Outline helpers (R3) ── */
+  /* Show the merged CAR watersheds outline (non-interactive, no fill) */
+  _showWatershedOutline() {
+    const map = this.state.map;
+    if (!map) return;
+    this._removeWatershedOutline();
+    const outlineData = this.state.rawData['watershedOutline'];
+    if (!outlineData || !outlineData.features) return;
+    this.state.watershedOutlineLayer = L.geoJSON(outlineData, {
+      interactive: false,
+      style: { color: '#166534', weight: 2.5, fillOpacity: 0, opacity: 0.85 },
+    }).addTo(map);
+  },
+
+  _removeWatershedOutline() {
+    if (this.state.watershedOutlineLayer) {
+      this.state.map.removeLayer(this.state.watershedOutlineLayer);
+      this.state.watershedOutlineLayer = null;
+    }
   },
 
   /* Render the 14 major basins as interactive colored polygons (hydro level 0) */
@@ -2112,33 +2144,44 @@ const APP = {
     if (menu) menu.classList.remove('show');
   },
 
-  _toggleBoundaryLayer(type, checkbox) {
+  async _toggleBoundaryLayer(type, checkbox) {
     if (checkbox.checked) {
-      this._addBoundaryLayer(type);
+      await this._addBoundaryLayer(type);
     } else {
       this._removeBoundaryLayer(type);
     }
   },
 
-  _addBoundaryLayer(type) {
+  async _addBoundaryLayer(type) {
     if (this.state.adminLayers[type]) return;
-    /* Resolve the raw-data level for this boundary type under the active source.
-       CAD has only 2 levels (region=0, municipality=1); NAMRIA has 3 (0/1/2). */
     let lvl;
     const src = this._src();
+    const useCad = this.state.activeSource === 'cad';
     if (type === 'region') {
       lvl = 0;
     } else if (type === 'province') {
-      /* CAD has no province geometry */
       if (src.maxLevel < 2) return;
       lvl = 1;
     } else if (type === 'municipality') {
-      lvl = src.maxLevel; /* NAMRIA: 2, CAD: 1 */
+      lvl = src.maxLevel;
     } else {
       return;
     }
-    const data = this.state.rawData[lvl];
-    if (!data) return;
+    /* Use source-prefixed cache key to avoid stale cross-source data */
+    /* Use source-prefixed cache key to avoid stale cross-source data;
+       fall back to plain level key for backward compat with _refreshBoundaryOverlays */
+    const cacheKey = (useCad ? 'cad:' : 'namria:') + lvl;
+    let data = this.state.rawData[cacheKey] || this.state.rawData[lvl];
+    if (!data) {
+      try {
+        const resp = await fetch(src.geoJSON[lvl]);
+        if (!resp.ok) throw new Error('Failed to load');
+        data = await resp.json();
+        this.state.rawData[cacheKey] = data;
+      } catch (_) {
+        return;
+      }
+    }
     const styleMap = {
       region: { color: '#1f2937', weight: 2.5, fillOpacity: 0, opacity: 0.85 },
       province: { color: '#374151', weight: 2, fillOpacity: 0, opacity: 0.85 },
@@ -2179,22 +2222,16 @@ const APP = {
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
 
-    /* Restore basin styles — re-apply checkbox filter if active, else normal overview */
+    /* R3: Remove filled basins (hydroLayers[0]) and show merged outline instead */
     if (this.state.hydroLayers[0]) {
-      if (this.state.hydroActiveFilterIds && this.state.hydroActiveFilterIds.length > 0) {
-        this._applyHydroFilter();
-      } else {
-        this.state.hydroLayers[0].eachLayer(function(lf) {
-          const idx = self._hydroBasinIndex(lf.feature);
-          const c = self.config.hydroLevelColors[idx] || '#6b7280';
-          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
-        });
-      }
+      map.removeLayer(this.state.hydroLayers[0]);
+      this.state.hydroLayers[0] = null;
     }
+    this._showWatershedOutline();
 
-    /* Fly back to CAR bounds */
-    if (this.state.hydroLayers[0]) {
-      map.flyToBounds(this.state.hydroLayers[0].getBounds(), {
+    /* Fly back to CAR bounds using the outline layer */
+    if (this.state.watershedOutlineLayer) {
+      map.flyToBounds(this.state.watershedOutlineLayer.getBounds(), {
         ...this._getPaddingOpts(),
         duration: 0.45,
         easeLinearity: 0.25,
@@ -2211,11 +2248,13 @@ const APP = {
     [0, 1, 2].forEach(l => {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
+    this._removeWatershedOutline();
   },
 
   /* Full reset of hydro state (used when switching to Boundaries mode) */
   _clearHydroState(keepViewMode) {
     this._clearHydroLayers();
+    this._removeWatershedOutline();
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
     if (this.state.hydroBoundaryLayer && this.state.map) {
@@ -2348,10 +2387,132 @@ const APP = {
     if (tab) tab.classList.add('hidden');
   },
 
+  /* ── R1: Admin Picker Panel (Boundary mode, level 0) ── */
+  _showAdminPickerPanel() {
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+
+    this.state.lastViewed = null;
+
+    const src = this._src();
+    const data = this.state.rawData[1];
+    if (!data || !data.features) return;
+
+    let groupHtml = '';
+
+    if (src.maxLevel >= 2) {
+      /* NAMRIA: provinces list — filter to CAR children */
+      const provinces = this._filterToParent(data, 1, { properties: { _id: 'CAR' } });
+      const header = `Provinces (${provinces.features.length})`;
+      let itemsHtml = '';
+      provinces.features.forEach(f => {
+        const name = this._featureName(f, 1);
+        const id = f.properties._id;
+        const muniCount = this.state.hierarchy?.children?.[id]?.length || 0;
+        const areaM2 = parseFloat(f.properties.Shape_Area || 0);
+        const areaStr = areaM2 > 0 ? (areaM2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+        itemsHtml += `
+          <button class="basin-picker-item" onclick="APP._adminDrillDownByName('${this._escHtml(name)}')">
+            <div class="basin-picker-info">
+              <span class="basin-picker-name">${this._escHtml(name)}</span>
+              <span class="basin-picker-meta">
+                ${muniCount ? `<span class="basin-size">${muniCount} municipalities</span>` : ''}
+                ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
+              </span>
+            </div>
+            <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>`;
+      });
+      groupHtml += `
+        <div class="basin-picker-group">
+          <div class="basin-picker-group-title">${this._escHtml(header)}</div>
+          ${itemsHtml}
+        </div>`;
+    } else {
+      /* CAD: group municipalities by Province property */
+      const byProvince = {};
+      data.features.forEach(f => {
+        const prov = (f.properties.Province || '').trim();
+        if (!prov) return;
+        if (!byProvince[prov]) byProvince[prov] = [];
+        byProvince[prov].push(f);
+      });
+
+      Object.keys(byProvince).sort().forEach(provName => {
+        const munis = byProvince[provName];
+        let itemsHtml = '';
+        munis.forEach(f => {
+          const name = this._featureName(f, 1);
+          const areaM2 = parseFloat(f.properties.Shape_Area || 0);
+          const areaStr = areaM2 > 0 ? (areaM2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+          itemsHtml += `
+            <button class="basin-picker-item" onclick="APP._adminDrillDownByName('${this._escHtml(name)}')">
+              <div class="basin-picker-info">
+                <span class="basin-picker-name">${this._escHtml(name)}</span>
+                <span class="basin-picker-meta">
+                  ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
+                </span>
+              </div>
+              <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>`;
+        });
+        groupHtml += `
+          <div class="basin-picker-group">
+            <div class="basin-picker-group-title">${this._escHtml(provName)}</div>
+            ${itemsHtml}
+          </div>`;
+      });
+    }
+
+    const html = `
+      <div class="panel-hero basin-picker-hero">
+        <div class="panel-level-badge">Administrative Boundaries</div>
+        <h2 class="panel-title">Cordillera Administrative Region</h2>
+        <p class="panel-subtitle">Tap a province/municipality to drill in</p>
+      </div>
+      <div class="panel-section basin-picker-section">
+        ${groupHtml}
+      </div>`;
+
+    content.innerHTML = html;
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded');
+    panel.classList.remove('open', 'closed', 'peek');
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
+    const tab = document.getElementById('panel-toggle-tab');
+    if (tab) tab.classList.add('hidden');
+  },
+
+  /* R1: Drill down by admin name (called from admin picker list) */
+  _adminDrillDownByName(name) {
+    const layer = this.state.layers[1];
+    if (!layer) return;
+    let targetFeature = null, targetLayer = null;
+    layer.eachLayer(lf => {
+      const lfName = this._featureName(lf.feature, 1);
+      if (lfName === name) { targetFeature = lf.feature; targetLayer = lf; }
+    });
+    if (targetFeature && targetLayer) this.drillDown(targetFeature, targetLayer);
+  },
+
   /* Helper: drill down by basin name (called from basin picker list) */
   _hydroDrillDownByName(name) {
     const wsData = this.state.rawData['watershed'];
-    if (!wsData || !this.state.hydroLayers[0]) return;
+    if (!wsData) return;
+    /* R3: If basins haven't been rendered yet (outline mode), render them now and remove the outline */
+    if (!this.state.hydroLayers[0]) {
+      this._removeWatershedOutline();
+      this._renderHydroBasins();
+    }
+    if (!this.state.hydroLayers[0]) return;
     let targetFeature = null, targetLayer = null;
     this.state.hydroLayers[0].eachLayer(lf => {
       const lfName = lf.feature.properties.Name || lf.feature.properties.Old_Name || '';
