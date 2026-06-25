@@ -582,7 +582,9 @@ const APP = {
             easeLinearity: 0.25
           });
         }
-        this._showAdminPickerPanel();
+        if (this.state.viewMode === 'boundaries') {
+          this._showAdminPickerPanel();
+        }
         this._updateBreadcrumb();
         this._updateOutlines();
         return;
@@ -2272,9 +2274,12 @@ const APP = {
     this._closeBoundaryMenu();
     this.state.hydroActiveFilterIds = [];
     this.state.showStreamOrder = false;
+    this.state.hydroShowBoundary = false;
+    this.state.activeOutline = null;
+    this.state.outlineLayers = {};
+    this.state._outlineHighlight = null;
     if (!keepViewMode) {
       this.state.viewMode = 'boundaries';
-      this.state.hydroShowBoundary = false;
     }
     this._updateBreadcrumb();
   },
@@ -2800,7 +2805,8 @@ const APP = {
     }
     const wsBtn = document.getElementById('watershed-btn');
     if (wsBtn) wsBtn.classList.remove('active');
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    const wsOpts = document.getElementById('watershed-options');
+    if (wsOpts) wsOpts.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.checked = false;
     });
   },
