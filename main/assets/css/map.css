@@ -1528,6 +1528,9 @@ body.panel-open .bottom-left-controls {
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
+/* Hide source toggle in Watersheds mode (R2) */
+body.mode-watersheds .source-toggle-control { display: none; }
+
 /* =============================================
    VIEW MODE + SOURCE TOGGLE ROW
    ============================================= */
