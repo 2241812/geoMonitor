@@ -11,7 +11,7 @@ function initDashboard() {
 function updateDashboard(feature) {
   /* Delegate to APP */
   if (feature && APP) {
-    APP.openPanel(feature, APP.state.currentLevel);
+    if (APP.state.viewMode === 'boundaries') { APP._openAdminPanel(feature, APP.state.currentLevel); } else { APP._openWatershedPanel(feature); }
   }
 }
 

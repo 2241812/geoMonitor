@@ -27,7 +27,7 @@ async function initLayers() {
     APP._updateBreadcrumb();
 
     if (geo0 && geo0.features && geo0.features[0]) {
-      APP.openPanel(geo0.features[0], 0);
+      APP._openAdminPanel(geo0.features[0], 0);
     }
   }
 }
