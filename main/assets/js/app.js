@@ -1703,15 +1703,18 @@ const APP = {
 
       this._clearHydroState();
       
-      /* Close the info panel initially in boundary mode.
-         User will click a boundary map polygon to open it. */
-      this.closePanel();
-      
       /* Only restore if returning to boundaries mode after initial load */
       if (this.state.currentLevel === null && this.state.rawData[0]) {
         this._showLevel(0);
       } else {
         this._showLevel(this.state.currentLevel);
+      }
+      
+      if (this.state.currentLevel === 0 || this.state.currentLevel === null) {
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
       }
     }
   },
@@ -2305,6 +2308,18 @@ const APP = {
         layer.bindTooltip(this._featureName(feature, lvl), { sticky: true, direction: 'top' });
       },
     }).addTo(this.state.map);
+  },
+
+  /* Remove all admin boundary layers */
+  _clearAdminOverlays() {
+    for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+      if (this.state.layers[lvl]) {
+        this.state.map.removeLayer(this.state.layers[lvl]);
+        this.state.layers[lvl] = null;
+      }
+    }
+    this.state.selectedPath = [];
+    this.state.currentLevel = 0;
   },
 
   _removeBoundaryLayer(type) {
