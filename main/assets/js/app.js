@@ -2521,6 +2521,107 @@ const APP = {
     this._updatePanelToggleIcon();
   },
 
+  /* ── R1: Boundary Picker Panel (Boundary mode, level 0) ── */
+  _showBoundaryPicker(feature, level) {
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+
+    this.state.lastViewed = null;
+    this._updatePanelHeader();
+
+    const src = this._src();
+    const data = this.state.rawData[1];
+    if (!data || !data.features) return;
+
+    let groupHtml = '';
+
+    if (src.maxLevel >= 2) {
+      /* NAMRIA: provinces list — filter to CAR children */
+      const provinces = this._filterToParent(data, 1, { properties: { _id: 'CAR' } });
+      const header = `Provinces (${provinces.features.length})`;
+      let itemsHtml = '';
+      provinces.features.forEach(f => {
+        const name = this._toTitleCase(this._featureName(f, 1));
+        const id = f.properties._id;
+        const muniCount = this.state.hierarchy?.children?.[id]?.length || 0;
+        const areaM2 = parseFloat(f.properties.Shape_Area || 0);
+        const areaStr = areaM2 > 0 ? (areaM2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+        itemsHtml += `
+          <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
+            <div class="basin-picker-info">
+              <span class="basin-picker-name">${this._escHtml(name)}</span>
+              <span class="basin-picker-meta">
+                ${muniCount ? `<span class="basin-size">${muniCount} municipalities</span>` : ''}
+                ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
+              </span>
+            </div>
+            <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>`;
+      });
+      groupHtml += `
+        <div class="basin-picker-group">
+          <div class="basin-picker-group-title">${this._escHtml(header)}</div>
+          ${itemsHtml}
+        </div>`;
+    } else {
+      /* CAD: group municipalities by Province property */
+      const byProvince = {};
+      data.features.forEach(f => {
+        const prov = (f.properties.Province || '').trim();
+        if (!prov) return;
+        if (!byProvince[prov]) byProvince[prov] = [];
+        byProvince[prov].push(f);
+      });
+      Object.keys(byProvince).sort().forEach(provName => {
+        const titleProv = this._toTitleCase(provName);
+        let itemsHtml = '';
+        byProvince[provName].forEach(f => {
+          const name = this._toTitleCase(this._featureName(f, 1));
+          itemsHtml += `
+            <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
+              <div class="basin-picker-info">
+                <span class="basin-picker-name">${this._escHtml(name)}</span>
+              </div>
+              <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>`;
+        });
+        groupHtml += `
+          <div class="basin-picker-group">
+            <div class="basin-picker-group-title">${this._escHtml(titleProv)}</div>
+            ${itemsHtml}
+          </div>`;
+      });
+    }
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero basin-picker-hero';
+      hero.innerHTML = `<div class="panel-level-badge">Administrative Boundaries</div>
+        <h2 class="panel-title">Cordillera Administrative Region</h2>
+        <p class="panel-subtitle">Tap a province/municipality to drill in</p>`;
+    }
+
+    const html = `
+      <div class="panel-section basin-picker-section">
+        ${groupHtml}
+      </div>`;
+
+    content.innerHTML = html;
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded', 'open', 'closed', 'peek');
+    
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
+    this._updatePanelToggleIcon();
+  },
+
   /* Click handler for boundary picker items — mimics the map polygon click pattern */
   _drillBoundaryFromPicker(childName, childLevel) {
     const childData = this.state.rawData[childLevel];
