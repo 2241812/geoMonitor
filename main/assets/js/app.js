@@ -386,7 +386,7 @@ const APP = {
       if (wasOpen) {
         const carData = this.state.rawData[0];
         if (carData && carData.features && carData.features[0]) {
-          this._openAdminPanel(carData.features[0], 0);
+          this.openPanel(carData.features[0], 0);
         }
       }
     });
@@ -481,10 +481,329 @@ const APP = {
   },
 
   /* ── Drill DOWN ──────────────────────────────── */
+  async drillDown(feature, leafletLayer) {
+    if (this.state._drilling) return;
+    this.state._drilling = true;
+    this._hideHoverLabel();
+    try {
+      const currentLevel = this.state.currentLevel;
+      if (currentLevel >= this._src().maxLevel) return;
+
+      const nextLevel = currentLevel + 1;
+      const name = this._featureName(feature, currentLevel);
+
+      this.state.selectedPath = this.state.selectedPath.filter(item => item.level < currentLevel);
+      this.state.selectedPath.push({ level: currentLevel, feature, name });
+
+      /* Clear selection state so it doesn't leak into the deeper level */
+      this.state._selectedFeature = null;
+      this.state._selectedLevel = null;
+      this.state._selectedLeafletLayer = null;
+
+      this._resetWatershedState();
+
+      this.state.currentLevel = nextLevel;
+
+      /* Parent context → thin dashed outline ("you are inside this boundary") */
+      if (currentLevel > 0 && this.state.layers[currentLevel]) {
+        if (currentLevel === 1) {
+          this._updateSmartFilters(feature.properties._id);
+        }
+        
+        const cfg = this.config.colors[currentLevel];
+        this.state.layers[currentLevel].eachLayer(function(lf) {
+          if (lf.feature === feature) {
+            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
+            lf.bringToFront();
+          } else {
+            lf.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
+          }
+        });
+        this.state.layers[currentLevel]._hiddenByDrill = true;
+      }
+
+      /* Ensure level 0 stays visible to frame the region at all levels */
+
+      this._updateBreadcrumb();
+
+      /* Fly into the selected feature with smooth animation, except for 0->1 where bounds are identical */
+      if (currentLevel > 0 && leafletLayer && leafletLayer.getBounds) {
+        this.state.map.flyToBounds(leafletLayer.getBounds(), {
+          ...this._getPaddingOpts(),
+          duration: 0.45,
+          easeLinearity: 0.25,
+        });
+        /* Delayed child reveal: render children after zoom starts settling */
+        await new Promise(r => setTimeout(r, 450));
+      }
+
+      await this._showLevel(nextLevel, feature, currentLevel);
+
+      this._updateOutlines();
+    } finally {
+      this.state._drilling = false;
+    }
+  },
 
   /* ── Drill UP (both modes) ─────────────────── */
+  async drillUp(targetLevel) {
+    if (this.state._drilling) return;
+    this.state._drilling = true;
+    this._hideHoverLabel();
+    try {
+      const previousLevel = this.state.currentLevel;
+
+      if (targetLevel === this.state.currentLevel) return;
+
+      /* Clear selection state */
+      this.state._selectedFeature = null;
+      this.state._selectedLevel = null;
+      this.state._selectedLeafletLayer = null;
+
+      this._resetWatershedState();
+
+      if (targetLevel === 0) {
+        /* Open level 0 panel */
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
+        this._updateSmartFilters(null);
+        for (let lvl = this._src().maxLevel; lvl > 0; lvl--) {
+          if (this.state.layers[lvl]) {
+            this.state.map.removeLayer(this.state.layers[lvl]);
+            this.state.layers[lvl] = null;
+          }
+        }
+        /* Restore levels 0 to full style */
+        if (this.state.layers[0]) this._resetLevelStyle(0);
+        this.state.selectedPath = [];
+        this.state.currentLevel = 0;
+        /* Only rebuild if layers don't exist yet (avoids visual flicker) */
+        if (!this.state.layers[0]) await this._showLevel(0);
+        this.state.currentLevel = 0;
+        /* Jump back to CAR bounds, except when coming from level 1 where bounds are identical */
+        if (this.state.layers[0] && previousLevel > 1) {
+          this.state.map.flyTo(this.config.mapCenter, this.config.mapZoom, {
+            duration: 0.45,
+            easeLinearity: 0.25
+          });
+        }
+        this._updateBreadcrumb();
+        this._updateOutlines();
+        return;
+      }
+
+      for (let lvl = this._src().maxLevel; lvl > targetLevel; lvl--) {
+        if (this.state.layers[lvl]) {
+          this.state.map.removeLayer(this.state.layers[lvl]);
+          this.state.layers[lvl] = null;
+        }
+      }
+
+      /* Restore context layer style (was dimmed during drillDown) */
+      if (targetLevel === 1) {
+        const provItem = this.state.selectedPath[0];
+        if (provItem) this._updateSmartFilters(provItem.feature.properties._id);
+      } else {
+        this._updateSmartFilters(null);
+      }
+
+      if (targetLevel > 0 && this.state.layers[targetLevel]) {
+        this._resetLevelStyle(targetLevel);
+        this.state.layers[targetLevel]._hiddenByDrill = false;
+      }
+
+      /* Re-add level 0 (CAR) if it was removed at maxLevel */
+      if (targetLevel < this._src().maxLevel && !this.state.layers[0]) {
+        this._showLevel(0);
+      }
+
+      this.state.selectedPath = this.state.selectedPath.slice(0, targetLevel);
+      this.state.currentLevel = targetLevel;
+
+      /* Jump to target */
+      if (targetLevel > 0 && this.state.selectedPath.length > 0) {
+        const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
+        const levelLayer = this.state.layers[targetLevel];
+        if (levelLayer) {
+          let found = false;
+          levelLayer.eachLayer((lf) => {
+            if (lf.feature === lastItem.feature) {
+              found = true;
+              const targetBounds = lf.getBounds();
+              this.state.map.flyToBounds(targetBounds, {
+                ...this._getPaddingOpts(),
+                duration: 0.45,
+                easeLinearity: 0.25
+              });
+            }
+          });
+          if (!found) {
+            /* We are at a level (like level 1) where no specific child is selected */
+            this.state.map.flyToBounds(levelLayer.getBounds(), {
+              ...this._getPaddingOpts(),
+              duration: 0.45,
+              easeLinearity: 0.25
+            });
+          }
+        }
+      }
+
+      /* Show the feature at target level in panel and KEEP IT HIGHLIGHTED */
+      if (targetLevel > 0 && this.state.selectedPath.length > 0) {
+        const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
+        this.openPanel(lastItem.feature, lastItem.level);
+        
+        this.state._selectedFeature = lastItem.feature;
+        this.state._selectedLevel = lastItem.level;
+
+        const layer = this.state.layers[targetLevel];
+        if (layer) {
+          /* Restore normal un-highlighted state for all first */
+          this._resetLevelStyle(targetLevel);
+          layer._hiddenByDrill = false;
+          
+          /* Highlight the active one with a dashed colored outline (parent context style) */
+          const cfg = this.config.colors[targetLevel];
+          layer.eachLayer((lf) => {
+            if (lf.feature === lastItem.feature) {
+              this.state._selectedLeafletLayer = lf;
+              lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
+              lf.bringToFront();
+            }
+          });
+        }
+      }
+
+      this._updateBreadcrumb();
+      this._updateOutlines();
+    } finally {
+      this.state._drilling = false;
+    }
+  },
 
   /* ── Show a level (with optional parent filter) ── */
+  async _showLevel(level, parentFeature) {
+    if (this.state.layers[level]) {
+      this.state.map.removeLayer(this.state.layers[level]);
+      this.state.layers[level] = null;
+    }
+
+    const geoKey = level;
+    if (!this.state.rawData[geoKey]) {
+      const src = this._src();
+      if (!src.geoJSON[level]) return;
+      const resp = await fetch(src.geoJSON[level]);
+      if (!resp.ok) throw new Error('Failed to load level ' + level);
+      this.state.rawData[geoKey] = await resp.json();
+    }
+
+    let data = this.state.rawData[geoKey];
+
+    if (parentFeature && level > 0) {
+      data = this._filterToParent(data, level, parentFeature);
+    }
+
+    const styleConfig = this.config.colors[level];
+    const self = this;
+    const featureCount = data.features ? data.features.length : 0;
+    const useHover = featureCount <= 300;
+
+    const layer = L.geoJSON(data, {
+      interactive: true,
+      style: () => ({
+        fillColor: styleConfig.fill,
+        fillOpacity: level === 0 ? 0.15 : 0,
+        color: styleConfig.stroke,
+        weight: styleConfig.weight,
+        opacity: 0.9,
+        className: 'fade-in-path',
+        dashArray: null,
+      }),
+
+      onEachFeature(feature, leafletLayer) {
+        if (useHover) {
+          leafletLayer.on('mouseover', function (e) {
+            if (level !== self.state.currentLevel) return;
+            if (e.target._hiddenByIsolation) return;
+            if (self.state.activeOutline === level) return;
+            
+            self._showHoverLabel(feature, level);
+            
+            /* Do not alter style if this feature is currently selected */
+            if (self.state._selectedFeature === feature) return;
+
+            e.target.setStyle({ fillColor: styleConfig.fill, fillOpacity: level === 0 ? 0.15 : 0.35, weight: styleConfig.weight + 1, dashArray: null });
+            e.target.bringToFront();
+          });
+          leafletLayer.on('mouseout', function (e) {
+            if (level !== self.state.currentLevel) return;
+            if (e.target._hiddenByIsolation) return;
+            if (self.state.activeOutline === level) return;
+            
+            self._hideHoverLabel();
+
+            /* Do not clear highlight if this feature is currently selected */
+            if (self.state._selectedFeature === feature) return;
+
+            e.target.setStyle({
+              fillColor: styleConfig.fill,
+              fillOpacity: level === 0 ? 0.15 : 0,
+              color: styleConfig.stroke,
+              weight: styleConfig.weight,
+              opacity: 0.9,
+              dashArray: null,
+            });
+          });
+        }
+
+          leafletLayer.on('click', function (e) {
+            L.DomEvent.stopPropagation(e);
+            
+            /* If currently viewing a watershed, clicking a map feature should just deselect the watershed and return to boundary view */
+            if (self.state.lastViewed && self.state.lastViewed.isWatershed) {
+              if (self.state.selectedPath && self.state.selectedPath.length > 0) {
+                const lastBoundary = self.state.selectedPath[self.state.selectedPath.length - 1];
+                self._clearWatershedHighlightAndReturn(lastBoundary.level);
+              }
+              return;
+            }
+            
+            if (self.state.activeWatershedIds && self.state.activeWatershedIds.length > 0) return;
+            if (self.state.activeOutline === level) return;
+            /* Clicked on a parent level → drill up to it */
+            if (level < self.state.currentLevel) {
+              self.drillUp(level);
+              return;
+            }
+            if (level !== self.state.currentLevel) return;
+            if (e.target._hiddenByIsolation) {
+              /* Clicking a dimmed feature at deepest level → drill up */
+              self.drillUp(level - 1);
+              return;
+            }
+
+            /* If a feature is already selected at this level, and we click a DIFFERENT one, 
+               treat it as 'clicking outside' to deselect and drill up, rather than instantly switching. */
+            if (self.state._selectedFeature && self.state._selectedFeature !== feature) {
+              self.drillUp(level - 1);
+              return;
+            }
+
+            self.openPanel(feature, level);
+            if (level >= self._src().maxLevel) {
+              self._highlightAndDim(feature, leafletLayer, level);
+            } else {
+              self.drillDown(feature, leafletLayer);
+            }
+          });
+      },
+    });
+
+    layer.addTo(this.state.map);
+    this.state.layers[level] = layer;
+  },
 
   /* ── Filter GeoJSON to parent boundary ─────── */
   _filterToParent(data, childLevel, parentFeature) {
@@ -537,6 +856,40 @@ const APP = {
   },
 
   /* ── Isolate selected feature: highlight it, hide all others at this level ── */
+  _dimLevel(level, selectedFeature) {
+    const layer = this.state.layers[level];
+    if (!layer) return;
+    const cfg = this.config.colors[level];
+    layer.eachLayer(function(leafletLayer) {
+      if (leafletLayer.feature !== selectedFeature) {
+        leafletLayer._hiddenByIsolation = true;
+        leafletLayer.setStyle({
+          fillOpacity: 0,
+          opacity: 0,
+          weight: 0,
+        });
+      } else {
+        leafletLayer._hiddenByIsolation = false;
+        leafletLayer.setStyle({
+          fillColor: cfg.fill,
+          fillOpacity: 0.65,
+          color: '#000000',
+          weight: 3,
+          opacity: 1,
+          dashArray: null,
+        });
+        leafletLayer.bringToFront();
+      }
+    });
+
+    if (selectedFeature) {
+      layer.eachLayer(function(leafletLayer) {
+        if (leafletLayer.feature === selectedFeature) {
+          leafletLayer.bringToFront();
+        }
+      });
+    }
+  },
 
   /* ── Highlight selection via dim (max-level click) ── */
   _highlightAndDim(feature, leafletLayer, level) {
@@ -574,6 +927,21 @@ const APP = {
     this.closePanel();
   },
 
+  _resetLevelStyle(level) {
+    const layer = this.state.layers[level];
+    if (!layer) return;
+    const cfg = this.config.colors[level];
+    layer.eachLayer(function(leafletLayer) {
+      delete leafletLayer._hiddenByIsolation;
+      leafletLayer.setStyle({
+        fillColor: cfg.fill,
+        color: cfg.stroke,
+        weight: cfg.weight,
+        opacity: 0.9,
+        fillOpacity: 0.25,
+      });
+    });
+  },
 
   _dimDrillLayer(level) {
     const layer = this.state.layers[level];
@@ -601,6 +969,15 @@ const APP = {
   },
 
   /* ── Background prefetch ── */
+  async _prefetchLevel(level) {
+    if (this.state.rawData[level]) return;
+    try {
+      const src = this._src();
+      if (!src.geoJSON[level]) return;
+      const resp = await fetch(src.geoJSON[level]);
+      if (resp.ok) this.state.rawData[level] = await resp.json();
+    } catch (_) { }
+  },
 
   /* ── Hover label ──────────────────────────── */
   _showHoverLabel(feature, level) {
@@ -647,7 +1024,7 @@ const APP = {
     } else {
       const carData = this.state.rawData[0];
       if (carData && carData.features && carData.features[0]) {
-        this._openAdminPanel(carData.features[0], 0);
+        this.openPanel(carData.features[0], 0);
       }
     }
     this._updateBreadcrumb();
@@ -830,7 +1207,7 @@ const APP = {
           layer.setStyle({ fillColor: cfg.fill, fillOpacity: 0.35, color: '#000000', weight: 3, opacity: 1 });
           layer.bringToFront();
           self.state._outlineHighlight = layer;
-          self._openAdminPanel(feature, level);
+          self.openPanel(feature, level);
           if (self.state.activeMode === 'boundary' && level === self.state.currentLevel) {
             if (level < self._src().maxLevel) {
               self.drillDown(feature, layer);
@@ -868,6 +1245,180 @@ const APP = {
   },
 
   /* ── Info Panel ───────────────────────────── */
+  openPanel(feature, level) {
+    if (level === 0 && this.state.viewMode === 'boundaries') {
+      this._showBoundaryPicker(feature, level);
+      return;
+    }
+
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+    
+    this._updatePanelHeader();
+    this.state.lastViewed = { feature, level };
+
+    const name = this._toTitleCase(this._featureName(feature, level));
+    const p = feature.properties || {};
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero';
+      hero.innerHTML = `<div class="panel-level-badge">${this._src().levelNames[level]}</div>
+        <h2 class="panel-title">${this._escHtml(name)}</h2>
+        <p class="panel-subtitle">Administrative Boundary</p>`;
+    }
+
+    /* Details Section */
+    const isCAD = this.state.activeMode === 'cad';
+    let html = `<div class="panel-section">`; 
+    
+    const details = this._resolveDetails(p, level, name);
+    Object.entries(details).forEach(([k, v]) => {
+      html += `<div class="panel-row">
+        <span class="panel-row-label">${this._escHtml(k)}</span>
+        <span class="panel-row-value">${this._escHtml(v)}</span>
+      </div>`;
+    });
+
+    html += `</div>`;
+
+    const chartData = this._resolveChartData(p);
+    if (chartData.values.length > 0) {
+      html += `<div class="panel-section">
+        <div class="panel-section-title">Measurements</div>
+        <div class="chart-wrap"><canvas id="panel-chart"></canvas></div>
+      </div>`;
+    }
+
+    /* Add Map Legend to Side Panel */
+    html += `<div class="panel-section">
+      <div class="panel-section-title">Legend</div>
+      <div class="panel-legend">
+        <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
+        <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
+        <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
+        <div class="legend-item"><span class="legend-dot watershed-dot"></span>Watershed</div>
+      </div>
+    </div>`;
+
+    /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
+    const id = p._id;
+    let intersectingWs = null;
+    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+      intersectingWs = this.state.watershedIntersections[id];
+    } else if (level === 0 && this.state.rawData['watershed']) {
+      /* Show all watersheds for the region */
+      intersectingWs = this.state.rawData['watershed'].features
+        .map(f => f.properties.Name || f.properties.Old_Name)
+        .filter(Boolean);
+    }
+
+    if (intersectingWs && intersectingWs.length > 0) {
+      html += `<div class="panel-section">
+        <div class="panel-section-title">Watersheds <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${intersectingWs.length}</span></div>
+        <div class="watershed-summary-list">
+          ${intersectingWs.slice(0, 5).map(ws => {
+            let areaText = '';
+            let outflowText = '';
+            if (this.state.rawData['watershed']) {
+              const wsFeature = this.state.rawData['watershed'].features.find(f => {
+                const n = f.properties.Name || f.properties.Old_Name || '';
+                return n === ws;
+              });
+              if (wsFeature && wsFeature.properties.Area_Ha) {
+                areaText = `<span class="ws-area">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
+              }
+              outflowText = this.config.watershedConnections[ws] || '';
+            }
+            return `<div class="watershed-summary-item">
+              <div class="ws-summary-name">${this._escHtml(ws)}</div>
+              <div class="ws-summary-meta">${areaText}${outflowText ? `<span class="ws-outflow-inline">→ ${this._escHtml(outflowText)}</span>` : ''}</div>
+            </div>`;
+          }).join('')}
+          ${intersectingWs.length > 5 ? `<div class="watershed-summary-more">+ ${intersectingWs.length - 5} more watersheds</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    /* Add Show More Button and Expanded Content — for drilling into specific admin boundaries */
+    let expandedHtml = '';
+    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+      const wsForCheckboxes = this.state.watershedIntersections[id];
+      if (wsForCheckboxes.length > 0) {
+        expandedHtml = `<div class="expanded-content">
+          <div class="panel-section-title">Overlay on Map <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${wsForCheckboxes.length}</span></div>
+          <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">Toggle watersheds to highlight them on the map:</p>
+          <div class="watershed-list">
+            ${wsForCheckboxes.map(ws => {
+              let areaText = '';
+              if (this.state.rawData['watershed']) {
+                const wsFeature = this.state.rawData['watershed'].features.find(f => {
+                  const n = f.properties.Name || f.properties.Old_Name || '';
+                  return n === ws;
+                });
+                if (wsFeature && wsFeature.properties.Area_Ha) {
+                  areaText = `<span style="font-size: 0.8rem; color: #6b7280; margin-left: auto;">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
+                }
+              }
+              return `
+              <div class="watershed-list-item">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
+                  <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${this.state.activeWatershedIds && this.state.activeWatershedIds.includes(ws) ? 'checked' : ''} style="accent-color: #0284c7; width: 16px; height: 16px;">
+                  <span style="font-weight: 500;">${this._escHtml(ws)}</span>
+                  ${areaText}
+                </label>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+
+        html += `<div class="panel-show-more">
+          <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View Watersheds on Map (${wsForCheckboxes.length})
+          </button>
+        </div>`;
+        html += expandedHtml;
+      }
+    }
+
+    content.innerHTML = html;
+    panel.classList.remove('open');
+    panel.classList.add('open');
+    this.state.panelState = 'open';
+
+    /* Hide toggle tab when panel is open */
+    const tab = document.getElementById('panel-toggle-tab');
+    if (tab) tab.classList.add('hidden');
+
+    if (chartData.values.length > 0) {
+      const ctx = document.getElementById('panel-chart');
+      if (ctx) {
+        if (this.state._chart) this.state._chart.destroy();
+        this.state._chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: chartData.labels,
+            datasets: [{
+              data: chartData.values,
+              backgroundColor: ['#059669', '#0d9488', '#0891b2', '#7c3aed'],
+              borderRadius: 5,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { type: 'logarithmic', ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+              x: { ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { display: false } },
+            },
+          },
+        });
+      }
+    }
+  },
 
   closePanel() {
     const panel = document.getElementById('info-panel');
@@ -907,7 +1458,7 @@ const APP = {
         if (this.state.lastViewed.isWatershed) {
           this._openWatershedPanel(this.state.lastViewed.feature);
         } else {
-          this._openAdminPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
         }
       } else {
         this.closePanel();
@@ -919,13 +1470,13 @@ const APP = {
         if (this.state.lastViewed.isWatershed) {
           this._openWatershedPanel(this.state.lastViewed.feature);
         } else {
-          this._openAdminPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
         }
       } else {
         /* Default: show CAR region details */
         const carData = this.state.rawData[0];
         if (carData && carData.features && carData.features[0]) {
-          this._openAdminPanel(carData.features[0], 0);
+          this.openPanel(carData.features[0], 0);
         }
       }
     }
@@ -1003,8 +1554,81 @@ const APP = {
     }
   },
 
+  _resolveDetails(props, level, name) {
+    const d = {};
+    const hierarchy = this.state.hierarchy;
+    const childCount = (id) => {
+      if (!hierarchy || !hierarchy.children) return null;
+      const kids = hierarchy.children[id];
+      return kids ? kids.length : null;
+    };
 
+    if (this.state.activeSource === 'cad') {
+      if (level === 1) {
+        d['Municipality/City'] = props.Muni_City || name;
+        if (props.Province) d['Province'] = props.Province;
+      } else {
+        d['Region'] = props.Region || 'Cordillera Administrative Region';
+      }
+      if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
+      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
+    } else {
+      if (level === 2) {
+        d['Municipality/City'] = props.Municipali || name;
+        if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
+        if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
+        if (props.X_Coord && props.Y_Coord) {
+          d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
+        }
+      } else if (level === 1) {
+        d['Province'] = props.PROVINCE || props.Province || name;
+        if (props.REGION) d['Region'] = props.REGION;
+        const cc = childCount(props._id);
+        if (cc !== null) d['Municipalities'] = String(cc);
+      } else {
+        d['Region'] = props.Region || 'Cordillera Administrative Region';
+        const cc = childCount(props._id);
+        if (cc !== null) d['Provinces'] = String(cc);
+      }
+    }
+    
+    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
+    if (sqMeters > 0) d['Square Meters'] = sqMeters.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    let hectares = parseFloat(props.Hectares || props.Area || 0);
+    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
+    if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
+    if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    return d;
+  },
 
+  _resolveChartData(props) {
+    const labels = [], values = [];
+    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
+    if (sqMeters > 0) { labels.push('Square Meters'); values.push(sqMeters); }
+    
+    let hectares = parseFloat(props.Hectares || props.Area || 0);
+    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
+    if (hectares > 0) { labels.push('Hectares'); values.push(hectares); }
+    
+    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
+    if (perimeter > 0) { labels.push('Perimeter'); values.push(perimeter); }
+    
+    return { labels, values };
+  },
+
+  _heroSubtitle(props, level) {
+    if (this.state.activeSource === 'cad') {
+      if (level === 1) return props.Province || props.REGION || '';
+      return 'Cordillera Administrative Region';
+    }
+    if (level === 2) return props.Province || props.PROVINCE || 'Province';
+    if (level === 1) return 'Province — Cordillera Administrative Region';
+    return 'Watershed Cradle of Northern Luzon';
+  },
 
   _showToast(msg) {
     let toast = document.getElementById('drill-toast');
@@ -1089,53 +1713,534 @@ const APP = {
       if (this.state.currentLevel === 0 || this.state.currentLevel === null) {
         const carData = this.state.rawData[0];
         if (carData && carData.features && carData.features[0]) {
-          this._openAdminPanel(carData.features[0], 0);
+          this.openPanel(carData.features[0], 0);
         }
       }
     }
   },
 
   /* ── Hydro Mode: enter, render basins ── */
+  async _enterHydroMode() {
+    /* Defensive cleanup: ensure no residual admin boundary layers remain */
+    for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+      if (this.state.layers[lvl]) {
+        this.state.map.removeLayer(this.state.layers[lvl]);
+        this.state.layers[lvl] = null;
+      }
+    }
+    Object.values(this.state.outlineLayers).forEach(l => {
+      if (l) this.state.map.removeLayer(l);
+    });
+    this.state.outlineLayers = {};
+    this.state.activeOutline = null;
+    this.state._outlineHighlight = null;
+    this.state.selectedPath = [];
+    this.state.currentLevel = 0;
+
+    if (!this.state.rawData['watershed']) {
+      try {
+        const resp = await fetch('geoJSON/CAR Watersheds.geojson');
+        this.state.rawData['watershed'] = await resp.json();
+      } catch (_) {
+        this._showToast('Failed to load watershed data');
+        return;
+      }
+    }
+    /* R3: Load merged watershed outline if not already cached */
+    if (!this.state.rawData['watershedOutline']) {
+      try {
+        const resp = await fetch('geoJSON/CAR Watersheds Outline.geojson');
+        this.state.rawData['watershedOutline'] = await resp.json();
+      } catch (_) {}
+    }
+    
+    /* Level 0: seamless basin fill underneath + interactive silhouette border on top */
+    this.state.hydroDrillLevel = 0;
+    this.state.hydroSelectedBasin = null;
+    this.state.hydroSelectedZone = null;
+    this.state.hydroSelectedZoneLayer = null;
+    this._clearHydroLayers();
+    this._renderHydroBasins(true); /* uniform fill, no stroke, non-interactive */
+    this._renderHydroSilhouette(true); /* border only, interactive — click to reveal basins */
+    this._updateBreadcrumb();
+  },
 
   /* Index of a basin in hydroBasinFolderMap (for color assignment) */
+  _hydroBasinIndex(feature) {
+    const name = feature.properties.Name || feature.properties.Old_Name || '';
+    return Object.keys(this.config.hydroBasinFolderMap).indexOf(name);
+  },
 
   /* ── Silhouette system (merged outline for level 0) ── */
 
   /* Compute the dissolved outer boundary of all 14 basins (cached).
      Uses the pre-computed CAR Watersheds Outline.geojson when available. */
+  _computeHydroSilhouette() {
+    if (this.state._hydroSilhouetteGeo) return this.state._hydroSilhouetteGeo;
+    /* Use pre-computed outline if loaded */
+    const outline = this.state.rawData['watershedOutline'];
+    if (outline && outline.features && outline.features.length > 0) {
+      this.state._hydroSilhouetteGeo = outline;
+      return outline;
+    }
+    /* Fallback: try turf dissolve at runtime */
+    const data = this.state.rawData['watershed'];
+    if (!data || !data.features || data.features.length === 0) return null;
+    if (typeof turf === 'undefined') {
+      /* No turf and no pre-computed outline — use the raw watershed FeatureCollection as-is */
+      this.state._hydroSilhouetteGeo = data;
+      return data;
+    }
+    try {
+      const fc = { type: 'FeatureCollection', features: data.features };
+      const dissolved = turf.dissolve(fc);
+      if (!dissolved) return null;
+      this.state._hydroSilhouetteGeo = dissolved;
+      return dissolved;
+    } catch (e) {
+      try {
+        let merged = data.features[0];
+        for (let i = 1; i < data.features.length; i++) {
+          merged = turf.union(merged, data.features[i]);
+        }
+        this.state._hydroSilhouetteGeo = merged;
+        return merged;
+      } catch (e2) {
+        return null;
+      }
+    }
+  },
 
+  _renderHydroSilhouette(interactive) {
+    if (this.state.hydroSilhouetteLayer) return;
+    const map = this.state.map;
+    if (!map) return;
+    const geo = this._computeHydroSilhouette();
+    if (!geo) return;
+    const self = this;
+    const opts = {
+      interactive: !!interactive,
+      style: {
+        color: '#1f2937',
+        weight: 2.5,
+        opacity: 0.9,
+        fillColor: '#3b82f6',
+        fillOpacity: 0,
+      },
+    };
+    if (interactive) {
+      opts.onEachFeature = function(feature, layer) {
+        layer.on('click', function(e) {
+          L.DomEvent.stopPropagation(e);
+          if (self.state._drilling) return;
+          if (self.state.hydroDrillLevel !== 0) return;
+          self._silhouetteClick();
+        });
+        layer.on('mouseover', function() {
+          if (self.state.hydroLayers[0]) {
+            self.state.hydroLayers[0].eachLayer(function(lf) {
+              lf.setStyle({ fillOpacity: 0.55 });
+            });
+          }
+          const lbl = document.getElementById('map-hover-label');
+          if (lbl) {
+            lbl.innerHTML = '<span class="label-level">Watersheds</span>Click to explore basins';
+            lbl.classList.add('visible');
+            lbl.style.display = '';
+          }
+        });
+        layer.on('mouseout', function() {
+          if (self.state.hydroLayers[0]) {
+            self.state.hydroLayers[0].eachLayer(function(lf) {
+              lf.setStyle({ fillOpacity: 0.35 });
+            });
+          }
+          self._hideHoverLabel();
+        });
+      };
+    }
+    this.state.hydroSilhouetteLayer = L.geoJSON(geo, opts).addTo(map);
+  },
 
   /* Remove the silhouette outline layer */
+  _removeHydroSilhouette() {
+    if (this.state.hydroSilhouetteLayer) {
+      this.state.map.removeLayer(this.state.hydroSilhouetteLayer);
+      this.state.hydroSilhouetteLayer = null;
+    }
+  },
 
   /* Click on silhouette at Level 0 → reveal 14 individual basins */
+  _silhouetteClick() {
+    if (this.state._drilling) return;
+    this.state._drilling = true;
+    this._hideHoverLabel();
+    try {
+      this.state.hydroSelectedBasin = null;
+      this.state.hydroSelectedZone = null;
+      this.state.hydroSelectedZoneLayer = null;
+      /* Remove silhouette and re-render basins with visible borders */
+      this._removeHydroSilhouette();
+      this._renderHydroBasins(); /* border mode (no argument = false) */
+      /* Apply any pending watershed filters */
+      if (this.state.hydroActiveFilterIds && this.state.hydroActiveFilterIds.length > 0) {
+        this._applyHydroFilter();
+      }
+      this._showBasinPickerPanel();
+      this._updateBreadcrumb();
+    } finally {
+      this.state._drilling = false;
+    }
+  },
 
   /* Render the 14 major basins as interactive colored polygons (hydro level 0) */
+  _renderHydroBasins(silhouetteMode) {
+    const map = this.state.map;
+    const data = this.state.rawData['watershed'];
+    if (!data || !map) return;
+
+    /* Clear previous hydro layers */
+    this._clearHydroLayers();
+
+    const colors = this.config.hydroLevelColors;
+    const self = this;
+
+    this.state.hydroLayers[0] = L.geoJSON(data, {
+      interactive: !silhouetteMode,
+      style: (feature) => {
+        const idx = self._hydroBasinIndex(feature);
+        if (silhouetteMode) {
+          /* Silhouette mode: solid fill, no strokes */
+          return {
+            fillColor: colors[idx] || '#6b7280',
+            fillOpacity: 0.35,
+            weight: 0,
+            opacity: 0,
+            className: 'fade-in-path',
+          };
+        } else {
+          /* Border mode: standard view with strokes */
+          return {
+            fillColor: colors[idx] || '#6b7280',
+            fillOpacity: 0.15,
+            color: colors[idx] || '#6b7280',
+            weight: 2,
+            opacity: 0.9,
+            className: 'fade-in-path',
+          };
+        }
+      },
+      onEachFeature(feature, leafletLayer) {
+        if (silhouetteMode) return;
+        const name = feature.properties.Name || feature.properties.Old_Name || 'Unknown';
+        const idx = self._hydroBasinIndex(feature);
+        const basinColor = colors[idx] || '#6b7280';
+
+        leafletLayer.on('mouseover', function(e) {
+          if (self.state.hydroDrillLevel !== 0) return;
+          e.target.setStyle({ fillColor: basinColor, fillOpacity: 0.4, weight: 3, opacity: 1 });
+          e.target.bringToFront();
+          const lbl = document.getElementById('map-hover-label');
+          if (lbl) {
+            lbl.innerHTML = `<span class="label-level">Basin</span>${self._escHtml(name)}`;
+            lbl.classList.add('visible');
+            lbl.style.display = '';
+          }
+        });
+
+        leafletLayer.on('mouseout', function(e) {
+          if (self.state.hydroDrillLevel !== 0) return;
+          e.target.setStyle({ fillColor: basinColor, fillOpacity: 0.15, color: basinColor, weight: 2, opacity: 0.9 });
+          self._hideHoverLabel();
+        });
+
+        leafletLayer.on('click', function(e) {
+          L.DomEvent.stopPropagation(e);
+          if (self.state._drilling) return;
+          if (self.state.hydroDrillLevel !== 0) return;
+          self._hydroDrillDown(feature, leafletLayer);
+        });
+      },
+    }).addTo(map);
+  },
 
   /* Apply checkbox filter to the basin overview layer.
      - When hydroActiveFilterIds is empty: all basins shown normally.
      - When non-empty: only checked basins keep full color; others are hidden (fillOpacity 0, faint outline). */
+  _applyHydroFilter() {
+    const layer = this.state.hydroLayers[0];
+    if (!layer) return;
+    const self = this;
+    const filter = this.state.hydroActiveFilterIds;
+    const colors = this.config.hydroLevelColors;
+
+    if (filter.length === 0) {
+      /* Restore normal overview styles (only if not currently drilled in) */
+      if (this.state.hydroDrillLevel === 0) {
+        layer.eachLayer(function(lf) {
+          const idx = self._hydroBasinIndex(lf.feature);
+          const c = colors[idx] || '#6b7280';
+          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+        });
+      }
+      return;
+    }
+
+    layer.eachLayer(function(lf) {
+      const name = lf.feature.properties.Name || lf.feature.properties.Old_Name || '';
+      const idx = self._hydroBasinIndex(lf.feature);
+      const c = colors[idx] || '#6b7280';
+      if (filter.includes(name)) {
+        lf.setStyle({ fillColor: c, fillOpacity: 0.4, color: c, weight: 3, opacity: 1 });
+      } else {
+        lf.setStyle({ fillColor: c, fillOpacity: 0, color: c, weight: 0.5, opacity: 0.15 });
+      }
+    });
+  },
 
   /* Drill into a basin: load sub-watersheds + stream order */
+  async _hydroDrillDown(feature, leafletLayer) {
+    if (this.state._drilling) return;
+    this.state._drilling = true;
+    this._hideHoverLabel();
+    const self = this;
+    try {
+      const name = feature.properties.Name || feature.properties.Old_Name || '';
+      const mapEntry = this.config.hydroBasinFolderMap[name];
+      if (!mapEntry) {
+        this._showToast('Basin folder not configured');
+        return;
+      }
+      this.state.hydroDrillLevel = 1;
+      this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
+
+      /* Dim all basins except the selected one */
+      const idx = self._hydroBasinIndex(feature);
+      const basinColor = self.config.hydroLevelColors[idx] || '#6b7280';
+      if (this.state.hydroLayers[0]) {
+        this.state.hydroLayers[0].eachLayer(function(lf) {
+          if (lf.feature !== feature) {
+            lf.setStyle({ fillOpacity: 0, opacity: 0.15, weight: 0.5 });
+          } else {
+            lf.setStyle({ fillColor: basinColor, fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
+            lf.bringToFront();
+          }
+        });
+      }
+
+      /* Fly to selected basin */
+      if (leafletLayer && leafletLayer.getBounds) {
+        this.state.map.flyToBounds(leafletLayer.getBounds(), {
+          ...this._getPaddingOpts(),
+          duration: 0.45,
+          easeLinearity: 0.25,
+        });
+        await new Promise(r => setTimeout(r, 450));
+      }
+
+      await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
+      this._updateBreadcrumb();
+    } finally {
+      this.state._drilling = false;
+    }
+  },
 
   /* Fetch + render sub-watersheds (hydroLayers[1]) and stream order (hydroLayers[2]) */
+  async _showHydroSubWatersheds(code, folder) {
+    const map = this.state.map;
+    const basePath = 'geoJSON/Watersheds/' + encodeURIComponent(folder) + '/';
+    const self = this;
+    const swPath = basePath + code + '_SW.geojson';
+    const soPath = basePath + code + '_StreamOrder.geojson';
+
+    /* Remove any previous level-1 layers */
+    [1, 2].forEach(l => {
+      if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
+    });
+
+    const results = await Promise.allSettled([
+      fetch(swPath).then(r => { if (!r.ok) throw new Error('No SW'); return r.json(); }),
+      fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }),
+    ]);
+
+    /* Sub-watershed polygons */
+    if (results[0].status === 'fulfilled') {
+      this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
+        style: { fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 },
+        onEachFeature(feature, layer) {
+          layer.on('mouseover', function(e) {
+            if (layer._hiddenByIsolation) return;
+            e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.55, weight: 2.5, opacity: 1 });
+            const lbl = document.getElementById('map-hover-label');
+            if (lbl) {
+              const p = feature.properties;
+              lbl.innerHTML = `<span class="label-level">Sub-watershed</span>Zone ${p.gridcode || '?'}`;
+              lbl.classList.add('visible');
+              lbl.style.display = '';
+            }
+          });
+          layer.on('mouseout', function(e) {
+            if (layer._hiddenByIsolation) return;
+            e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 });
+            self._hideHoverLabel();
+          });
+          layer.on('click', function(e) {
+            /* Only stop propagation if this zone is visible;
+               dimmed/hidden zones should let the click pass through
+               to the map background handler for drill-up. */
+            if (!layer._hiddenByIsolation) {
+              L.DomEvent.stopPropagation(e);
+            }
+            if (layer._hiddenByIsolation) return;
+            self._selectSubWatershed(feature, layer);
+          });
+        },
+      }).addTo(map);
+      this.state.hydroLayers[1].bringToFront();
+    } else {
+      this._showToast('Sub-watershed data not available for this basin');
+    }
+
+    /* Stream order lines — loaded but only added to map if toggled on */
+    if (results[1].status === 'fulfilled') {
+      this.state.hydroLayers[2] = L.geoJSON(results[1].value, {
+        style: (feature) => {
+          const order = feature.properties.grid_code || 1;
+          const weight = Math.max(1, Math.min(order * 0.8, 3.5));
+          return { color: '#1d4ed8', weight, opacity: 0.85 };
+        },
+      });
+      if (this.state.showStreamOrder) {
+        this.state.hydroLayers[2].addTo(map);
+        this.state.hydroLayers[2].bringToFront();
+      }
+    } else {
+      this._showToast('Stream order data not available for this basin');
+    }
+
+    /* Open the basin detail panel */
+    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+    }
+  },
 
   /* ── Sub-watershed zone isolation ── */
 
   /* Select a sub-watershed zone: isolate it visually and open its detail panel */
+  _selectSubWatershed(feature, leafletLayer) {
+    /* If clicking the same zone again, deselect it */
+    if (this.state.hydroSelectedZone === feature) {
+      this._deselectSubWatershed();
+      return;
+    }
+
+    this._dimSubWatersheds(feature);
+    this.state.hydroSelectedZone = feature;
+    this.state.hydroSelectedZoneLayer = leafletLayer;
+
+    /* Zoom to the selected zone */
+    if (leafletLayer && leafletLayer.getBounds) {
+      this.state.map.flyToBounds(leafletLayer.getBounds(), {
+        padding: [150, 150],
+        maxZoom: 12,
+        duration: 0.45,
+        easeLinearity: 0.25,
+      });
+    }
+
+    this._openSubWatershedPanel(feature);
+    this._updateBreadcrumb();
+  },
 
   /* Deselect the current sub-watershed zone and return to the basin detail panel */
+  _deselectSubWatershed() {
+    if (!this.state.hydroSelectedZone) return;
+    this._restoreSubWatersheds();
+    this.state.hydroSelectedZone = null;
+    this.state.hydroSelectedZoneLayer = null;
+    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+    }
+    this._updateBreadcrumb();
+  },
 
   /* Dim all sub-watershed zones except the selected one */
+  _dimSubWatersheds(selectedFeature) {
+    const layer = this.state.hydroLayers[1];
+    if (!layer) return;
+    layer.eachLayer(function(leafletLayer) {
+      if (leafletLayer.feature !== selectedFeature) {
+        leafletLayer._hiddenByIsolation = true;
+        leafletLayer.setStyle({
+          fillOpacity: 0,
+          opacity: 0,
+          weight: 0,
+        });
+      } else {
+        leafletLayer._hiddenByIsolation = false;
+        leafletLayer.setStyle({
+          fillColor: '#0ea5e9',
+          fillOpacity: 0.55,
+          color: '#0369a1',
+          weight: 3,
+          opacity: 1,
+        });
+        leafletLayer.bringToFront();
+      }
+    });
+    /* Keep stream order on top */
+    if (this.state.hydroLayers[2]) this.state.hydroLayers[2].bringToFront();
+  },
 
   /* Restore all sub-watershed zones to their normal style */
+  _restoreSubWatersheds() {
+    const layer = this.state.hydroLayers[1];
+    if (!layer) return;
+    layer.eachLayer(function(leafletLayer) {
+      delete leafletLayer._hiddenByIsolation;
+      leafletLayer.setStyle({
+        fillColor: '#0ea5e9',
+        fillOpacity: 0.3,
+        color: '#0284c7',
+        weight: 1.2,
+        opacity: 0.8,
+      });
+    });
+  },
 
   /* ── Zone-level admin boundary spans ── */
 
   /* Look up zone-specific admin boundary spans from zoneIntersections.
      Key format: "<basinCode>:<gridcode>" e.g. "AGN:27"
      Uses activeSource ('namria' or 'cad') to pick the right intersection set. */
+  _zoneSpans(basinCode, gridcode) {
+    const data = this.state.zoneIntersections;
+    if (!data) return null;
+    const key = basinCode + ':' + gridcode;
+    const entry = data[key];
+    if (!entry) return null;
+    const prefix = this.state.activeSource === 'cad' ? 'cad_' : 'namria_';
+    return {
+      provinces: (entry[prefix + 'provinces'] || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
+      municipalities: (entry[prefix + 'municipalities'] || []).map(slug => {
+        const parts = slug.split(':');
+        return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
+      }),
+    };
+  },
 
   /* Toggle stream order overlay on/off */
+  _toggleStreamOrder() {
+    this.state.showStreamOrder = !this.state.showStreamOrder;
+    const sl = this.state.hydroLayers[2];
+    if (!sl) return;
+    if (this.state.showStreamOrder) {
+      this.state.map.addLayer(sl);
+      sl.bringToFront();
+    } else {
+      this.state.map.removeLayer(sl);
+    }
+  },
 
   /* ── Boundary Overlay Menu ── */
 
@@ -1225,26 +2330,481 @@ const APP = {
   },
 
   /* Drill back up to the basins overview */
+  _hydroDrillUp(targetLevel) {
+    if (this.state._drilling) return;
+    if (targetLevel === this.state.hydroDrillLevel) return;
+    const self = this;
+    const map = this.state.map;
+
+    /* Remove sub-watershed + stream order layers */
+    [1, 2].forEach(l => {
+      if (self.state.hydroLayers[l]) { map.removeLayer(self.state.hydroLayers[l]); self.state.hydroLayers[l] = null; }
+    });
+    /* Remove admin outline overlay if active */
+    if (self.state.hydroAdminOutlineLayer) { map.removeLayer(self.state.hydroAdminOutlineLayer); self.state.hydroAdminOutlineLayer = null; }
+    document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+
+    this.state.hydroDrillLevel = 0;
+    this.state.hydroSelectedBasin = null;
+    this.state.hydroSelectedZone = null;
+    this.state.hydroSelectedZoneLayer = null;
+
+    /* Re-render basins in silhouette mode + silhouette border */
+    this._clearHydroLayers();
+    this._renderHydroBasins(true);
+    this._renderHydroSilhouette(true);
+
+    /* Fly back to CAR bounds */
+    const wsData = this.state.rawData['watershed'];
+    if (wsData) {
+      try {
+        const tempLayer = L.geoJSON(wsData);
+        map.flyToBounds(tempLayer.getBounds(), {
+          ...this._getPaddingOpts(),
+          duration: 0.45,
+          easeLinearity: 0.25,
+        });
+      } catch (_) {}
+    }
+    this._updateBreadcrumb();
+    this._showBasinPickerPanel();
+  },
 
   /* Remove all hydro layers from the map */
+  _clearHydroLayers() {
+    const map = this.state.map;
+    if (!map) return;
+    [0, 1, 2].forEach(l => {
+      if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
+    });
+    this._removeHydroSilhouette();
+  },
 
   /* Full reset of hydro state (used when switching to Boundaries mode) */
+  _clearHydroState(keepViewMode) {
+    this._clearHydroLayers();
+    this._removeHydroSilhouette();
+    this.state.hydroDrillLevel = 0;
+    this.state.hydroSelectedBasin = null;
+    if (this.state.hydroBoundaryLayer && this.state.map) {
+      this.state.map.removeLayer(this.state.hydroBoundaryLayer);
+      this.state.hydroBoundaryLayer = null;
+    }
+    if (this.state.hydroAdminOutlineLayer && this.state.map) {
+      this.state.map.removeLayer(this.state.hydroAdminOutlineLayer);
+      this.state.hydroAdminOutlineLayer = null;
+    }
+    Object.values(this.state.adminLayers).forEach(l => {
+      if (l && this.state.map) this.state.map.removeLayer(l);
+    });
+    this.state.adminLayers = {};
+    this._closeBoundaryMenu();
+    this.state.hydroActiveFilterIds = [];
+    this.state.showStreamOrder = false;
+    this.state.hydroShowBoundary = false;
+    this.state.activeOutline = null;
+    this.state.outlineLayers = {};
+    this.state._outlineHighlight = null;
+    if (!keepViewMode) {
+      this.state.viewMode = 'boundaries';
+    }
+    this._updateBreadcrumb();
+  },
 
   /* ── Toggle CAR boundary outline in hydro mode ── */
+  async _toggleHydroBoundary() {
+    if (this.state.viewMode !== 'watersheds') return;
+    this.state.hydroShowBoundary = !this.state.hydroShowBoundary;
+    const map = this.state.map;
+    const btn = document.getElementById('hydro-boundary-btn');
+    if (btn) btn.classList.toggle('active', this.state.hydroShowBoundary);
+
+    if (this.state.hydroShowBoundary) {
+      /* Lazily create the boundary layer */
+      if (!this.state.hydroBoundaryLayer) {
+        try {
+          if (!this.state.rawData[0]) {
+            const resp = await fetch('geoJSON/CAR NAMRIA Boundary.geojson');
+            this.state.rawData[0] = await resp.json();
+          }
+          this.state.hydroBoundaryLayer = L.geoJSON(this.state.rawData[0], {
+            interactive: false,
+            style: { color: '#0f172a', weight: 2.5, fillOpacity: 0, dashArray: '6 4', opacity: 0.7 },
+          }).addTo(map);
+          this.state.hydroBoundaryLayer.bringToBack();
+        } catch (_) {
+          this._showToast('Failed to load CAR boundary');
+          this.state.hydroShowBoundary = false;
+          if (btn) btn.classList.remove('active');
+        }
+      } else {
+        map.addLayer(this.state.hydroBoundaryLayer);
+        this.state.hydroBoundaryLayer.bringToBack();
+      }
+    } else {
+      if (this.state.hydroBoundaryLayer) {
+        map.removeLayer(this.state.hydroBoundaryLayer);
+      }
+    }
+  },
 
   /* ── Basin Picker Panel (mobile-friendly tappable list) ── */
+  _showBasinPickerPanel() {
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+
+    this.state.lastViewed = null;
+    this._updatePanelHeader();
+
+    const wsData = this.state.rawData['watershed'];
+    const groups = this.config.hydroBasinGroups;
+
+    let groupHtml = '';
+    groups.forEach(group => {
+      let itemsHtml = '';
+      group.basins.forEach(name => {
+        /* Find the feature to get area + size */
+        let areaHa = null, size = '';
+        if (wsData) {
+          const f = wsData.features.find(x => (x.properties.Name || x.properties.Old_Name) === name);
+          if (f) {
+            areaHa = f.properties.Area_Ha;
+            size = f.properties.SIZE_W || '';
+          }
+        }
+        const areaStr = areaHa ? (areaHa / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+        itemsHtml += `
+          <button class="basin-picker-item" onclick="APP._hydroDrillDownByName('${this._escHtml(name)}')">
+            <div class="basin-picker-info">
+              <span class="basin-picker-name">${this._escHtml(name).replace(/ River Watershed$/, '')}</span>
+              <span class="basin-picker-meta">
+                ${size ? `<span class="basin-size">${this._escHtml(size)}</span>` : ''}
+                ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
+              </span>
+            </div>
+            <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>`;
+      });
+      groupHtml += `
+        <div class="basin-picker-group">
+          <div class="basin-picker-group-title">${this._escHtml(group.title)}</div>
+          ${itemsHtml}
+        </div>`;
+    });
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero basin-picker-hero';
+      hero.innerHTML = `<div class="panel-level-badge">14 Major Basins</div>
+        <h2 class="panel-title">Watersheds</h2>
+        <p class="panel-subtitle">Tap a basin to explore sub-watersheds &amp; stream network</p>`;
+    }
+
+    const html = `
+      <div class="panel-section basin-picker-section">
+        ${groupHtml}
+      </div>`;
+
+    content.innerHTML = html;
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded');
+    panel.classList.remove('open', 'closed', 'peek');
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
+    this._updatePanelToggleIcon();
+  },
 
   /* ── R1: Boundary Picker Panel (Boundary mode, level 0) ── */
+  _showBoundaryPicker(feature, level) {
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+
+    this.state.lastViewed = null;
+    this._updatePanelHeader();
+
+    const src = this._src();
+    const data = this.state.rawData[1];
+    if (!data || !data.features) return;
+
+    let groupHtml = '';
+
+    if (src.maxLevel >= 2) {
+      /* NAMRIA: provinces list — filter to CAR children */
+      const provinces = this._filterToParent(data, 1, { properties: { _id: 'CAR' } });
+      const header = `Provinces (${provinces.features.length})`;
+      let itemsHtml = '';
+      provinces.features.forEach(f => {
+        const name = this._toTitleCase(this._featureName(f, 1));
+        const id = f.properties._id;
+        const muniCount = this.state.hierarchy?.children?.[id]?.length || 0;
+        const areaM2 = parseFloat(f.properties.Shape_Area || 0);
+        const areaStr = areaM2 > 0 ? (areaM2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+        itemsHtml += `
+          <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
+            <div class="basin-picker-info">
+              <span class="basin-picker-name">${this._escHtml(name)}</span>
+              <span class="basin-picker-meta">
+                ${muniCount ? `<span class="basin-size">${muniCount} municipalities</span>` : ''}
+                ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
+              </span>
+            </div>
+            <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>`;
+      });
+      groupHtml += `
+        <div class="basin-picker-group">
+          <div class="basin-picker-group-title">${this._escHtml(header)}</div>
+          ${itemsHtml}
+        </div>`;
+    } else {
+      /* CAD: group municipalities by Province property */
+      const byProvince = {};
+      data.features.forEach(f => {
+        const prov = (f.properties.Province || '').trim();
+        if (!prov) return;
+        if (!byProvince[prov]) byProvince[prov] = [];
+        byProvince[prov].push(f);
+      });
+      Object.keys(byProvince).sort().forEach(provName => {
+        const titleProv = this._toTitleCase(provName);
+        let itemsHtml = '';
+        byProvince[provName].forEach(f => {
+          const name = this._toTitleCase(this._featureName(f, 1));
+          itemsHtml += `
+            <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
+              <div class="basin-picker-info">
+                <span class="basin-picker-name">${this._escHtml(name)}</span>
+              </div>
+              <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>`;
+        });
+        groupHtml += `
+          <div class="basin-picker-group">
+            <div class="basin-picker-group-title">${this._escHtml(titleProv)}</div>
+            ${itemsHtml}
+          </div>`;
+      });
+    }
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero basin-picker-hero';
+      hero.innerHTML = `<div class="panel-level-badge">Administrative Boundaries</div>
+        <h2 class="panel-title">Cordillera Administrative Region</h2>
+        <p class="panel-subtitle">Tap a province/municipality to drill in</p>`;
+    }
+
+    const html = `
+      <div class="panel-section basin-picker-section">
+        ${groupHtml}
+      </div>`;
+
+    content.innerHTML = html;
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded', 'open', 'closed', 'peek');
+    
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
+    this._updatePanelToggleIcon();
+  },
 
   /* Click handler for boundary picker items — mimics the map polygon click pattern */
+  _drillBoundaryFromPicker(childName, childLevel) {
+    const childData = this.state.rawData[childLevel];
+    if (!childData || !childName) return;
+    const lookup = childName.toLowerCase();
+    const childFeature = childData.features.find(f => this._featureName(f, childLevel).toLowerCase() === lookup);
+    if (!childFeature) return;
+    let childLayer = null;
+    const layerGroup = this.state.layers[childLevel];
+    if (layerGroup) {
+      layerGroup.eachLayer(lf => {
+        if (lf.feature === childFeature) childLayer = lf;
+      });
+    }
+    this.openPanel(childFeature, childLevel);
+    /* Always zoom to the selected feature's bounds */
+    if (childLayer && childLayer.getBounds) {
+      this.state.map.fitBounds(childLayer.getBounds(), {
+        padding: [50, 50],
+        maxZoom: 12,
+      });
+    } else if (childFeature.geometry) {
+      try {
+        const temp = L.geoJSON(childFeature);
+        this.state.map.fitBounds(temp.getBounds(), {
+          padding: [50, 50],
+          maxZoom: 12,
+        });
+      } catch (_) {}
+    }
+    if (childLevel >= this._src().maxLevel) {
+      this._highlightAndDim(childFeature, childLayer, childLevel);
+    } else {
+      this.drillDown(childFeature, childLayer);
+    }
+  },
 
   /* Highlight a child boundary on the map when its chip is clicked */
+  _highlightBoundaryChild(childId, level, chipEl) {
+    /* Toggle active class on chips */
+    if (chipEl && chipEl.parentNode) {
+      chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+    }
+    if (chipEl) chipEl.classList.add('active');
+
+    if (!childId) return;
+    const layer = this.state.layers[level];
+    if (!layer) return;
+
+    /* Reset previous highlights on this level, then highlight the matched feature */
+    this._resetLevelStyle(level);
+    layer.eachLayer(lf => {
+      if (lf.feature && lf.feature.properties && lf.feature.properties._id === childId) {
+        lf.setStyle({
+          color: '#dc2626',
+          weight: 2.5,
+          fillOpacity: 0.06,
+          dashArray: '5 3',
+          lineCap: 'round',
+          opacity: 0.9,
+        });
+        lf.bringToFront();
+        if (lf.getBounds) {
+          this.state.map.fitBounds(lf.getBounds(), {
+            padding: [50, 50],
+            maxZoom: 12,
+          });
+        }
+      }
+    });
+  },
 
   /* Helper: drill down by basin name (called from basin picker list) */
+  _hydroDrillDownByName(name) {
+    const wsData = this.state.rawData['watershed'];
+    if (!wsData) return;
+    /* If basins are in silhouette mode, reveal them first */
+    if (this.state.hydroSilhouetteLayer) {
+      this._silhouetteClick();
+    }
+    if (!this.state.hydroLayers[0]) {
+      this._renderHydroBasins();
+    }
+    if (!this.state.hydroLayers[0]) return;
+    let targetFeature = null, targetLayer = null;
+    this.state.hydroLayers[0].eachLayer(lf => {
+      const lfName = lf.feature.properties.Name || lf.feature.properties.Old_Name || '';
+      if (lfName === name) { targetFeature = lf.feature; targetLayer = lf; }
+    });
+    if (targetFeature && targetLayer) this._hydroDrillDown(targetFeature, targetLayer);
+  },
 
   /* ── Sub-watershed Panel ── */
+  _openSubWatershedPanel(feature) {
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+
+    this._updatePanelHeader();
+
+    const p = feature.properties || {};
+    const gridcode = p.gridcode != null ? p.gridcode : '?';
+    const areaM2 = parseFloat(p.Shape_Area || 0);
+    const areaHa = areaM2 > 0 ? (areaM2 / 10000) : 0;
+    const basin = this.state.hydroSelectedBasin;
+    const basinName = basin ? basin.name : '';
+    const basinCode = basin ? basin.code : '';
+
+    this.state.lastViewed = { feature, isSubWatershed: true };
+
+    /* Build the Spans section — prefer zone-specific spans, fall back to basin spans */
+    let spansHTML = '';
+    if (this.state.viewMode === 'watersheds') {
+      let spans = null;
+      /* Try zone-specific spans first */
+      if (basinCode && gridcode != null) {
+        spans = this._zoneSpans(basinCode, gridcode);
+      }
+      /* Fall back to basin-level spans if zone data not available */
+      if (!spans && basinName) {
+        spans = this._watershedSpans(basinName);
+      }
+      if (spans && (spans.provinces.length || spans.municipalities.length)) {
+        spansHTML = `
+          <div class="panel-section">
+            <div class="panel-section-title">Spans — Administrative Boundaries</div>
+            ${this._renderSourceToggleHTML()}
+            <div class="span-group">
+              <div class="span-group-label">Provinces (${spans.provinces.length})</div>
+              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+            </div>
+            ${spans.municipalities.length ? `
+            <div class="span-group">
+              <div class="span-group-label">Municipalities (${spans.municipalities.length})</div>
+              <div class="span-chip-row span-muni-scroll">${this._renderSpansChips(spans.municipalities, 'municipality')}</div>
+            </div>` : ''}
+            <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
+          </div>`;
+      }
+    }
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero';
+      hero.innerHTML = `<button onclick="APP._backToBasinPanel()" class="panel-back-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to ${this._escHtml(basinName).replace(/ River Watershed$/, '')}
+        </button>
+        <div class="panel-level-badge">Sub-watershed</div>
+        <h2 class="panel-title">Zone ${this._escHtml(String(gridcode))}</h2>
+        <p class="panel-subtitle">Sub-catchment within ${this._escHtml(basinName).replace(/ River Watershed$/, ' Basin')}</p>`;
+    }
+
+    const html = `
+      <div class="panel-section">
+        <div class="panel-section-title">Details</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">Zone Code</div>
+            <div class="stat-value">${this._escHtml(String(gridcode))}</div>
+          </div>
+          ${areaHa > 0 ? `<div class="stat-box">
+            <div class="stat-label">Area (Ha)</div>
+            <div class="stat-value">${areaHa.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+          </div>` : ''}
+        </div>
+      </div>
+      ${spansHTML}`;
+
+    content.innerHTML = html;
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded', 'open', 'closed', 'peek');
+    if (window.innerWidth <= 640) { panel.classList.add('peek'); this.state.panelState = 'peek'; }
+    else { panel.classList.add('open'); this.state.panelState = 'open'; }
+  },
 
   /* Back button from sub-watershed panel → return to basin detail panel */
+  _backToBasinPanel() {
+    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+    }
+  },
 
   /* ── Watershed ↔ boundary cross-reference ── */
 
@@ -1283,6 +2843,38 @@ const APP = {
      { provinces: [{slug,label}], municipalities: [{slug,label,province}] }
      Uses the new namria/cad per-watershed spans sections when available,
      falling back to the old boundary→watershed inversion for backward compat. */
+  _watershedSpans(wsName) {
+    const data = this.state.watershedIntersections;
+    if (!data) return { provinces: [], municipalities: [] };
+
+    /* Try the new per-watershed spans sections first */
+    const prefix = this.state.activeSource === 'cad' ? 'cad' : 'namria';
+    if (data[prefix] && data[prefix][wsName]) {
+      const entry = data[prefix][wsName];
+      return {
+        provinces: (entry.provinces || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
+        municipalities: (entry.municipalities || []).map(slug => {
+          const parts = slug.split(':');
+          return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
+        }),
+      };
+    }
+
+    /* Fallback: invert the old boundary→watershed arrays */
+    const provinces = [];
+    const municipalities = [];
+    Object.keys(data).forEach(key => {
+      if (!Array.isArray(data[key]) || !data[key].includes(wsName)) return;
+      if (key.includes(':')) {
+        const [provSlug, muniSlug] = key.split(':');
+        municipalities.push({ slug: key, province: this._prettySlug(provSlug), label: this._prettySlug(muniSlug) });
+      } else {
+        provinces.push({ slug: key, label: this._prettySlug(key) });
+      }
+    });
+    municipalities.sort((a, b) => a.province === b.province ? a.label.localeCompare(b.label) : a.province.localeCompare(b.province));
+    return { provinces, municipalities };
+  },
 
   /* Render tappable chip list HTML for the Spans section.
      Filters out disputed-area placeholders ("X vs Y") that are not real LGUs. */
@@ -1410,11 +3002,357 @@ const APP = {
 
 
   /* ── Watershed Overlay Toggle ───────────── */
+  toggleWatershedMenu() {
+    const baseOpts = document.getElementById('basemap-options');
+    if (baseOpts) baseOpts.classList.remove('show');
+    this._closeBoundaryMenu();
 
+    const opts = document.getElementById('watershed-options');
+    if (!opts) return;
+    opts.classList.toggle('show');
+  },
 
+  _resetWatershedState() {
+    this.state.activeWatershedIds = [];
+    if (this.state.watershedLayer) {
+      this.state.map.removeLayer(this.state.watershedLayer);
+      this.state.watershedLayer = null;
+    }
+    const wsBtn = document.getElementById('watershed-btn');
+    if (wsBtn) wsBtn.classList.remove('active');
+    const wsOpts = document.getElementById('watershed-options');
+    if (wsOpts) wsOpts.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
+  },
 
+  async updateWatersheds(checkbox) {
+    const val = checkbox.value;
 
+    /* Sync all checkboxes with this value across the DOM */
+    document.querySelectorAll(`input[type="checkbox"][value="${val}"]`).forEach(cb => {
+      if (cb !== checkbox) cb.checked = checkbox.checked;
+    });
 
+    if (checkbox.checked) {
+      if (!this.state.activeWatershedIds.includes(val)) {
+        this.state.activeWatershedIds.push(val);
+      }
+    } else {
+      this.state.activeWatershedIds = this.state.activeWatershedIds.filter(id => id !== val);
+    }
+
+    const btn = document.getElementById('watershed-btn');
+    if (btn) btn.classList.toggle('active', this.state.activeWatershedIds.length > 0);
+
+    /* ── Hydro mode: filter the basin layer to only checked basins ── */
+    if (this.state.viewMode === 'watersheds') {
+      this.state.hydroActiveFilterIds = [...this.state.activeWatershedIds];
+      this._applyHydroFilter();
+      return;
+    }
+
+    // Initial load if needed
+    if (!this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
+      if (this.state._fetchingWatersheds) {
+        await this.state._fetchingWatersheds;
+      } else {
+        this.state._fetchingWatersheds = (async () => {
+          try {
+            let data = this.state.rawData['watershed'];
+            if (!data) {
+              const response = await fetch('geoJSON/CAR Watersheds.geojson');
+              data = await response.json();
+              this.state.rawData['watershed'] = data;
+            }
+
+            // Instantiate all layers once, without a filter
+            this.state.watershedLayer = L.geoJSON(data, {
+              style: this.config.colors.watershed,
+              onEachFeature: (feature, layer) => {
+                layer.on({
+                  mouseover: (e) => {
+                    if (e.target._isHidden) return; // Ignore hidden layers
+                    if (this.state._outlineHighlight !== e.target) {
+                      const style = Object.assign({}, this.config.colors.watershedHighlight);
+                      style.weight = 3;
+                      e.target.setStyle(style);
+                    }
+                    const p = feature.properties;
+                    const name = p.Name || p.Old_Name || 'Unknown Watershed';
+                    const lbl = document.getElementById('map-hover-label');
+                    if (lbl) {
+                      lbl.innerHTML = `<span class="label-level">Watershed</span>${this._escHtml(name)}`;
+                      lbl.classList.add('visible');
+                      lbl.style.display = ''; /* Clear any inline display */
+                    }
+                  },
+                  mouseout: (e) => {
+                    if (e.target._isHidden) return;
+                    if (this.state._outlineHighlight !== e.target) {
+                      this.state.watershedLayer.resetStyle(e.target);
+                    }
+                    const lbl = document.getElementById('map-hover-label');
+                    if (lbl) {
+                      lbl.classList.remove('visible');
+                      lbl.style.display = ''; /* Clear any inline display */
+                    }
+                  },
+                  click: (e) => {
+                    if (e.target._isHidden) return;
+                    L.DomEvent.stopPropagation(e);
+                    if (this.state._outlineHighlight) {
+                      this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
+                    }
+                    this.state._outlineHighlight = e.target;
+                    e.target.setStyle(this.config.colors.watershedHighlight);
+                    this.state.map.flyToBounds(e.target.getBounds(), {
+                      ...this._getPaddingOpts(),
+                      duration: 0.45,
+                      easeLinearity: 0.25
+                    });
+                    this._openWatershedPanel(feature);
+                  }
+                });
+              }
+            });
+
+            // Store array of all child layers for quick filtering
+            this.state._allWatershedChildLayers = [];
+            this.state.watershedLayer.eachLayer(layer => {
+              layer._isHidden = true; // default to hidden
+              this.state._allWatershedChildLayers.push(layer);
+            });
+
+          } catch (err) {
+            console.error("Failed to load watersheds:", err);
+          }
+        })();
+        await this.state._fetchingWatersheds;
+        this.state._fetchingWatersheds = null;
+      }
+    }
+
+    if (this.state.watershedLayer) {
+      if (this.state.activeWatershedIds.length > 0) {
+        if (!this.state.map.hasLayer(this.state.watershedLayer)) {
+          this.state.map.addLayer(this.state.watershedLayer);
+        }
+        
+        // Fast layer toggling
+        this.state.watershedLayer.clearLayers();
+        this.state._allWatershedChildLayers.forEach(layer => {
+          const name = layer.feature.properties.Name || layer.feature.properties.Old_Name || '';
+          if (this.state.activeWatershedIds.includes(name)) {
+            layer._isHidden = false;
+            this.state.watershedLayer.addLayer(layer);
+          } else {
+            layer._isHidden = true;
+          }
+        });
+        
+        this.state.watershedLayer.bringToFront();
+      } else {
+        this.state.map.removeLayer(this.state.watershedLayer);
+        // Clear highlighted outline from watershed if any
+        if (this.state._outlineHighlight) {
+          this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
+          this.state._outlineHighlight = null;
+        }
+      }
+      
+      if (this.state.lastViewed && this.state.lastViewed.isWatershed) {
+        this.closePanel();
+      }
+    }
+  },
+
+  _updateSmartFilters(provinceId) {
+    if (!this.state.watershedIntersections) return;
+    let allowed = null;
+    if (provinceId && this.state.watershedIntersections[provinceId]) {
+      allowed = this.state.watershedIntersections[provinceId];
+    }
+    
+    const options = document.querySelectorAll('.watershed-option');
+    options.forEach(opt => {
+      const checkbox = opt.querySelector('input');
+      if (!checkbox) return;
+      
+      if (allowed) {
+        if (allowed.includes(checkbox.value)) {
+          opt.classList.remove('dimmed');
+        } else {
+          opt.classList.add('dimmed');
+          if (checkbox.checked) {
+            checkbox.checked = false;
+            this.updateWatersheds(checkbox);
+          }
+        }
+      } else {
+        opt.classList.remove('dimmed');
+      }
+    });
+  },
+
+  _clearWatershedHighlightAndReturn(level) {
+    if (this.state._outlineHighlight && this.state.watershedLayer) {
+      this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
+      this.state._outlineHighlight = null;
+    }
+    const lastBoundary = this.state.selectedPath.find(p => p.level === level);
+    if (lastBoundary) {
+      this.openPanel(lastBoundary.feature, lastBoundary.level);
+      if (this.state._wasExpandedBeforeWatershed) {
+        this.toggleExpandedPanel();
+      } else if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
+        this.state.map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), {
+          ...this._getPaddingOpts(),
+          duration: 0.45,
+          easeLinearity: 0.25
+        });
+      }
+    } else if (level === 0) {
+      const carData = this.state.rawData[0];
+      if (carData && carData.features && carData.features[0]) {
+        this.openPanel(carData.features[0], 0);
+        if (this.state.layers[0]) {
+          this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
+            ...this._getPaddingOpts(),
+            duration: 0.45,
+            easeLinearity: 0.25
+          });
+        }
+      }
+    }
+  },
+
+  _openWatershedPanel(feature) {
+    const p = feature.properties;
+    const name = p.Name || p.Old_Name || 'Unknown Watershed';
+    const id = p.WSID || p.UNQ_ID || '';
+    const connectsTo = this.config.watershedConnections[name] || 'Unknown';
+
+    /* Build the Spans section (only in hydro mode, where it's most useful) */
+    let spansHTML = '';
+    if (this.state.viewMode === 'watersheds') {
+      const spans = this._watershedSpans(name);
+      if (spans.provinces.length || spans.municipalities.length) {
+        spansHTML = `
+          <div class="panel-section">
+            <div class="panel-section-title">Spans — Administrative Boundaries</div>
+            ${this._renderSourceToggleHTML()}
+            <div class="span-group">
+              <div class="span-group-label">Provinces (${spans.provinces.length})</div>
+              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+            </div>
+            ${spans.municipalities.length ? `
+            <div class="span-group">
+              <div class="span-group-label">Municipalities (${spans.municipalities.length})</div>
+              <div class="span-chip-row span-muni-scroll">${this._renderSpansChips(spans.municipalities, 'municipality')}</div>
+            </div>` : ''}
+            <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
+          </div>`;
+      }
+    }
+    
+    this.state.lastViewed = { feature, isWatershed: true };
+    
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    
+    this.state._wasExpandedBeforeWatershed = panel.classList.contains('expanded');
+    this._updatePanelHeader();
+    
+    let backButtonHTML = '';
+    if (this.state.viewMode === 'watersheds' && this.state.hydroDrillLevel === 1) {
+      /* In hydro mode — show "Back to Basins" button */
+      backButtonHTML = `<button onclick="APP._hydroDrillUp(0)" class="panel-back-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to All Basins
+      </button>`;
+    } else if (this.state.selectedPath && this.state.selectedPath.length > 0) {
+      const lastBoundary = this.state.selectedPath[this.state.selectedPath.length - 1];
+      backButtonHTML = `<button onclick="APP._clearWatershedHighlightAndReturn(${lastBoundary.level})" class="panel-back-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to ${this._escHtml(lastBoundary.name)}
+      </button>`;
+    }
+    
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero';
+      hero.innerHTML = `${backButtonHTML}
+        <div class="panel-badge-row" style="display:flex; align-items:center;">
+          <span class="panel-badge">Watershed</span>
+          <span class="panel-id-code" style="margin-left:8px;">${this._escHtml(id)}</span>
+        </div>
+        <h2 class="panel-title">${this._escHtml(name)}</h2>
+        <p class="panel-subtitle">Hydrological Boundary</p>`;
+    }
+
+    const html = `
+      <div class="panel-section">
+        <div class="panel-section-title">Connectivity</div>
+        <div class="stat-grid" style="grid-template-columns: 1fr;">
+          <div class="stat-box" style="background: #eff6ff; border-color: #bfdbfe;">
+            <div class="stat-label" style="color: #1e40af;">Connects To / Outflow</div>
+            <div class="stat-value" style="color: #1e3a8a; font-size: 1.1rem;">${this._escHtml(connectsTo)}</div>
+          </div>
+        </div>
+      </div>
+
+      ${spansHTML}
+
+      ${this.state.hydroDrillLevel === 1 ? `
+      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
+        <div class="panel-section-title">Map Overlays</div>
+        <div class="toggle-row">
+          <span>Stream Order</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+      </div>` : ''}
+
+      <div class="panel-section">
+        <div class="panel-section-title">Details</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">Area (Ha)</div>
+            <div class="stat-value">${p.Area_Ha ? p.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:2}) : 'N/A'}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Size Category</div>
+            <div class="stat-value" style="font-size: 0.85rem; line-height: 1.2;">${this._escHtml(p.SIZE_W || 'N/A')}</div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 0.9rem; color: #4b5563;">
+          <strong>Regions Spanned:</strong> ${this._escHtml(p.Region || 'N/A')}
+        </div>
+      </div>
+      
+      <div class="panel-section" style="font-size: 0.95rem; color: #374151; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+        <div class="panel-section-title">Basin Overview</div>
+        <p>${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
+      </div>
+    `;
+
+    content.innerHTML = html;
+    
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded');
+    panel.classList.remove('open', 'closed', 'peek');
+    
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
+  },
 };
 
 const EVENTS = {
