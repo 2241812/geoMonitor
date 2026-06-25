@@ -1032,12 +1032,14 @@ body.panel-open .bottom-left-controls {
   display: none;
 }
 
-/* Panel internals */
+/* Panel internals — Green Hero Card (Zone B), shared by ALL modes */
 .panel-hero {
   background: linear-gradient(135deg, #065f46 0%, #047857 100%);
   padding: 24px 20px 20px;
+  min-height: 128px;
   color: #fff;
   position: relative;
+  flex-shrink: 0;
 }
 
 .panel-level-badge {
@@ -1710,6 +1712,9 @@ body.mode-watersheds .source-toggle-control { display: none; }
   margin-bottom: 6px;
 }
 
+.basin-picker-item + .basin-picker-item {
+  margin-top: 10px;
+}
 .basin-picker-item {
   display: flex;
   align-items: center;

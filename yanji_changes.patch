@@ -1,0 +1,694 @@
+commit 64eb603802ca094b2a6f82ef881da5cdd69fad9c
+Author: GIAN MARC DOMALANTA <giandomalanta22@gmail.com>
+Date:   Wed Jun 24 15:11:23 2026 +0800
+
+    feat(ui): unify boundary and watershed panels, fix state logic, and enhance map interactions
+    
+    • Fixed state execution bugs to ensure the side panel properly updates and explicitly closes when toggling between Watershed and Boundary modes.
+    • Unified UI design and information architecture across both panels, standardizing green hero card dimensions, metrics containers, padding, and hierarchical list layouts.
+    • Corrected text casing issues, enforcing standard Title Case for UI lists and Leaflet map tooltips.
+    • Resolved case-insensitive string matching bugs to fully restore click-to-zoom and active state functionality for province selection.
+    • Repaired the boundary map highlight styles to successfully apply the dashed red outline on active selections without overwriting global layer styles or stacking colors.
+    • Fixed boundary layer hover (mouseover) glitches to preserve boundary stroke weights, ensuring proper legend color restoration on mouseout.
+    • Updated panel instructional copy for better user clarity and adjusted vertical spacing for list cards.
+
+diff --git a/main/assets/css/map.css b/main/assets/css/map.css
+index 5653bd3..3ca8bbb 100644
+--- a/main/assets/css/map.css
++++ b/main/assets/css/map.css
+@@ -1022,12 +1022,14 @@ body:not(.panel-open) .panel-toggle-btn {
+   display: none;
+ }
+ 
+-/* Panel internals */
++/* Panel internals — Green Hero Card (Zone B), shared by ALL modes */
+ .panel-hero {
+   background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+   padding: 24px 20px 20px;
++  min-height: 128px;
+   color: #fff;
+   position: relative;
++  flex-shrink: 0;
+ }
+ 
+ .panel-level-badge {
+@@ -1697,6 +1699,9 @@ body:not(.panel-open) .panel-toggle-btn {
+   margin-bottom: 6px;
+ }
+ 
++.basin-picker-item + .basin-picker-item {
++  margin-top: 10px;
++}
+ .basin-picker-item {
+   display: flex;
+   align-items: center;
+diff --git a/main/assets/js/app.js b/main/assets/js/app.js
+index eb22e4f..a4cb03a 100644
+--- a/main/assets/js/app.js
++++ b/main/assets/js/app.js
+@@ -721,7 +721,7 @@ const APP = {
+             /* Do not alter style if this feature is currently selected */
+             if (self.state._selectedFeature === feature) return;
+ 
+-            e.target.setStyle({ fillColor: styleConfig.fill, fillOpacity: level === 0 ? 0.15 : 0.35, weight: styleConfig.weight + 1, dashArray: null });
++            e.target.setStyle({ fillOpacity: level === 0 ? 0.15 : 0.35 });
+             e.target.bringToFront();
+           });
+           leafletLayer.on('mouseout', function (e) {
+@@ -734,14 +734,9 @@ const APP = {
+             /* Do not clear highlight if this feature is currently selected */
+             if (self.state._selectedFeature === feature) return;
+ 
+-            e.target.setStyle({
+-              fillColor: styleConfig.fill,
+-              fillOpacity: level === 0 ? 0.15 : 0,
+-              color: styleConfig.stroke,
+-              weight: styleConfig.weight,
+-              opacity: 0.9,
+-              dashArray: null,
+-            });
++            if (self.state.layers[level]) {
++              self.state.layers[level].resetStyle(e.target);
++            }
+           });
+         }
+ 
+@@ -970,7 +965,7 @@ const APP = {
+   _showHoverLabel(name, level) {
+     const lbl = document.getElementById('map-hover-label');
+     if (!lbl) return;
+-    lbl.innerHTML = `<span class="label-level">${this._src().levelNames[level]}</span>${this._escHtml(name)}`;
++    lbl.innerHTML = `<span class="label-level">${this._src().levelNames[level]}</span>${this._escHtml(this._toTitleCase(name))}`;
+     lbl.classList.add('visible');
+   },
+ 
+@@ -1229,78 +1224,112 @@ const APP = {
+     const content = document.getElementById('info-panel-content');
+     if (!panel || !content) return;
+ 
++    this._updatePanelHeader();
++    this.state.lastViewed = { feature, level };
++    const src = this._src();
++
++    /* ── Level 0 → boundary picker (provinces / municipalities) ── */
++    if (level === 0) {
++      this._showBoundaryPicker(feature, level);
++      return;
++    }
++
+     document.body.classList.add('panel-open');
+     document.body.classList.remove('panel-expanded');
+     panel.classList.remove('expanded');
+-    this.state.lastViewed = { feature, level };
+     const name = this._featureName(feature, level);
+-    const src = this._src();
+     const levelLabel = src.levelNames[level];
+     const props = feature.properties || {};
+-    const details = this._resolveDetails(props, level, name);
+ 
+     let html = '';
+ 
+-    html += `<div class="panel-hero">
+-      <div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
+-      <h2 class="panel-title">${this._escHtml(name)}</h2>
+-      <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>
+-    </div>`;
+-
+-    if (level < src.maxLevel) {
+-      const nextName = src.levelNames[level + 1];
+-      html += `<div class="panel-drill-hint" onclick="void(0)">
+-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+-        Click a ${nextName} on the map to drill in
+-      </div>`;
++    /* Populate the hardcoded Zone B (Green Hero Card) separately from content */
++    const hero = document.getElementById('panel-hero');
++    if (hero) {
++      hero.className = 'panel-hero';
++      hero.innerHTML = `<div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
++        <h2 class="panel-title">${this._escHtml(name)}</h2>
++        <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>`;
+     }
+ 
+-    /* Numeric properties rendered as stat-boxes (same CSS pattern as watershed panel).
+-       Textual properties rendered as detail rows below. */
+-    const numericKeys = new Set(['Square Meters', 'Area (Ha)', 'Perimeter']);
+-    const statItems = {};
+-    const rowItems = {};
+-    Object.entries(details).forEach(([k, v]) => {
+-      if (numericKeys.has(k)) statItems[k] = v;
+-      else rowItems[k] = v;
+-    });
++    /* ── Metrics — Connectivity-style card block ── */
++    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
++    let areaHa = parseFloat(props.Hectares || props.Area || 0);
++    if (areaHa <= 0 && sqMeters > 0) areaHa = sqMeters / 10000;
++    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
+ 
+-    const chartData = this._resolveChartData(props);
+-    if (Object.keys(statItems).length > 0 || chartData.values.length > 0) {
+-      html += `<div class="panel-section">
+-        <div class="panel-section-title">Measurements</div>`;
+-
+-      if (Object.keys(statItems).length > 0) {
+-        html += `<div class="stat-grid" style="margin-bottom: ${chartData.values.length > 0 ? '12px' : '0'};">`;
+-        Object.entries(statItems).forEach(([k, v]) => {
+-          html += `<div class="stat-box">
+-            <div class="stat-label">${this._escHtml(k)}</div>
+-            <div class="stat-value">${this._escHtml(v)}</div>
+-          </div>`;
+-        });
+-        html += `</div>`;
++    html += `<div class="panel-section">
++      <div class="panel-section-title">Metrics</div>
++      <div class="stat-grid" style="grid-template-columns: 1fr;">
++        <div class="stat-box" style="background: #eff6ff; border-color: #bfdbfe;">
++          <div class="stat-label" style="color: #1e40af;">Area</div>
++          <div class="stat-value" style="color: #1e3a8a; font-size: 1.1rem;">
++            ${areaHa > 0 ? areaHa.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' Ha' : 'N/A'}
++          </div>
++        </div>
++      </div>`;
++    if (sqMeters > 0 || perimeter > 0) {
++      html += `<div class="stat-grid" style="margin-top: 8px;">`;
++      if (sqMeters > 0) {
++        html += `<div class="stat-box">
++          <div class="stat-label">Square Meters</div>
++          <div class="stat-value">${sqMeters.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
++        </div>`;
+       }
+-
+-      if (chartData.values.length > 0) {
+-        html += `<div class="chart-wrap"><canvas id="panel-chart"></canvas></div>`;
++      if (perimeter > 0) {
++        html += `<div class="stat-box">
++          <div class="stat-label">Perimeter</div>
++          <div class="stat-value">${perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
++        </div>`;
+       }
+-
+       html += `</div>`;
+     }
++    html += `</div>`;
+ 
+-    if (Object.keys(rowItems).length > 0) {
+-      html += `<div class="panel-section">
+-        <div class="panel-section-title">Details</div>`;
+-      Object.entries(rowItems).forEach(([k, v]) => {
+-        html += `<div class="panel-row">
+-          <span class="panel-row-label">${this._escHtml(k)}</span>
+-          <span class="panel-row-value">${this._escHtml(v)}</span>
++    /* ── Subdivisions or parent hierarchy ── */
++    if (level < src.maxLevel) {
++      const childLevel = level + 1;
++      const childLevelName = src.levelNames[childLevel];
++      const parentId = feature.properties._id;
++      let children = [];
++      if (this.state.hierarchy && this.state.hierarchy.children && parentId) {
++        const childIds = this.state.hierarchy.children[parentId] || [];
++        const childData = this.state.rawData[childLevel];
++        if (childData && childData.features) {
++          children = childIds
++            .map(id => childData.features.find(f => f.properties._id === id))
++            .filter(Boolean);
++        }
++      }
++      if (children.length > 0) {
++        const pluralLabel = childLevelName.endsWith('y') ? childLevelName.slice(0, -1) + 'ies' : childLevelName + 's';
++        html += `<div class="panel-section">
++          <div class="panel-section-title">${this._escHtml(pluralLabel)} (${children.length})</div>`;
++        if (children.length <= 30) {
++          html += `<div class="span-chip-row">`;
++          children.forEach(child => {
++            const childName = this._toTitleCase(this._featureName(child, childLevel));
++            const childId = (child.properties && child.properties._id) || '';
++            html += `<button class="span-chip" onclick="APP._highlightBoundaryChild('${this._escHtml(childId).replace(/'/g, '&#39;')}', ${childLevel}, this)">${this._escHtml(childName)}</button>`;
++          });
++          html += `</div>`;
++        }
++        html += `</div>`;
++      }
++    } else if (level > 0) {
++      const parentLevel = level - 1;
++      const parentItem = this.state.selectedPath.find(item => item.level === parentLevel);
++      if (parentItem) {
++        html += `<div class="panel-section">
++          <div class="panel-section-title" style="text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.72rem;">Part of</div>
++          <div class="span-chip-row">
++            <button class="span-chip" onclick="APP.drillUp(${parentLevel})">${this._escHtml(parentItem.name)}</button>
++          </div>
+         </div>`;
+-      });
+-      html += `</div>`;
++      }
+     }
+ 
+-    /* Add Map Legend to Side Panel */
++    /* ── Legend ── */
+     html += `<div class="panel-section">
+       <div class="panel-section-title">Legend</div>
+       <div class="panel-legend">
+@@ -1311,13 +1340,12 @@ const APP = {
+       </div>
+     </div>`;
+ 
+-    /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
++    /* ── Watershed summary ── */
+     const id = props._id;
+     let intersectingWs = null;
+     if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+       intersectingWs = this.state.watershedIntersections[id];
+     } else if (level === 0 && this.state.rawData['watershed']) {
+-      /* Show all watersheds for the region */
+       intersectingWs = this.state.rawData['watershed'].features
+         .map(f => f.properties.Name || f.properties.Old_Name)
+         .filter(Boolean);
+@@ -1350,7 +1378,7 @@ const APP = {
+       </div>`;
+     }
+ 
+-    /* Add Show More Button and Expanded Content — for drilling into specific admin boundaries */
++    /* ── Show More (watershed overlay checkboxes) ── */
+     let expandedHtml = '';
+     if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+       const wsForCheckboxes = this.state.watershedIntersections[id];
+@@ -1397,32 +1425,21 @@ const APP = {
+     panel.classList.add('open');
+     this.state.panelState = 'open';
+     this._updatePanelToggleIcon();
++  },
+ 
+-    if (chartData.values.length > 0) {
+-      const ctx = document.getElementById('panel-chart');
+-      if (ctx) {
+-        if (this.state._chart) this.state._chart.destroy();
+-        this.state._chart = new Chart(ctx, {
+-          type: 'bar',
+-          data: {
+-            labels: chartData.labels,
+-            datasets: [{
+-              data: chartData.values,
+-              backgroundColor: ['#059669', '#0d9488', '#0891b2', '#7c3aed'],
+-              borderRadius: 5,
+-            }],
+-          },
+-          options: {
+-            responsive: true,
+-            maintainAspectRatio: false,
+-            plugins: { legend: { display: false } },
+-            scales: {
+-              y: { type: 'logarithmic', ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+-              x: { ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { display: false } },
+-            },
+-          },
+-        });
+-      }
++  /* Force Zone A (the white header bar) to match the current global mode.
++     Called at the top of every panel-open method so the header is never stale. */
++  _updatePanelHeader() {
++    const mode = this.state.viewMode;
++    const labelEl = document.getElementById('panel-header-label');
++    if (labelEl) {
++      labelEl.textContent = mode === 'watersheds' ? 'Watershed Monitor' : 'Administrative Boundaries';
++    }
++    const iconEl = document.getElementById('panel-header-icon');
++    if (iconEl) {
++      iconEl.innerHTML = mode === 'watersheds'
++        ? '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>'
++        : '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>';
+     }
+   },
+ 
+@@ -1440,6 +1457,9 @@ const APP = {
+     panel.classList.add('closed');
+     this.state.panelState = 'closed';
+     this._updatePanelToggleIcon();
++    /* Clear the hardcoded hero card so stale content doesn't flash on reopen */
++    const hero = document.getElementById('panel-hero');
++    if (hero) hero.innerHTML = '';
+     
+     if (this.state._chart) {
+       this.state._chart.destroy();
+@@ -1699,16 +1719,7 @@ const APP = {
+     this.state.viewMode = mode;
+ 
+     /* Update dynamic header label + icon */
+-    const headerLabel = document.getElementById('panel-header-label');
+-    if (headerLabel) {
+-      headerLabel.textContent = mode === 'watersheds' ? 'Watershed Monitor' : 'Boundary Monitor';
+-    }
+-    const headerIcon = document.getElementById('panel-header-icon');
+-    if (headerIcon) {
+-      headerIcon.innerHTML = mode === 'watersheds'
+-        ? '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>'
+-        : '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>';
+-    }
++    this._updatePanelHeader();
+ 
+     document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
+     const btnId = mode === 'watersheds' ? 'btn-view-watersheds' : 'btn-view-boundaries';
+@@ -1722,7 +1733,6 @@ const APP = {
+       this._clearHydroState(true); /* keep viewMode */
+       this._clearSelection();
+       this.closePanel();
+-      if (header) header.style.display = 'none';
+       /* Remove all admin boundary layers */
+       for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+         if (this.state.layers[lvl]) {
+@@ -1732,20 +1742,19 @@ const APP = {
+       }
+       this.state.selectedPath = [];
+       this.state.currentLevel = 0;
+-      /* Ensure watershed data is loaded, then render basins */
++      /* Ensure watershed data is loaded, then render basins.
++         Panel stays closed — user opens it via polygon click or toggle button. */
+       this._enterHydroMode();
+     } else {
+       /* Exit hydro mode: remove hydro layers, restore admin layers */
+       this._clearHydroState(true);
+       this._resetWatershedState();
++      this.closePanel();
+       this.state.currentLevel = 0;
+       if (header) header.style.display = '';
+       this._showLevel(0).then(() => {
+         this.state.currentLevel = 0;
+-        const carData = this.state.rawData[0];
+-        if (carData && carData.features && carData.features[0]) {
+-          this.openPanel(carData.features[0], 0);
+-        }
++        /* Panel stays closed — user opens it via polygon click or toggle button */
+       });
+     }
+   },
+@@ -1786,7 +1795,9 @@ const APP = {
+     this._renderHydroBasins(true); /* uniform fill, no stroke, non-interactive */
+     this._renderHydroSilhouette(true); /* border only, interactive — click to reveal basins */
+     this._updateBreadcrumb();
+-    this._showBasinPickerPanel();
++    /* Note: _showBasinPickerPanel() is NOT called here so the panel stays
++       closed on initial page load. The caller (e.g. _setViewMode) is
++       responsible for opening the panel when the user toggles modes. */
+   },
+ 
+   /* Index of a basin in hydroBasinFolderMap (for color assignment) */
+@@ -2323,7 +2334,7 @@ const APP = {
+     this.state.adminLayers[type] = L.geoJSON(data, {
+       style: styleMap[type],
+       onEachFeature: (feature, layer) => {
+-        layer.bindTooltip(this._featureName(feature, lvl), { sticky: true, direction: 'top' });
++        layer.bindTooltip(this._toTitleCase(this._featureName(feature, lvl)), { sticky: true, direction: 'top' });
+       },
+     }).addTo(this.state.map);
+   },
+@@ -2483,6 +2494,7 @@ const APP = {
+     const content = document.getElementById('info-panel-content');
+     if (!panel || !content) return;
+ 
++    this._updatePanelHeader();
+     this.state.lastViewed = null;
+ 
+     const wsData = this.state.rawData['watershed'];
+@@ -2521,12 +2533,15 @@ const APP = {
+         </div>`;
+     });
+ 
+-    const html = `
+-      <div class="panel-hero basin-picker-hero">
+-        <div class="panel-level-badge">14 Major Basins</div>
++    const hero = document.getElementById('panel-hero');
++    if (hero) {
++      hero.className = 'panel-hero basin-picker-hero';
++      hero.innerHTML = `<div class="panel-level-badge">14 Major Basins</div>
+         <h2 class="panel-title">Watersheds</h2>
+-        <p class="panel-subtitle">Tap a basin to explore sub-watersheds &amp; stream network</p>
+-      </div>
++        <p class="panel-subtitle">Tap a basin to explore sub-watersheds &amp; stream network</p>`;
++    }
++
++    const html = `
+       <div class="panel-section basin-picker-section">
+         ${groupHtml}
+       </div>`;
+@@ -2563,12 +2578,164 @@ const APP = {
+     if (targetFeature && targetLayer) this._hydroDrillDown(targetFeature, targetLayer);
+   },
+ 
++  /* ── Boundary Picker (level 0 — show children as clickable cards) ── */
++  _showBoundaryPicker(feature, level) {
++    const panel = document.getElementById('info-panel');
++    const content = document.getElementById('info-panel-content');
++    if (!panel || !content) return;
++
++    const src = this._src();
++    const childLevel = 1;
++    const parentId = feature.properties._id;
++
++    this._updatePanelHeader();
++    this.state.lastViewed = { feature, level };
++
++    /* Hero — with instructional subtitle matching watershed pattern */
++    const childLevelName = src.levelNames[childLevel];
++    const hero = document.getElementById('panel-hero');
++    if (hero) {
++      hero.className = 'panel-hero basin-picker-hero';
++      hero.innerHTML = `<div class="panel-level-badge">${this._escHtml(src.levelNames[0])}</div>
++        <h2 class="panel-title">Administrative Boundaries</h2>
++        <p class="panel-subtitle">Tap a ${childLevelName.toLowerCase()} to explore its ${childLevelName === 'Province' ? 'municipalities, metrics, and intersecting watersheds' : 'metrics and intersecting watersheds'}.</p>`;
++    }
++
++    /* Gather children at level 1 */
++    let children = [];
++    const childData = this.state.rawData[childLevel];
++    if (childData && childData.features) {
++      if (this.state.hierarchy && this.state.hierarchy.children && parentId) {
++        const childIds = this.state.hierarchy.children[parentId] || [];
++        children = childIds
++          .map(id => childData.features.find(f => f.properties._id === id))
++          .filter(Boolean);
++      } else {
++        children = childData.features;
++      }
++    }
++
++    let html = '';
++
++    /* Render picker items — same card design as watershed basin picker */
++    html += `<div class="panel-section basin-picker-section">`;
++    const pluralLabel = childLevelName.endsWith('y') ? childLevelName.slice(0, -1) + 'ies' : childLevelName + 's';
++    html += `<div class="basin-picker-group">
++      <div class="basin-picker-group-title">${this._escHtml(pluralLabel)} (${children.length})</div>`;
++    children.forEach(child => {
++      const childName = this._toTitleCase(this._featureName(child, childLevel));
++      const p = child.properties || {};
++      let a = parseFloat(p.Shape_Area || p.AREA || 0);
++      if (a > 0) a = a / 10000;
++      const areaStr = a > 0 ? a.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
++      html += `
++        <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(childName).replace(/'/g, '&#39;')}', ${childLevel})">
++          <div class="basin-picker-info">
++            <span class="basin-picker-name">${this._escHtml(childName)}</span>
++            <span class="basin-picker-meta">
++              <span class="basin-size">${this._escHtml(childLevelName)}</span>
++              ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
++            </span>
++          </div>
++          <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
++        </button>`;
++    });
++    html += `</div></div>`;
++
++    content.innerHTML = html;
++    document.body.classList.add('panel-open');
++    document.body.classList.remove('panel-expanded');
++    panel.classList.remove('expanded');
++    panel.classList.remove('open', 'closed', 'peek');
++    if (window.innerWidth <= 640) {
++      panel.classList.add('peek');
++      this.state.panelState = 'peek';
++    } else {
++      panel.classList.add('open');
++      this.state.panelState = 'open';
++    }
++    this._updatePanelToggleIcon();
++  },
++
++  /* Click handler for boundary picker items — mimics the map polygon click pattern */
++  _drillBoundaryFromPicker(childName, childLevel) {
++    const childData = this.state.rawData[childLevel];
++    if (!childData || !childName) return;
++    const lookup = childName.toLowerCase();
++    const childFeature = childData.features.find(f => this._featureName(f, childLevel).toLowerCase() === lookup);
++    if (!childFeature) return;
++    let childLayer = null;
++    const layerGroup = this.state.layers[childLevel];
++    if (layerGroup) {
++      layerGroup.eachLayer(lf => {
++        if (lf.feature === childFeature) childLayer = lf;
++      });
++    }
++    this.openPanel(childFeature, childLevel);
++    /* Always zoom to the selected feature's bounds */
++    if (childLayer && childLayer.getBounds) {
++      this.state.map.fitBounds(childLayer.getBounds(), {
++        padding: [50, 50],
++        maxZoom: 12,
++      });
++    } else if (childFeature.geometry) {
++      try {
++        const temp = L.geoJSON(childFeature);
++        this.state.map.fitBounds(temp.getBounds(), {
++          padding: [50, 50],
++          maxZoom: 12,
++        });
++      } catch (_) {}
++    }
++    if (childLevel >= this._src().maxLevel) {
++      this._highlightAndDim(childFeature, childLayer, childLevel);
++    } else {
++      this.drillDown(childFeature, childLayer);
++    }
++  },
++
++  /* Highlight a child boundary on the map when its chip is clicked */
++  _highlightBoundaryChild(childId, level, chipEl) {
++    /* Toggle active class on chips */
++    if (chipEl && chipEl.parentNode) {
++      chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
++    }
++    if (chipEl) chipEl.classList.add('active');
++
++    if (!childId) return;
++    const layer = this.state.layers[level];
++    if (!layer) return;
++
++    /* Reset previous highlights on this level, then highlight the matched feature */
++    this._resetLevelStyle(level);
++    layer.eachLayer(lf => {
++      if (lf.feature && lf.feature.properties && lf.feature.properties._id === childId) {
++        lf.setStyle({
++          color: '#dc2626',
++          weight: 2.5,
++          fillOpacity: 0.06,
++          dashArray: '5 3',
++          lineCap: 'round',
++          opacity: 0.9,
++        });
++        lf.bringToFront();
++        if (lf.getBounds) {
++          this.state.map.fitBounds(lf.getBounds(), {
++            padding: [50, 50],
++            maxZoom: 12,
++          });
++        }
++      }
++    });
++  },
++
+   /* ── Sub-watershed Panel ── */
+   _openSubWatershedPanel(feature) {
+     const panel = document.getElementById('info-panel');
+     const content = document.getElementById('info-panel-content');
+     if (!panel || !content) return;
+ 
++    this._updatePanelHeader();
+     const p = feature.properties || {};
+     const gridcode = p.gridcode != null ? p.gridcode : '?';
+     const areaM2 = parseFloat(p.Shape_Area || 0);
+@@ -2610,17 +2777,19 @@ const APP = {
+       }
+     }
+ 
+-    const html = `
+-      <div class="panel-hero">
+-        <button onclick="APP._backToBasinPanel()" class="panel-back-btn">
++    const hero = document.getElementById('panel-hero');
++    if (hero) {
++      hero.className = 'panel-hero';
++      hero.innerHTML = `<button onclick="APP._backToBasinPanel()" class="panel-back-btn">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+           Back to ${this._escHtml(basinName).replace(/ River Watershed$/, '')}
+         </button>
+         <div class="panel-level-badge">Sub-watershed</div>
+         <h2 class="panel-title">Zone ${this._escHtml(String(gridcode))}</h2>
+-        <p class="panel-subtitle">Sub-catchment within ${this._escHtml(basinName).replace(/ River Watershed$/, ' Basin')}</p>
+-      </div>
+-      <div class="panel-section">
++        <p class="panel-subtitle">Sub-catchment within ${this._escHtml(basinName).replace(/ River Watershed$/, ' Basin')}</p>`;
++    }
++
++    const html = `<div class="panel-section">
+         <div class="panel-section-title">Details</div>
+         <div class="stat-grid">
+           <div class="stat-box">
+@@ -2662,6 +2831,12 @@ const APP = {
+     }).join('-');
+   },
+ 
++  /* Convert an ALL-CAPS string to Title Case (e.g. "MOUNTAIN PROVINCE" → "Mountain Province") */
++  _toTitleCase(str) {
++    if (!str) return '';
++    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
++  },
++
+   /* Invert watershedIntersections: for the given watershed name, return
+      { provinces: [{slug,label}], municipalities: [{slug,label,province}] }
+      Uses the new namria/cad per-watershed spans sections when available,
+@@ -3051,6 +3226,7 @@ const APP = {
+   },
+ 
+   _openWatershedPanel(feature) {
++    this._updatePanelHeader();
+     const p = feature.properties;
+     const name = p.Name || p.Old_Name || 'Unknown Watershed';
+     const id = p.WSID || p.UNQ_ID || '';
+@@ -3101,16 +3277,19 @@ const APP = {
+       </button>`;
+     }
+     
+-    const html = `
+-      <div class="panel-hero">
+-        ${backButtonHTML}
++    const hero = document.getElementById('panel-hero');
++    if (hero) {
++      hero.className = 'panel-hero';
++      hero.innerHTML = `${backButtonHTML}
+         <div class="panel-badge-row" style="display:flex; align-items:center;">
+           <span class="panel-badge">Watershed</span>
+           <span class="panel-id-code" style="margin-left:8px;">${this._escHtml(id)}</span>
+         </div>
+         <h2 class="panel-title">${this._escHtml(name)}</h2>
+-        <p class="panel-subtitle">Hydrological Boundary</p>
+-      </div>
++        <p class="panel-subtitle">Hydrological Boundary</p>`;
++    }
++
++    const html = `
+ 
+       <div class="panel-section">
+         <div class="panel-section-title">Connectivity</div>
+diff --git a/main/assets/js/map-layers.js b/main/assets/js/map-layers.js
+index d52ff71..bbf400a 100644
+--- a/main/assets/js/map-layers.js
++++ b/main/assets/js/map-layers.js
+@@ -29,9 +29,5 @@ async function initLayers() {
+     if (geo0 && geo0.features && geo0.features[0]) {
+       APP.openPanel(geo0.features[0], 0);
+     }
+-  } else {
+-    /* Watersheds mode — hide admin panel header, skip CAR boundary */
+-    const header = document.querySelector('.info-panel-header');
+-    if (header) header.style.display = 'none';
+   }
+ }
+diff --git a/main/map.html b/main/map.html
+index cc878c9..ed4b4b4 100644
+--- a/main/map.html
++++ b/main/map.html
+@@ -162,6 +162,8 @@
+           <span id="panel-header-label">Watershed Monitor</span>
+         </div>
+       </div>
++      <!-- Green Hero Card (Zone B) — skeleton hardcoded, populated by JS -->
++      <div class="panel-hero" id="panel-hero"></div>
+       <div class="info-panel-handle" id="info-panel-handle" onclick="APP.togglePanel()">
+         <span class="handle-bar"></span>
+       </div>
