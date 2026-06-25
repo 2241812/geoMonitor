@@ -29,6 +29,7 @@ const APP = {
     hydroSelectedBasin: null, /* { name, folder, code, feature } */
     hydroLayers: {}, /* key 0 = basins, 1 = sub-watersheds, 2 = stream order */
     watershedOutlineLayer: null, /* L.geoJSON for the merged watershed outline (R3) */
+    watershedOutlineSelected: false, /* whether the merged outline is toggled to black selection */
     hydroShowBoundary: false, /* whether the CAR outline is toggled on in hydro mode */
     hydroBoundaryLayer: null, /* L.geoJSON layer for the CAR boundary outline */
     hydroAdminOutlineLayer: null, /* L.geoJSON layer for province/muni outline from Spans chips */
@@ -1772,16 +1773,57 @@ const APP = {
   },
 
   /* ── Watershed Outline helpers (R3) ── */
-  /* Show the merged CAR watersheds outline (non-interactive, no fill) */
+  /* Show the merged CAR watersheds outline (interactive, no fill, hover/select support).
+     Single outline represents the whole CAR watershed boundary.
+     - Hover: thickens outline and brightens it.
+     - Click: toggles a black outline selection (mirrors boundary-mode selection behavior). */
   _showWatershedOutline() {
     const map = this.state.map;
     if (!map) return;
     this._removeWatershedOutline();
     const outlineData = this.state.rawData['watershedOutline'];
     if (!outlineData || !outlineData.features) return;
+    const self = this;
+    const baseStyle = { color: '#166534', weight: 2.5, fillOpacity: 0, opacity: 0.85 };
+    const hoverStyle = { color: '#16a34a', weight: 4, fillOpacity: 0, opacity: 1 };
+    const selectedStyle = { color: '#000000', weight: 3, fillOpacity: 0, opacity: 1 };
     this.state.watershedOutlineLayer = L.geoJSON(outlineData, {
-      interactive: false,
-      style: { color: '#166534', weight: 2.5, fillOpacity: 0, opacity: 0.85 },
+      interactive: true,
+      style: baseStyle,
+      onEachFeature(feature, leafletLayer) {
+        /* Only interactive at the basin overview (drill level 0) */
+        leafletLayer.on('mouseover', function(e) {
+          if (self.state.hydroDrillLevel !== 0) return;
+          if (self.state.watershedOutlineSelected) return; /* keep black if selected */
+          e.target.setStyle(hoverStyle);
+          e.target.bringToFront();
+          const lbl = document.getElementById('map-hover-label');
+          if (lbl) {
+            lbl.innerHTML = `<span class="label-level">Watersheds</span>Cordillera Administrative Region`;
+            lbl.classList.add('visible');
+            lbl.style.display = '';
+          }
+        });
+        leafletLayer.on('mouseout', function(e) {
+          if (self.state.hydroDrillLevel !== 0) return;
+          if (self.state.watershedOutlineSelected) return;
+          e.target.setStyle(baseStyle);
+          self._hideHoverLabel();
+        });
+        leafletLayer.on('click', function(e) {
+          L.DomEvent.stopPropagation(e);
+          if (self.state.hydroDrillLevel !== 0) return;
+          if (self.state._drilling) return;
+          /* Toggle black outline selection */
+          self.state.watershedOutlineSelected = !self.state.watershedOutlineSelected;
+          if (self.state.watershedOutlineSelected) {
+            e.target.setStyle(selectedStyle);
+            e.target.bringToFront();
+          } else {
+            e.target.setStyle(baseStyle);
+          }
+        });
+      },
     }).addTo(map);
   },
 
@@ -1790,6 +1832,7 @@ const APP = {
       this.state.map.removeLayer(this.state.watershedOutlineLayer);
       this.state.watershedOutlineLayer = null;
     }
+    this.state.watershedOutlineSelected = false;
   },
 
   /* Render the 14 major basins as interactive colored polygons (hydro level 0) */
