@@ -27,11 +27,14 @@ const APP = {
     /* Hydro drill-down state (watersheds view mode only) */
     hydroDrillLevel: 0, /* 0 = basins overview, 1 = drilled into a basin's sub-watersheds */
     hydroSelectedBasin: null, /* { name, folder, code, feature } */
-    hydroLayers: {}, /* key 0 = basins, 1 = sub-watersheds, 2 = stream order */
-    hydroShowBoundary: false, /* whether the CAR outline is toggled on in hydro mode */
-    hydroBoundaryLayer: null, /* L.geoJSON layer for the CAR boundary outline */
-    hydroAdminOutlineLayer: null, /* L.geoJSON layer for province/muni outline from Spans chips */
-    hydroActiveFilterIds: [], /* watershed IDs checked via the checkbox dropdown in hydro mode */
+    hydroLayers: [null, null, null],
+    watershedOutlineLayer: null, /* L.geoJSON for the merged watershed outline (R3) */
+    hydroShowBoundary: true,
+    hydroBoundaryLayer: null,
+    hydroAdminOutlineLayer: null,
+    hydroSilhouetteLayer: null,
+    _hydroSilhouetteGeo: null,
+    hydroActiveFilterIds: [],
     hydroSelectedZone: null, /* currently isolated sub-watershed zone feature */
     hydroSelectedZoneLayer: null, /* leaflet layer of the isolated zone */
     zoneIntersections: null, /* loaded from zone-intersections.json */
@@ -40,142 +43,7 @@ const APP = {
     boundaryMenuOpen: false,
   },
 
-  config: {
-    mapCenter: [17.3, 121.0],
-    mapZoom: 8.5,
-    minZoom: 5,
-    maxZoom: 18,
-    maxBounds: [[4.0, 116.0], [21.5, 128.0]],
-
-    sources: {
-      namria: {
-        label: 'NAMRIA',
-        geoJSON: {
-          0: 'geoJSON/CAR NAMRIA Boundary.geojson',
-          1: 'geoJSON/CAR NAMRIA Provincial Boundary.geojson',
-          2: 'geoJSON/CAR NAMRIA Municipal Boundary.geojson',
-        },
-        hierarchy: 'geoJSON/hierarchy-namria.json',
-        levelNames: ['Region', 'Province', 'Municipality'],
-        maxLevel: 2,
-      },
-      cad: {
-        label: 'CAD',
-        geoJSON: {
-          0: 'geoJSON/CAR CAD Boundary.geojson',
-          1: 'geoJSON/CAR CAD Municipal Boundary.geojson',
-        },
-        hierarchy: 'geoJSON/hierarchy-cad.json',
-        levelNames: ['Region', 'Municipality'],
-        maxLevel: 1,
-      },
-    },
-
-    colors: {
-      0: { fill: '#059669', stroke: '#0f172a', weight: 2.5 },
-      1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
-      2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
-      highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
-      watershed: { fill: '#0ea5e9', stroke: '#0284c7', weight: 2, fillOpacity: 0.35 },
-      watershedHighlight: { fill: '#0ea5e9', stroke: '#0369a1', weight: 4, fillOpacity: 0.55 },
-    },
-
-    watershedConnections: {
-      "Abra River Watershed": "West Philippine Sea",
-      "Abulug River Watershed": "Babuyan Channel",
-      "Agno River Watershed": "Lingayen Gulf",
-      "Amburayan River Watershed": "South China Sea",
-      "Aringay River Watershed": "Lingayen Gulf",
-      "Bayogao River Watershed": "South China Sea",
-      "Bued River Watershed": "Lingayen Gulf",
-      "Cabicungan River Watershed": "Babuyan Channel",
-      "Mallig River Watershed": "Cagayan River",
-      "Naguilian River Watershed": "West Philippine Sea",
-      "Santa Maria River Watershed": "West Philippine Sea",
-      "Siffu River Watershed": "Cagayan River",
-      "Upper Chico River Watershed": "Cagayan River",
-      "Upper Magat River Watershed": "Cagayan River",
-      "Zumigui-Ziwanan River Watershed": "Babuyan Channel"
-    },
-
-    watershedDescriptions: {
-      "Upper Chico River Watershed": "The Upper Chico River Watershed is a major headwater system for the Chico River, flowing through the Cordillera mountains and primarily draining into the Cagayan River Basin. It plays a critical role in supporting local agriculture and the region's indigenous communities.",
-      "Upper Magat River Watershed": "This watershed forms the upper reaches of the Magat River, a vital tributary of the Cagayan River. It is characterized by steep mountainous terrain and is essential for supplying water to the Magat Dam, which supports large-scale irrigation and hydroelectric power generation.",
-      "Siffu River Watershed": "The Siffu River Watershed spans the eastern slopes of the Cordillera Central, eventually draining into the Magat River. It serves as an important agricultural water source for the surrounding lowland communities.",
-      "Mallig River Watershed": "A significant sub-basin of the Cagayan River system, the Mallig River Watershed covers portions of Kalinga and Mountain Province, delivering vital surface water to the agricultural plains below.",
-      "Zumigui-Ziwanan River Watershed": "Also known as the Pamplona or Manucotae watershed, this river system primarily drains northward towards the Babuyan Channel. It features dense forest cover and is critical for maintaining the region's hydrological balance.",
-      "Abra River Watershed": "The Abra River Watershed is the largest river basin in the Ilocos Region, originating from the slopes of Mount Data in the Cordillera Central. It carves a deep valley westward before emptying into the West Philippine Sea.",
-      "Naguilian River Watershed": "The Naguilian River Watershed flows westward from the mountains of Benguet, directly draining into the West Philippine Sea. It is a smaller but essential basin supporting local municipalities along the La Union coast.",
-      "Aringay River Watershed": "Originating from the rugged terrains of Benguet, the Aringay River Watershed runs westward into the Lingayen Gulf. The basin is characterized by varied topography and supports diverse local ecosystems.",
-      "Zumiqui-Ziwanan River Watershed": "Pamplona River",
-      "Abulug River Watershed": "The Abulug River Watershed is the second largest river system in the Cagayan Valley region, originating from the Apayao highlands and draining northward into the Babuyan Channel. It plays a critical role in supporting diverse ecosystems and local agricultural irrigation.",
-      "Agno River Watershed": "Originating from the slopes of Mount Data, the Agno River Watershed is one of the largest river systems in Luzon. It flows southward through the Cordillera mountains before winding its way across the plains of Pangasinan to drain into the Lingayen Gulf, providing vital hydroelectric power and irrigation.",
-      "Amburayan River Watershed": "The Amburayan River flows from the tri-boundary of Benguet, La Union, and Ilocos Sur, serving as a historic natural boundary. It empties into the South China Sea and is essential for the region's agricultural plains and surrounding communities.",
-      "Bayogao River Watershed": "The Bayogao River Watershed is a coastal basin situated along the western slopes of the Cordillera mountains, draining directly into the South China Sea. It provides critical water resources for local coastal municipalities.",
-      "Bued River Watershed": "The Bued River Watershed originates in the mountains of Baguio City and flows down through Benguet and Pangasinan to the Lingayen Gulf. The basin is characterized by steep slopes and is a key water source for surrounding urban and rural areas.",
-      "Cabicungan River Watershed": "The Cabicungan River Watershed spans the northern territories of Apayao, draining towards the Babuyan Channel. It supports dense forest cover and rich biodiversity in the northernmost reaches of the Cordillera.",
-      "Santa Maria River Watershed": "The Santa Maria River Watershed flows through the western slopes of the Cordilleras and into the Ilocos region, discharging into the West Philippine Sea. It sustains the agricultural livelihoods of downstream communities."
-    },
-
-    /* Maps each watershed Name to its subfolder + code for fetching sub-watershed/stream GeoJSON */
-    hydroBasinFolderMap: {
-      "Abra River Watershed": { folder: "Abra Riverbasin", code: "ABR" },
-      "Abulug River Watershed": { folder: "Apayao-Abulug Riverbasin", code: "ABU" },
-      "Agno River Watershed": { folder: "Agno Riverbasin", code: "AGN" },
-      "Bayogao River Watershed": { folder: "Amburayan River", code: "AMB" },
-      "Aringay River Watershed": { folder: "Aringay River", code: "ARI" },
-      "Bued River Watershed": { folder: "Bued River", code: "BUD" },
-      "Cabicungan River Watershed": { folder: "Cabicungan River", code: "CAB" },
-      "Mallig River Watershed": { folder: "Mallig River", code: "MLG" },
-      "Naguilian River Watershed": { folder: "Naguilian River", code: "NAG" },
-      "Siffu River Watershed": { folder: "Siffu River", code: "SIF" },
-      "Santa Maria River Watershed": { folder: "Santa Maria River (Silag)", code: "SMR" },
-      "Upper Chico River Watershed": { folder: "Upper Chico Riverbasin", code: "UCH" },
-      "Upper Magat River Watershed": { folder: "Upper Magat River", code: "UMT" },
-      "Zumigui-Ziwanan River Watershed": { folder: "Zumigui-Ziwanan River", code: "ZUM" },
-    },
-
-    /* 14-color palette — one per basin, indexed by _hydroBasinIndex() */
-    hydroLevelColors: [
-      '#e11d48', '#0891b2', '#7c3aed', '#d97706',
-      '#059669', '#2563eb', '#db2777', '#0d9488',
-      '#ca8a04', '#4f46e5', '#ea580c', '#16a34a',
-      '#9333ea', '#0284c7',
-    ],
-
-    /* Basin picker groups (by outflow destination) */
-    hydroBasinGroups: [
-      { title: 'Cagayan River Basin', basins: [
-        'Upper Chico River Watershed', 'Upper Magat River Watershed',
-        'Siffu River Watershed', 'Mallig River Watershed', 'Zumigui-Ziwanan River Watershed',
-      ]},
-      { title: 'West Philippine Sea', basins: [
-        'Abra River Watershed', 'Bayogao River Watershed',
-        'Naguilian River Watershed', 'Aringay River Watershed', 'Santa Maria River Watershed',
-      ]},
-      { title: 'Lingayen Gulf', basins: [
-        'Agno River Watershed', 'Bued River Watershed',
-      ]},
-      { title: 'Babuyan Channel', basins: [
-        'Abulug River Watershed', 'Cabicungan River Watershed',
-      ]},
-    ],
-
-    baseMaps: {
-      osm: {
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attr: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-      },
-      topo: {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-        attr: 'Tiles &copy; <a href="https://esri.com">Esri</a>',
-      },
-      satellite: {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        attr: 'Tiles &copy; <a href="https://esri.com">Esri</a>',
-      },
-    },
-  },
+  config: {},
 
   _src() {
     return this.config.sources[this.state.activeSource];
@@ -184,6 +52,7 @@ const APP = {
   /* ── Init ────────────────────────────────── */
   init() {
     document.body.classList.add('mode-explore');
+    document.body.classList.add('mode-' + this.state.viewMode); /* R2: initial body class for source-toggle */
 
     const map = L.map('map', {
       center: this.config.mapCenter,
@@ -343,6 +212,13 @@ const APP = {
        Only the Spans chips and boundary overlay layers depend on source,
        so just refresh the boundary overlays + the current panel. */
     if (this.state.viewMode === 'watersheds') {
+      /* Clear any active admin outline from a spans chip click */
+      if (this.state.hydroAdminOutlineLayer && this.state.map) {
+        this.state.map.removeLayer(this.state.hydroAdminOutlineLayer);
+        this.state.hydroAdminOutlineLayer = null;
+      }
+      document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+
       this._refreshBoundaryOverlays();
       /* Re-render the current panel so chips reflect the new source */
       if (this.state.hydroSelectedZone) {
@@ -390,6 +266,13 @@ const APP = {
     });
     this.state.adminLayers = {};
 
+    /* Always clear ALL cached raw admin data — NAMRIA uses levels 0/1/2,
+       CAD uses 0/1. Stale levels from the previous source must not linger
+       (e.g. NAMRIA's rawData[2] must be wiped when switching to CAD), even
+       when no overlay checkbox is currently checked, so that a later Spans
+       chip tap doesn't render the other source's geometry. */
+    this.state.rawData = {};
+
     /* Reload raw admin data for the new source, then re-add checked overlays */
     const checkboxes = document.querySelectorAll('#boundary-options input[type="checkbox"]:checked');
     if (checkboxes.length === 0) return;
@@ -397,7 +280,7 @@ const APP = {
     const src = this._src();
     const typesToReload = [...new Set([...checkboxes].map(cb => cb.dataset.type).filter(Boolean))];
 
-    /* Compute which source levels we need to fetch for the checked types */
+    /* Collect the unique set of levels we need to load for the new source */
     const levelsToFetch = new Set();
     typesToReload.forEach(type => {
       if (type === 'region') levelsToFetch.add(0);
@@ -405,19 +288,29 @@ const APP = {
       else if (type === 'municipality') levelsToFetch.add(src.maxLevel);
     });
 
-    levelsToFetch.forEach(lvl => {
-      if (!src.geoJSON[lvl]) return;
-      /* Clear cached raw data for this level so it re-fetches from the new source */
-      this.state.rawData[lvl] = null;
+    /* In CAD mode, province has no geometry — uncheck it so it doesn't
+       silently linger and confuse the UI. */
+    if (src.maxLevel < 2) {
+      const provCb = document.querySelector('#boundary-options input[data-type="province"]');
+      if (provCb) provCb.checked = false;
+    }
+
+    /* Fetch each needed level, then re-add overlays once all data is loaded */
+    const pending = [...levelsToFetch].filter(lvl => src.geoJSON[lvl]);
+    let loaded = 0;
+    pending.forEach(lvl => {
       fetch(src.geoJSON[lvl])
         .then(r => r.json())
         .then(d => {
           this.state.rawData[lvl] = d;
-          /* Re-add all checked overlays now that the level data is available */
-          typesToReload.forEach(type => {
-            const cb = document.querySelector(`#boundary-options input[data-type="${type}"]`);
-            if (cb && cb.checked) this._addBoundaryLayer(type);
-          });
+          loaded++;
+          if (loaded === pending.length) {
+            /* All levels loaded — re-add every checked overlay */
+            typesToReload.forEach(type => {
+              if (type === 'province' && src.maxLevel < 2) return;
+              this._addBoundaryLayer(type);
+            });
+          }
         })
         .catch(() => {});
     });
@@ -535,6 +428,11 @@ const APP = {
       this._resetWatershedState();
 
       if (targetLevel === 0) {
+        /* Open level 0 panel */
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
         this._updateSmartFilters(null);
         for (let lvl = this._src().maxLevel; lvl > 0; lvl--) {
           if (this.state.layers[lvl]) {
@@ -555,11 +453,6 @@ const APP = {
             duration: 0.45,
             easeLinearity: 0.25
           });
-        }
-        /* Show CAR info in panel */
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
         }
         this._updateBreadcrumb();
         this._updateOutlines();
@@ -695,15 +588,13 @@ const APP = {
       }),
 
       onEachFeature(feature, leafletLayer) {
-        const name = self._featureName(feature, level);
-
         if (useHover) {
           leafletLayer.on('mouseover', function (e) {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
             if (self.state.activeOutline === level) return;
             
-            self._showHoverLabel(name, level);
+            self._showHoverLabel(feature, level);
             
             /* Do not alter style if this feature is currently selected */
             if (self.state._selectedFeature === feature) return;
@@ -954,10 +845,11 @@ const APP = {
   },
 
   /* ── Hover label ──────────────────────────── */
-  _showHoverLabel(name, level) {
+  _showHoverLabel(feature, level) {
     const lbl = document.getElementById('map-hover-label');
     if (!lbl) return;
-    lbl.innerHTML = `<span class="label-level">${this._src().levelNames[level]}</span>${this._escHtml(name)}`;
+    const name = this._featureName(feature, level);
+    lbl.innerHTML = `<span class="label-level">${this._src().levelNames[level]}</span>${this._escHtml(this._toTitleCase(name))}`;
     lbl.classList.add('visible');
   },
 
@@ -988,10 +880,17 @@ const APP = {
         easeLinearity: 0.25,
       });
     }
-    /* Show CAR info in panel */
-    const carData = this.state.rawData[0];
-    if (carData && carData.features && carData.features[0]) {
-      this.openPanel(carData.features[0], 0);
+    /* Show admin picker in boundaries mode, CAR info otherwise */
+    if (this.state.viewMode === 'boundaries') {
+      const carData = this.state.rawData[0];
+      if (carData && carData.features && carData.features[0]) {
+        this._showBoundaryPicker(carData.features[0], 0);
+      }
+    } else {
+      const carData = this.state.rawData[0];
+      if (carData && carData.features && carData.features[0]) {
+        this.openPanel(carData.features[0], 0);
+      }
     }
     this._updateBreadcrumb();
     this._updateOutlines();
@@ -1047,7 +946,7 @@ const APP = {
     if (this.state.viewMode === 'watersheds') {
       html += `<button class="breadcrumb-item ${this.state.hydroDrillLevel === 0 ? 'active' : 'clickable'}" onclick="APP._hydroDrillUp(0)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-        Watersheds
+        Basins
       </button>`;
 
       if (this.state.hydroDrillLevel >= 1 && this.state.hydroSelectedBasin) {
@@ -1155,7 +1054,7 @@ const APP = {
         
         layer.on('mouseover', function () {
           if (level < self.state.currentLevel) return;
-          self._showHoverLabel(name, level);
+          self._showHoverLabel(feature, level);
         });
 
         layer.on('mouseout', function () {
@@ -1210,398 +1109,6 @@ const APP = {
     }
   },
 
-  /* ── Info Panel ───────────────────────────── */
-  openPanel(feature, level) {
-    const panel = document.getElementById('info-panel');
-    const content = document.getElementById('info-panel-content');
-    if (!panel || !content) return;
-
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded');
-    this.state.lastViewed = { feature, level };
-    const name = this._featureName(feature, level);
-    const src = this._src();
-    const levelLabel = src.levelNames[level];
-    const props = feature.properties || {};
-    const details = this._resolveDetails(props, level, name);
-
-    let html = '';
-
-    html += `<div class="panel-hero">
-      <div class="panel-level-badge">${this._escHtml(levelLabel)}</div>
-      <h2 class="panel-title">${this._escHtml(name)}</h2>
-      <p class="panel-subtitle">${this._escHtml(this._heroSubtitle(props, level))}</p>
-    </div>`;
-
-    if (level < src.maxLevel) {
-      const nextName = src.levelNames[level + 1];
-      html += `<div class="panel-drill-hint" onclick="void(0)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        Click a ${nextName} on the map to drill in
-      </div>`;
-    }
-
-    html += `<div class="panel-section">
-      <div class="panel-section-title">Details</div>`;
-
-    Object.entries(details).forEach(([k, v]) => {
-      html += `<div class="panel-row">
-        <span class="panel-row-label">${this._escHtml(k)}</span>
-        <span class="panel-row-value">${this._escHtml(v)}</span>
-      </div>`;
-    });
-
-    html += `</div>`;
-
-    const chartData = this._resolveChartData(props);
-    if (chartData.values.length > 0) {
-      html += `<div class="panel-section">
-        <div class="panel-section-title">Measurements</div>
-        <div class="chart-wrap"><canvas id="panel-chart"></canvas></div>
-      </div>`;
-    }
-
-    /* Add Map Legend to Side Panel */
-    html += `<div class="panel-section">
-      <div class="panel-section-title">Legend</div>
-      <div class="panel-legend">
-        <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
-        <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
-        <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
-        <div class="legend-item"><span class="legend-dot watershed-dot"></span>Watershed</div>
-      </div>
-    </div>`;
-
-    /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
-    const id = props._id;
-    let intersectingWs = null;
-    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
-      intersectingWs = this.state.watershedIntersections[id];
-    } else if (level === 0 && this.state.rawData['watershed']) {
-      /* Show all watersheds for the region */
-      intersectingWs = this.state.rawData['watershed'].features
-        .map(f => f.properties.Name || f.properties.Old_Name)
-        .filter(Boolean);
-    }
-
-    if (intersectingWs && intersectingWs.length > 0) {
-      html += `<div class="panel-section">
-        <div class="panel-section-title">Watersheds <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${intersectingWs.length}</span></div>
-        <div class="watershed-summary-list">
-          ${intersectingWs.slice(0, 5).map(ws => {
-            let areaText = '';
-            let outflowText = '';
-            if (this.state.rawData['watershed']) {
-              const wsFeature = this.state.rawData['watershed'].features.find(f => {
-                const n = f.properties.Name || f.properties.Old_Name || '';
-                return n === ws;
-              });
-              if (wsFeature && wsFeature.properties.Area_Ha) {
-                areaText = `<span class="ws-area">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
-              }
-              outflowText = this.config.watershedConnections[ws] || '';
-            }
-            return `<div class="watershed-summary-item">
-              <div class="ws-summary-name">${this._escHtml(ws)}</div>
-              <div class="ws-summary-meta">${areaText}${outflowText ? `<span class="ws-outflow-inline">→ ${this._escHtml(outflowText)}</span>` : ''}</div>
-            </div>`;
-          }).join('')}
-          ${intersectingWs.length > 5 ? `<div class="watershed-summary-more">+ ${intersectingWs.length - 5} more watersheds</div>` : ''}
-        </div>
-      </div>`;
-    }
-
-    /* Add Show More Button and Expanded Content — for drilling into specific admin boundaries */
-    let expandedHtml = '';
-    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
-      const wsForCheckboxes = this.state.watershedIntersections[id];
-      if (wsForCheckboxes.length > 0) {
-        expandedHtml = `<div class="expanded-content">
-          <div class="panel-section-title">Overlay on Map <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${wsForCheckboxes.length}</span></div>
-          <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">Toggle watersheds to highlight them on the map:</p>
-          <div class="watershed-list">
-            ${wsForCheckboxes.map(ws => {
-              let areaText = '';
-              if (this.state.rawData['watershed']) {
-                const wsFeature = this.state.rawData['watershed'].features.find(f => {
-                  const n = f.properties.Name || f.properties.Old_Name || '';
-                  return n === ws;
-                });
-                if (wsFeature && wsFeature.properties.Area_Ha) {
-                  areaText = `<span style="font-size: 0.8rem; color: #6b7280; margin-left: auto;">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
-                }
-              }
-              return `
-              <div class="watershed-list-item">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
-                  <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${this.state.activeWatershedIds && this.state.activeWatershedIds.includes(ws) ? 'checked' : ''} style="accent-color: #0284c7; width: 16px; height: 16px;">
-                  <span style="font-weight: 500;">${this._escHtml(ws)}</span>
-                  ${areaText}
-                </label>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>`;
-
-        html += `<div class="panel-show-more">
-          <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            View Watersheds on Map (${wsForCheckboxes.length})
-          </button>
-        </div>`;
-        html += expandedHtml;
-      }
-    }
-
-    content.innerHTML = html;
-    panel.classList.remove('open');
-    panel.classList.add('open');
-    this.state.panelState = 'open';
-
-    /* Hide toggle tab when panel is open */
-    const tab = document.getElementById('panel-toggle-tab');
-    if (tab) tab.classList.add('hidden');
-
-    if (chartData.values.length > 0) {
-      const ctx = document.getElementById('panel-chart');
-      if (ctx) {
-        if (this.state._chart) this.state._chart.destroy();
-        this.state._chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: chartData.labels,
-            datasets: [{
-              data: chartData.values,
-              backgroundColor: ['#059669', '#0d9488', '#0891b2', '#7c3aed'],
-              borderRadius: 5,
-            }],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              y: { type: 'logarithmic', ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-              x: { ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { display: false } },
-            },
-          },
-        });
-      }
-    }
-  },
-
-  closePanel() {
-    const panel = document.getElementById('info-panel');
-    if (!panel) return;
-    
-    /* If it was expanded, reset to non-expanded without panning */
-    if (panel.classList.contains('expanded')) {
-      this.toggleExpandedPanel(true);
-    }
-    
-    document.body.classList.remove('panel-open', 'panel-expanded');
-    panel.classList.remove('open', 'peek', 'expanded');
-    this.state.panelState = 'closed';
-    
-    /* Show toggle tab */
-    const tab = document.getElementById('panel-toggle-tab');
-    if (tab) tab.classList.remove('hidden');
-    
-    if (this.state._chart) {
-      this.state._chart.destroy();
-      this.state._chart = null;
-    }
-  },
-
-  togglePanel() {
-    const panel = document.getElementById('info-panel');
-    if (!panel) return;
-    const isMobile = window.innerWidth <= 640;
-    
-    if (isMobile) {
-      if (panel.classList.contains('open')) {
-        this.closePanel();
-      } else if (panel.classList.contains('peek')) {
-        panel.classList.remove('peek');
-        panel.classList.add('open');
-        document.body.classList.add('panel-open');
-      } else if (this.state.lastViewed) {
-        if (this.state.lastViewed.isWatershed) {
-          this._openWatershedPanel(this.state.lastViewed.feature);
-        } else {
-          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
-        }
-      } else {
-        this.closePanel();
-      }
-    } else {
-      if (panel.classList.contains('open')) {
-        this.closePanel();
-      } else if (this.state.lastViewed) {
-        if (this.state.lastViewed.isWatershed) {
-          this._openWatershedPanel(this.state.lastViewed.feature);
-        } else {
-          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
-        }
-      } else {
-        /* Default: show CAR region details */
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
-        }
-      }
-    }
-  },
-
-  toggleExpandedPanel(skipPan = false) {
-    const panel = document.getElementById('info-panel');
-    const btn = document.querySelector('.show-more-btn');
-    if (!panel) return;
-    const isExpanded = panel.classList.contains('expanded');
-    
-    const panelCheckboxes = panel.querySelectorAll('.panel-ws-checkbox');
-
-    if (isExpanded) {
-      panel.classList.remove('expanded');
-      document.body.classList.remove('panel-expanded');
-      if (btn) btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> View Watersheds on Map`;
-      
-      /* Turn off all visible watersheds in the panel */
-      const promises = [];
-      panelCheckboxes.forEach(cb => {
-        if (cb.checked) {
-          cb.checked = false;
-          cb.dataset.autoChecked = 'false';
-          promises.push(this.updateWatersheds(cb));
-        }
-      });
-      
-      Promise.all(promises).then(() => {
-        if (skipPan) return;
-        if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
-          this.state.map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), {
-            ...this._getPaddingOpts(),
-            duration: 0.45,
-            easeLinearity: 0.25
-          });
-        }
-      });
-    } else {
-      panel.classList.add('expanded');
-      document.body.classList.remove('panel-expanded');
-      document.body.classList.add('panel-expanded');
-      if (btn) btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hide Watersheds`;
-      
-      /* Turn on all unchecked watersheds */
-      const promises = [];
-      panelCheckboxes.forEach(cb => {
-        if (!cb.checked) {
-          cb.checked = true;
-          cb.dataset.autoChecked = 'true';
-          promises.push(this.updateWatersheds(cb));
-        }
-      });
-      
-      Promise.all(promises).then(() => {
-        if (skipPan) return;
-        if (this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
-          let activeBounds = L.latLngBounds([]);
-          this.state.watershedLayer.eachLayer(layer => {
-            const name = layer.feature.properties.Name || layer.feature.properties.Old_Name || '';
-            if (this.state.activeWatershedIds.includes(name)) {
-              activeBounds.extend(layer.getBounds());
-            }
-          });
-          
-          if (activeBounds.isValid()) {
-            this.state.map.flyToBounds(activeBounds, {
-              ...this._getPaddingOpts(),
-              duration: 0.45,
-              easeLinearity: 0.25
-            });
-          }
-        }
-      });
-    }
-  },
-
-  _resolveDetails(props, level, name) {
-    const d = {};
-    const hierarchy = this.state.hierarchy;
-    const childCount = (id) => {
-      if (!hierarchy || !hierarchy.children) return null;
-      const kids = hierarchy.children[id];
-      return kids ? kids.length : null;
-    };
-
-    if (this.state.activeSource === 'cad') {
-      if (level === 1) {
-        d['Municipality/City'] = props.Muni_City || name;
-        if (props.Province) d['Province'] = props.Province;
-      } else {
-        d['Region'] = props.Region || 'Cordillera Administrative Region';
-      }
-      if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
-      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
-    } else {
-      if (level === 2) {
-        d['Municipality/City'] = props.Municipali || name;
-        if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
-        if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
-        if (props.X_Coord && props.Y_Coord) {
-          d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
-        }
-      } else if (level === 1) {
-        d['Province'] = props.PROVINCE || props.Province || name;
-        if (props.REGION) d['Region'] = props.REGION;
-        const cc = childCount(props._id);
-        if (cc !== null) d['Municipalities'] = String(cc);
-      } else {
-        d['Region'] = props.Region || 'Cordillera Administrative Region';
-        const cc = childCount(props._id);
-        if (cc !== null) d['Provinces'] = String(cc);
-      }
-    }
-    
-    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
-    if (sqMeters > 0) d['Square Meters'] = sqMeters.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    
-    let hectares = parseFloat(props.Hectares || props.Area || 0);
-    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
-    if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    
-    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
-    if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    
-    return d;
-  },
-
-  _resolveChartData(props) {
-    const labels = [], values = [];
-    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
-    if (sqMeters > 0) { labels.push('Square Meters'); values.push(sqMeters); }
-    
-    let hectares = parseFloat(props.Hectares || props.Area || 0);
-    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
-    if (hectares > 0) { labels.push('Hectares'); values.push(hectares); }
-    
-    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
-    if (perimeter > 0) { labels.push('Perimeter'); values.push(perimeter); }
-    
-    return { labels, values };
-  },
-
-  _heroSubtitle(props, level) {
-    if (this.state.activeSource === 'cad') {
-      if (level === 1) return props.Province || props.REGION || '';
-      return 'Cordillera Administrative Region';
-    }
-    if (level === 2) return props.Province || props.PROVINCE || 'Province';
-    if (level === 1) return 'Province — Cordillera Administrative Region';
-    return 'Watershed Cradle of Northern Luzon';
-  },
-
   _showToast(msg) {
     let toast = document.getElementById('drill-toast');
     if (!toast) {
@@ -1646,430 +1153,6 @@ const APP = {
     setTimeout(() => { if (this.state.map) this.state.map.invalidateSize(); }, 250);
   },
 
-  /* ── View Mode Toggle: Watersheds / Boundaries ── */
-  _setViewMode(mode) {
-    if (mode === this.state.viewMode) return;
-    if (this.state._drilling) return;
-    this.state.viewMode = mode;
-
-    document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
-    const btnId = mode === 'watersheds' ? 'btn-view-watersheds' : 'btn-view-boundaries';
-    const btn = document.getElementById(btnId);
-    if (btn) btn.classList.add('active');
-
-    const header = document.querySelector('.info-panel-header');
-
-    if (mode === 'watersheds') {
-      /* Enter hydro mode: hide admin layers, show basins */
-      this._clearHydroState(true); /* keep viewMode */
-      this._clearSelection();
-      this.closePanel();
-      if (header) header.style.display = 'none';
-      /* Remove all admin boundary layers */
-      for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
-        if (this.state.layers[lvl]) {
-          this.state.map.removeLayer(this.state.layers[lvl]);
-          this.state.layers[lvl] = null;
-        }
-      }
-      this.state.selectedPath = [];
-      this.state.currentLevel = 0;
-      /* Ensure watershed data is loaded, then render basins */
-      this._enterHydroMode();
-    } else {
-      /* Exit hydro mode: remove hydro layers, restore admin layers */
-      this._clearHydroState(true);
-      this._resetWatershedState();
-      this.state.currentLevel = 0;
-      if (header) header.style.display = '';
-      this._showLevel(0).then(() => {
-        this.state.currentLevel = 0;
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
-        }
-      });
-    }
-  },
-
-  /* ── Hydro Mode: enter, render basins ── */
-  async _enterHydroMode() {
-    /* Defensive cleanup: ensure no residual admin boundary layers remain */
-    for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
-      if (this.state.layers[lvl]) {
-        this.state.map.removeLayer(this.state.layers[lvl]);
-        this.state.layers[lvl] = null;
-      }
-    }
-    Object.values(this.state.outlineLayers).forEach(l => {
-      if (l) this.state.map.removeLayer(l);
-    });
-    this.state.outlineLayers = {};
-    this.state.activeOutline = null;
-    this.state._outlineHighlight = null;
-    this.state.selectedPath = [];
-    this.state.currentLevel = 0;
-
-    if (!this.state.rawData['watershed']) {
-      try {
-        const resp = await fetch('geoJSON/CAR Watersheds.geojson');
-        this.state.rawData['watershed'] = await resp.json();
-      } catch (_) {
-        this._showToast('Failed to load watershed data');
-        return;
-      }
-    }
-    this._renderHydroBasins();
-    this.state.hydroDrillLevel = 0;
-    this.state.hydroSelectedBasin = null;
-    this.state.hydroSelectedZone = null;
-    this.state.hydroSelectedZoneLayer = null;
-    this._updateBreadcrumb();
-    this._showBasinPickerPanel();
-  },
-
-  /* Index of a basin in hydroBasinFolderMap (for color assignment) */
-  _hydroBasinIndex(feature) {
-    const name = feature.properties.Name || feature.properties.Old_Name || '';
-    return Object.keys(this.config.hydroBasinFolderMap).indexOf(name);
-  },
-
-  /* Render the 14 major basins as interactive colored polygons (hydro level 0) */
-  _renderHydroBasins() {
-    const map = this.state.map;
-    const data = this.state.rawData['watershed'];
-    if (!data || !map) return;
-
-    /* Clear previous hydro layers */
-    this._clearHydroLayers();
-
-    const colors = this.config.hydroLevelColors;
-    const self = this;
-
-    this.state.hydroLayers[0] = L.geoJSON(data, {
-      interactive: true,
-      style: (feature) => {
-        const idx = self._hydroBasinIndex(feature);
-        return {
-          fillColor: colors[idx] || '#6b7280',
-          fillOpacity: 0.15,
-          color: colors[idx] || '#6b7280',
-          weight: 2,
-          opacity: 0.9,
-          className: 'fade-in-path',
-        };
-      },
-      onEachFeature(feature, leafletLayer) {
-        const name = feature.properties.Name || feature.properties.Old_Name || 'Unknown';
-        const idx = self._hydroBasinIndex(feature);
-        const basinColor = colors[idx] || '#6b7280';
-
-        leafletLayer.on('mouseover', function(e) {
-          if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: basinColor, fillOpacity: 0.4, weight: 3, opacity: 1 });
-          e.target.bringToFront();
-          const lbl = document.getElementById('map-hover-label');
-          if (lbl) {
-            lbl.innerHTML = `<span class="label-level">Basin</span>${self._escHtml(name)}`;
-            lbl.classList.add('visible');
-            lbl.style.display = '';
-          }
-        });
-
-        leafletLayer.on('mouseout', function(e) {
-          if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: basinColor, fillOpacity: 0.15, color: basinColor, weight: 2, opacity: 0.9 });
-          self._hideHoverLabel();
-        });
-
-        leafletLayer.on('click', function(e) {
-          L.DomEvent.stopPropagation(e);
-          if (self.state._drilling) return;
-          if (self.state.hydroDrillLevel !== 0) return;
-          self._hydroDrillDown(feature, leafletLayer);
-        });
-      },
-    }).addTo(map);
-  },
-
-  /* Apply checkbox filter to the basin overview layer.
-     - When hydroActiveFilterIds is empty: all basins shown normally.
-     - When non-empty: only checked basins keep full color; others are hidden (fillOpacity 0, faint outline). */
-  _applyHydroFilter() {
-    const layer = this.state.hydroLayers[0];
-    if (!layer) return;
-    const self = this;
-    const filter = this.state.hydroActiveFilterIds;
-    const colors = this.config.hydroLevelColors;
-
-    if (filter.length === 0) {
-      /* Restore normal overview styles (only if not currently drilled in) */
-      if (this.state.hydroDrillLevel === 0) {
-        layer.eachLayer(function(lf) {
-          const idx = self._hydroBasinIndex(lf.feature);
-          const c = colors[idx] || '#6b7280';
-          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
-        });
-      }
-      return;
-    }
-
-    layer.eachLayer(function(lf) {
-      const name = lf.feature.properties.Name || lf.feature.properties.Old_Name || '';
-      const idx = self._hydroBasinIndex(lf.feature);
-      const c = colors[idx] || '#6b7280';
-      if (filter.includes(name)) {
-        lf.setStyle({ fillColor: c, fillOpacity: 0.4, color: c, weight: 3, opacity: 1 });
-      } else {
-        lf.setStyle({ fillColor: c, fillOpacity: 0, color: c, weight: 0.5, opacity: 0.15 });
-      }
-    });
-  },
-
-  /* Drill into a basin: load sub-watersheds + stream order */
-  async _hydroDrillDown(feature, leafletLayer) {
-    if (this.state._drilling) return;
-    this.state._drilling = true;
-    this._hideHoverLabel();
-    const self = this;
-    try {
-      const name = feature.properties.Name || feature.properties.Old_Name || '';
-      const mapEntry = this.config.hydroBasinFolderMap[name];
-      if (!mapEntry) {
-        this._showToast('Basin folder not configured');
-        return;
-      }
-      this.state.hydroDrillLevel = 1;
-      this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
-
-      /* Dim all basins except the selected one */
-      const idx = self._hydroBasinIndex(feature);
-      const basinColor = self.config.hydroLevelColors[idx] || '#6b7280';
-      if (this.state.hydroLayers[0]) {
-        this.state.hydroLayers[0].eachLayer(function(lf) {
-          if (lf.feature !== feature) {
-            lf.setStyle({ fillOpacity: 0, opacity: 0.15, weight: 0.5 });
-          } else {
-            lf.setStyle({ fillColor: basinColor, fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
-            lf.bringToFront();
-          }
-        });
-      }
-
-      /* Fly to selected basin */
-      if (leafletLayer && leafletLayer.getBounds) {
-        this.state.map.flyToBounds(leafletLayer.getBounds(), {
-          ...this._getPaddingOpts(),
-          duration: 0.45,
-          easeLinearity: 0.25,
-        });
-        await new Promise(r => setTimeout(r, 450));
-      }
-
-      await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
-      this._updateBreadcrumb();
-    } finally {
-      this.state._drilling = false;
-    }
-  },
-
-  /* Fetch + render sub-watersheds (hydroLayers[1]) and stream order (hydroLayers[2]) */
-  async _showHydroSubWatersheds(code, folder) {
-    const map = this.state.map;
-    const basePath = 'geoJSON/Watersheds/' + encodeURIComponent(folder) + '/';
-    const self = this;
-    const swPath = basePath + code + '_SW.geojson';
-    const soPath = basePath + code + '_StreamOrder.geojson';
-
-    /* Remove any previous level-1 layers */
-    [1, 2].forEach(l => {
-      if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
-    });
-
-    const results = await Promise.allSettled([
-      fetch(swPath).then(r => { if (!r.ok) throw new Error('No SW'); return r.json(); }),
-      fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }),
-    ]);
-
-    /* Sub-watershed polygons */
-    if (results[0].status === 'fulfilled') {
-      this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
-        style: { fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 },
-        onEachFeature(feature, layer) {
-          layer.on('mouseover', function(e) {
-            if (layer._hiddenByIsolation) return;
-            e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.55, weight: 2.5, opacity: 1 });
-            const lbl = document.getElementById('map-hover-label');
-            if (lbl) {
-              const p = feature.properties;
-              lbl.innerHTML = `<span class="label-level">Sub-watershed</span>Zone ${p.gridcode || '?'}`;
-              lbl.classList.add('visible');
-              lbl.style.display = '';
-            }
-          });
-          layer.on('mouseout', function(e) {
-            if (layer._hiddenByIsolation) return;
-            e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 });
-            self._hideHoverLabel();
-          });
-          layer.on('click', function(e) {
-            /* Only stop propagation if this zone is visible;
-               dimmed/hidden zones should let the click pass through
-               to the map background handler for drill-up. */
-            if (!layer._hiddenByIsolation) {
-              L.DomEvent.stopPropagation(e);
-            }
-            if (layer._hiddenByIsolation) return;
-            self._selectSubWatershed(feature, layer);
-          });
-        },
-      }).addTo(map);
-      this.state.hydroLayers[1].bringToFront();
-    } else {
-      this._showToast('Sub-watershed data not available for this basin');
-    }
-
-    /* Stream order lines — loaded but only added to map if toggled on */
-    if (results[1].status === 'fulfilled') {
-      this.state.hydroLayers[2] = L.geoJSON(results[1].value, {
-        style: (feature) => {
-          const order = feature.properties.grid_code || 1;
-          const weight = Math.max(1, Math.min(order * 0.8, 3.5));
-          return { color: '#1d4ed8', weight, opacity: 0.85 };
-        },
-      });
-      if (this.state.showStreamOrder) {
-        this.state.hydroLayers[2].addTo(map);
-        this.state.hydroLayers[2].bringToFront();
-      }
-    } else {
-      this._showToast('Stream order data not available for this basin');
-    }
-
-    /* Open the basin detail panel */
-    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
-      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
-    }
-  },
-
-  /* ── Sub-watershed zone isolation ── */
-
-  /* Select a sub-watershed zone: isolate it visually and open its detail panel */
-  _selectSubWatershed(feature, leafletLayer) {
-    /* If clicking the same zone again, deselect it */
-    if (this.state.hydroSelectedZone === feature) {
-      this._deselectSubWatershed();
-      return;
-    }
-
-    this._dimSubWatersheds(feature);
-    this.state.hydroSelectedZone = feature;
-    this.state.hydroSelectedZoneLayer = leafletLayer;
-
-    /* Zoom to the selected zone */
-    if (leafletLayer && leafletLayer.getBounds) {
-      this.state.map.flyToBounds(leafletLayer.getBounds(), {
-        padding: [150, 150],
-        maxZoom: 12,
-        duration: 0.45,
-        easeLinearity: 0.25,
-      });
-    }
-
-    this._openSubWatershedPanel(feature);
-    this._updateBreadcrumb();
-  },
-
-  /* Deselect the current sub-watershed zone and return to the basin detail panel */
-  _deselectSubWatershed() {
-    if (!this.state.hydroSelectedZone) return;
-    this._restoreSubWatersheds();
-    this.state.hydroSelectedZone = null;
-    this.state.hydroSelectedZoneLayer = null;
-    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
-      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
-    }
-    this._updateBreadcrumb();
-  },
-
-  /* Dim all sub-watershed zones except the selected one */
-  _dimSubWatersheds(selectedFeature) {
-    const layer = this.state.hydroLayers[1];
-    if (!layer) return;
-    layer.eachLayer(function(leafletLayer) {
-      if (leafletLayer.feature !== selectedFeature) {
-        leafletLayer._hiddenByIsolation = true;
-        leafletLayer.setStyle({
-          fillOpacity: 0,
-          opacity: 0,
-          weight: 0,
-        });
-      } else {
-        leafletLayer._hiddenByIsolation = false;
-        leafletLayer.setStyle({
-          fillColor: '#0ea5e9',
-          fillOpacity: 0.55,
-          color: '#0369a1',
-          weight: 3,
-          opacity: 1,
-        });
-        leafletLayer.bringToFront();
-      }
-    });
-    /* Keep stream order on top */
-    if (this.state.hydroLayers[2]) this.state.hydroLayers[2].bringToFront();
-  },
-
-  /* Restore all sub-watershed zones to their normal style */
-  _restoreSubWatersheds() {
-    const layer = this.state.hydroLayers[1];
-    if (!layer) return;
-    layer.eachLayer(function(leafletLayer) {
-      delete leafletLayer._hiddenByIsolation;
-      leafletLayer.setStyle({
-        fillColor: '#0ea5e9',
-        fillOpacity: 0.3,
-        color: '#0284c7',
-        weight: 1.2,
-        opacity: 0.8,
-      });
-    });
-  },
-
-  /* ── Zone-level admin boundary spans ── */
-
-  /* Look up zone-specific admin boundary spans from zoneIntersections.
-     Key format: "<basinCode>:<gridcode>" e.g. "AGN:27"
-     Uses activeSource ('namria' or 'cad') to pick the right intersection set. */
-  _zoneSpans(basinCode, gridcode) {
-    const data = this.state.zoneIntersections;
-    if (!data) return null;
-    const key = basinCode + ':' + gridcode;
-    const entry = data[key];
-    if (!entry) return null;
-    const prefix = this.state.activeSource === 'cad' ? 'cad_' : 'namria_';
-    return {
-      provinces: (entry[prefix + 'provinces'] || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
-      municipalities: (entry[prefix + 'municipalities'] || []).map(slug => {
-        const parts = slug.split(':');
-        return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
-      }),
-    };
-  },
-
-  /* Toggle stream order overlay on/off */
-  _toggleStreamOrder() {
-    this.state.showStreamOrder = !this.state.showStreamOrder;
-    const sl = this.state.hydroLayers[2];
-    if (!sl) return;
-    if (this.state.showStreamOrder) {
-      this.state.map.addLayer(sl);
-      sl.bringToFront();
-    } else {
-      this.state.map.removeLayer(sl);
-    }
-  },
-
   /* ── Boundary Overlay Menu ── */
 
   _toggleBoundaryMenu() {
@@ -2088,33 +1171,43 @@ const APP = {
     if (menu) menu.classList.remove('show');
   },
 
-  _toggleBoundaryLayer(type, checkbox) {
+  async _toggleBoundaryLayer(type, checkbox) {
     if (checkbox.checked) {
-      this._addBoundaryLayer(type);
+      await this._addBoundaryLayer(type);
     } else {
       this._removeBoundaryLayer(type);
     }
   },
 
-  _addBoundaryLayer(type) {
+  async _addBoundaryLayer(type) {
     if (this.state.adminLayers[type]) return;
-    /* Resolve the raw-data level for this boundary type under the active source.
-       CAD has only 2 levels (region=0, municipality=1); NAMRIA has 3 (0/1/2). */
     let lvl;
     const src = this._src();
+    const useCad = this.state.activeSource === 'cad';
     if (type === 'region') {
       lvl = 0;
     } else if (type === 'province') {
-      /* CAD has no province geometry */
       if (src.maxLevel < 2) return;
       lvl = 1;
     } else if (type === 'municipality') {
-      lvl = src.maxLevel; /* NAMRIA: 2, CAD: 1 */
+      lvl = src.maxLevel;
     } else {
       return;
     }
-    const data = this.state.rawData[lvl];
-    if (!data) return;
+    /* Use source-prefixed cache key to avoid stale cross-source data;
+       fall back to plain level key for backward compat with _refreshBoundaryOverlays */
+    const cacheKey = (useCad ? 'cad:' : 'namria:') + lvl;
+    let data = this.state.rawData[cacheKey] || this.state.rawData[lvl];
+    if (!data) {
+      try {
+        const resp = await fetch(src.geoJSON[lvl]);
+        if (!resp.ok) throw new Error('Failed to load');
+        data = await resp.json();
+        this.state.rawData[cacheKey] = data;
+      } catch (_) {
+        return;
+      }
+    }
     const styleMap = {
       region: { color: '#1f2937', weight: 2.5, fillOpacity: 0, opacity: 0.85 },
       province: { color: '#374151', weight: 2, fillOpacity: 0, opacity: 0.85 },
@@ -2128,6 +1221,18 @@ const APP = {
     }).addTo(this.state.map);
   },
 
+  /* Remove all admin boundary layers */
+  _clearAdminOverlays() {
+    for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
+      if (this.state.layers[lvl]) {
+        this.state.map.removeLayer(this.state.layers[lvl]);
+        this.state.layers[lvl] = null;
+      }
+    }
+    this.state.selectedPath = [];
+    this.state.currentLevel = 0;
+  },
+
   _removeBoundaryLayer(type) {
     if (this.state.adminLayers[type]) {
       this.state.map.removeLayer(this.state.adminLayers[type]);
@@ -2135,295 +1240,13 @@ const APP = {
     }
   },
 
-  /* Drill back up to the basins overview */
-  _hydroDrillUp(targetLevel) {
-    if (this.state._drilling) return;
-    if (targetLevel === this.state.hydroDrillLevel) return;
-    const self = this;
-    const map = this.state.map;
-
-    /* Remove sub-watershed + stream order layers */
-    [1, 2].forEach(l => {
-      if (self.state.hydroLayers[l]) { map.removeLayer(self.state.hydroLayers[l]); self.state.hydroLayers[l] = null; }
-    });
-    /* Remove admin outline overlay if active */
-    if (self.state.hydroAdminOutlineLayer) { map.removeLayer(self.state.hydroAdminOutlineLayer); self.state.hydroAdminOutlineLayer = null; }
-    document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
-
-    this.state.hydroDrillLevel = 0;
-    this.state.hydroSelectedBasin = null;
-    this.state.hydroSelectedZone = null;
-    this.state.hydroSelectedZoneLayer = null;
-
-    /* Restore basin styles — re-apply checkbox filter if active, else normal overview */
-    if (this.state.hydroLayers[0]) {
-      if (this.state.hydroActiveFilterIds && this.state.hydroActiveFilterIds.length > 0) {
-        this._applyHydroFilter();
-      } else {
-        this.state.hydroLayers[0].eachLayer(function(lf) {
-          const idx = self._hydroBasinIndex(lf.feature);
-          const c = self.config.hydroLevelColors[idx] || '#6b7280';
-          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
-        });
-      }
-    }
-
-    /* Fly back to CAR bounds */
-    if (this.state.hydroLayers[0]) {
-      map.flyToBounds(this.state.hydroLayers[0].getBounds(), {
-        ...this._getPaddingOpts(),
-        duration: 0.45,
-        easeLinearity: 0.25,
-      });
-    }
-    this._updateBreadcrumb();
-    this._showBasinPickerPanel();
-  },
-
-  /* Remove all hydro layers from the map */
-  _clearHydroLayers() {
-    const map = this.state.map;
-    if (!map) return;
-    [0, 1, 2].forEach(l => {
-      if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
-    });
-  },
-
-  /* Full reset of hydro state (used when switching to Boundaries mode) */
-  _clearHydroState(keepViewMode) {
-    this._clearHydroLayers();
-    this.state.hydroDrillLevel = 0;
-    this.state.hydroSelectedBasin = null;
-    if (this.state.hydroBoundaryLayer && this.state.map) {
-      this.state.map.removeLayer(this.state.hydroBoundaryLayer);
-      this.state.hydroBoundaryLayer = null;
-    }
-    if (this.state.hydroAdminOutlineLayer && this.state.map) {
-      this.state.map.removeLayer(this.state.hydroAdminOutlineLayer);
-      this.state.hydroAdminOutlineLayer = null;
-    }
-    Object.values(this.state.adminLayers).forEach(l => {
-      if (l && this.state.map) this.state.map.removeLayer(l);
-    });
-    this.state.adminLayers = {};
-    this._closeBoundaryMenu();
-    this.state.hydroActiveFilterIds = [];
-    this.state.showStreamOrder = false;
-    if (!keepViewMode) {
-      this.state.viewMode = 'boundaries';
-      this.state.hydroShowBoundary = false;
-    }
-    this._updateBreadcrumb();
-  },
-
-  /* ── Toggle CAR boundary outline in hydro mode ── */
-  async _toggleHydroBoundary() {
-    if (this.state.viewMode !== 'watersheds') return;
-    this.state.hydroShowBoundary = !this.state.hydroShowBoundary;
-    const map = this.state.map;
-    const btn = document.getElementById('hydro-boundary-btn');
-    if (btn) btn.classList.toggle('active', this.state.hydroShowBoundary);
-
-    if (this.state.hydroShowBoundary) {
-      /* Lazily create the boundary layer */
-      if (!this.state.hydroBoundaryLayer) {
-        try {
-          if (!this.state.rawData[0]) {
-            const resp = await fetch('geoJSON/CAR NAMRIA Boundary.geojson');
-            this.state.rawData[0] = await resp.json();
-          }
-          this.state.hydroBoundaryLayer = L.geoJSON(this.state.rawData[0], {
-            interactive: false,
-            style: { color: '#0f172a', weight: 2.5, fillOpacity: 0, dashArray: '6 4', opacity: 0.7 },
-          }).addTo(map);
-          this.state.hydroBoundaryLayer.bringToBack();
-        } catch (_) {
-          this._showToast('Failed to load CAR boundary');
-          this.state.hydroShowBoundary = false;
-          if (btn) btn.classList.remove('active');
-        }
-      } else {
-        map.addLayer(this.state.hydroBoundaryLayer);
-        this.state.hydroBoundaryLayer.bringToBack();
-      }
-    } else {
-      if (this.state.hydroBoundaryLayer) {
-        map.removeLayer(this.state.hydroBoundaryLayer);
-      }
-    }
-  },
-
-  /* ── Basin Picker Panel (mobile-friendly tappable list) ── */
-  _showBasinPickerPanel() {
-    const panel = document.getElementById('info-panel');
-    const content = document.getElementById('info-panel-content');
-    if (!panel || !content) return;
-
-    this.state.lastViewed = null;
-
-    const wsData = this.state.rawData['watershed'];
-    const groups = this.config.hydroBasinGroups;
-
-    let groupHtml = '';
-    groups.forEach(group => {
-      let itemsHtml = '';
-      group.basins.forEach(name => {
-        /* Find the feature to get area + size */
-        let areaHa = null, size = '';
-        if (wsData) {
-          const f = wsData.features.find(x => (x.properties.Name || x.properties.Old_Name) === name);
-          if (f) {
-            areaHa = f.properties.Area_Ha;
-            size = f.properties.SIZE_W || '';
-          }
-        }
-        const areaStr = areaHa ? (areaHa / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
-        itemsHtml += `
-          <button class="basin-picker-item" onclick="APP._hydroDrillDownByName('${this._escHtml(name)}')">
-            <div class="basin-picker-info">
-              <span class="basin-picker-name">${this._escHtml(name).replace(/ River Watershed$/, '')}</span>
-              <span class="basin-picker-meta">
-                ${size ? `<span class="basin-size">${this._escHtml(size)}</span>` : ''}
-                ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
-              </span>
-            </div>
-            <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>`;
-      });
-      groupHtml += `
-        <div class="basin-picker-group">
-          <div class="basin-picker-group-title">${this._escHtml(group.title)}</div>
-          ${itemsHtml}
-        </div>`;
-    });
-
-    const html = `
-      <div class="panel-hero basin-picker-hero">
-        <div class="panel-level-badge">14 Major Basins</div>
-        <h2 class="panel-title">Watersheds</h2>
-        <p class="panel-subtitle">Tap a basin to explore sub-watersheds &amp; stream network</p>
-      </div>
-      <div class="panel-section basin-picker-section">
-        ${groupHtml}
-      </div>`;
-
-    content.innerHTML = html;
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded');
-    panel.classList.remove('open', 'closed', 'peek');
-    if (window.innerWidth <= 640) {
-      panel.classList.add('peek');
-      this.state.panelState = 'peek';
-    } else {
-      panel.classList.add('open');
-      this.state.panelState = 'open';
-    }
-    /* Hide toggle tab */
-    const tab = document.getElementById('panel-toggle-tab');
-    if (tab) tab.classList.add('hidden');
-  },
-
-  /* Helper: drill down by basin name (called from basin picker list) */
-  _hydroDrillDownByName(name) {
-    const wsData = this.state.rawData['watershed'];
-    if (!wsData || !this.state.hydroLayers[0]) return;
-    let targetFeature = null, targetLayer = null;
-    this.state.hydroLayers[0].eachLayer(lf => {
-      const lfName = lf.feature.properties.Name || lf.feature.properties.Old_Name || '';
-      if (lfName === name) { targetFeature = lf.feature; targetLayer = lf; }
-    });
-    if (targetFeature && targetLayer) this._hydroDrillDown(targetFeature, targetLayer);
-  },
-
-  /* ── Sub-watershed Panel ── */
-  _openSubWatershedPanel(feature) {
-    const panel = document.getElementById('info-panel');
-    const content = document.getElementById('info-panel-content');
-    if (!panel || !content) return;
-
-    const p = feature.properties || {};
-    const gridcode = p.gridcode != null ? p.gridcode : '?';
-    const areaM2 = parseFloat(p.Shape_Area || 0);
-    const areaHa = areaM2 > 0 ? (areaM2 / 10000) : 0;
-    const basin = this.state.hydroSelectedBasin;
-    const basinName = basin ? basin.name : '';
-    const basinCode = basin ? basin.code : '';
-
-    this.state.lastViewed = { feature, isSubWatershed: true };
-
-    /* Build the Spans section — prefer zone-specific spans, fall back to basin spans */
-    let spansHTML = '';
-    if (this.state.viewMode === 'watersheds') {
-      let spans = null;
-      /* Try zone-specific spans first */
-      if (basinCode && gridcode != null) {
-        spans = this._zoneSpans(basinCode, gridcode);
-      }
-      /* Fall back to basin-level spans if zone data not available */
-      if (!spans && basinName) {
-        spans = this._watershedSpans(basinName);
-      }
-      if (spans && (spans.provinces.length || spans.municipalities.length)) {
-        spansHTML = `
-          <div class="panel-section">
-            <div class="panel-section-title">Spans — Administrative Boundaries</div>
-            ${this._renderSourceToggleHTML()}
-            <div class="span-group">
-              <div class="span-group-label">Provinces (${spans.provinces.length})</div>
-              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
-            </div>
-            ${spans.municipalities.length ? `
-            <div class="span-group">
-              <div class="span-group-label">Municipalities (${spans.municipalities.length})</div>
-              <div class="span-chip-row span-muni-scroll">${this._renderSpansChips(spans.municipalities, 'municipality')}</div>
-            </div>` : ''}
-            <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
-          </div>`;
-      }
-    }
-
-    const html = `
-      <div class="panel-hero">
-        <button onclick="APP._backToBasinPanel()" class="panel-back-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back to ${this._escHtml(basinName).replace(/ River Watershed$/, '')}
-        </button>
-        <div class="panel-level-badge">Sub-watershed</div>
-        <h2 class="panel-title">Zone ${this._escHtml(String(gridcode))}</h2>
-        <p class="panel-subtitle">Sub-catchment within ${this._escHtml(basinName).replace(/ River Watershed$/, ' Basin')}</p>
-      </div>
-      <div class="panel-section">
-        <div class="panel-section-title">Details</div>
-        <div class="stat-grid">
-          <div class="stat-box">
-            <div class="stat-label">Zone Code</div>
-            <div class="stat-value">${this._escHtml(String(gridcode))}</div>
-          </div>
-          ${areaHa > 0 ? `<div class="stat-box">
-            <div class="stat-label">Area (Ha)</div>
-            <div class="stat-value">${areaHa.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-          </div>` : ''}
-        </div>
-      </div>
-      ${spansHTML}`;
-
-    content.innerHTML = html;
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded', 'open', 'closed', 'peek');
-    if (window.innerWidth <= 640) { panel.classList.add('peek'); this.state.panelState = 'peek'; }
-    else { panel.classList.add('open'); this.state.panelState = 'open'; }
-  },
-
-  /* Back button from sub-watershed panel → return to basin detail panel */
-  _backToBasinPanel() {
-    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
-      this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
-    }
-  },
-
   /* ── Watershed ↔ boundary cross-reference ── */
+
+  /* Convert an ALL-CAPS string to Title Case (e.g. "MOUNTAIN PROVINCE" → "Mountain Province") */
+  _toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  },
 
   /* Title-case a slug like "baay-licuan" → "Baay-Licuan", preserving known acronyms */
   _prettySlug(slug) {
@@ -2434,360 +1257,19 @@ const APP = {
     }).join('-');
   },
 
-  /* Invert watershedIntersections: for the given watershed name, return
-     { provinces: [{slug,label}], municipalities: [{slug,label,province}] }
-     Uses the new namria/cad per-watershed spans sections when available,
-     falling back to the old boundary→watershed inversion for backward compat. */
-  _watershedSpans(wsName) {
-    const data = this.state.watershedIntersections;
-    if (!data) return { provinces: [], municipalities: [] };
-
-    /* Try the new per-watershed spans sections first */
-    const prefix = this.state.activeSource === 'cad' ? 'cad' : 'namria';
-    if (data[prefix] && data[prefix][wsName]) {
-      const entry = data[prefix][wsName];
-      return {
-        provinces: (entry.provinces || []).map(slug => ({ slug, label: this._prettySlug(slug) })),
-        municipalities: (entry.municipalities || []).map(slug => {
-          const parts = slug.split(':');
-          return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
-        }),
-      };
-    }
-
-    /* Fallback: invert the old boundary→watershed arrays */
-    const provinces = [];
-    const municipalities = [];
-    Object.keys(data).forEach(key => {
-      if (!Array.isArray(data[key]) || !data[key].includes(wsName)) return;
-      if (key.includes(':')) {
-        const [provSlug, muniSlug] = key.split(':');
-        municipalities.push({ slug: key, province: this._prettySlug(provSlug), label: this._prettySlug(muniSlug) });
-      } else {
-        provinces.push({ slug: key, label: this._prettySlug(key) });
-      }
-    });
-    municipalities.sort((a, b) => a.province === b.province ? a.label.localeCompare(b.label) : a.province.localeCompare(b.province));
-    return { provinces, municipalities };
-  },
-
-  /* Render tappable chip list HTML for the Spans section */
+  /* Render tappable chip list HTML for the Spans section.
+     Filters out disputed-area placeholders ("X vs Y") that are not real LGUs. */
   _renderSpansChips(items, type) {
-    if (!items.length) return '<span class="span-empty">—</span>';
-    return items.map(it => {
+    const clean = items.filter(it => {
+      const label = (it.label || '').toLowerCase();
+      const slug = (it.slug || '').toLowerCase();
+      return !slug.includes(' vs ') && !label.includes(' vs ');
+    });
+    if (!clean.length) return '<span class="span-empty">—</span>';
+    return clean.map(it => {
       const escaped = this._escHtml(it.label).replace(/'/g, '&#39;');
       return `<button class="span-chip" onclick="APP._outlineAdminUnit('${type}','${this._escHtml(it.slug).replace(/'/g, '&#39;')}')">${escaped}</button>`;
     }).join('');
-  },
-
-  /* Render a small NAMRIA/CAD toggle for the side panel Spans section */
-  _renderSourceToggleHTML() {
-    const isNamria = this.state.activeSource === 'namria';
-    return `
-      <div class="span-source-toggle">
-        <button class="source-toggle-pill${isNamria ? ' active' : ''}" onclick="APP._switchPanelSource('namria')">NAMRIA</button>
-        <button class="source-toggle-pill${!isNamria ? ' active' : ''}" onclick="APP._switchPanelSource('cad')">CADASTRE</button>
-      </div>`;
-  },
-
-  /* Switch source from inside the side panel — delegates to switchSource,
-     which in watersheds mode refreshes boundary overlays + chips without
-     resetting the current watershed/sub-watershed selection. */
-  _switchPanelSource(name) {
-    this.switchSource(name);
-  },
-
-  /* Toggle a province/municipality outline overlay on top of the current hydro view */
-  async _outlineAdminUnit(type, slug) {
-    const map = this.state.map;
-    if (!map) return;
-
-    /* If the same chip is tapped again, remove the outline */
-    const chip = document.querySelector(`.span-chip[onclick*="'${type}','${slug}'"]`);
-    if (this.state.hydroAdminOutlineLayer && chip && chip.classList.contains('active')) {
-      map.removeLayer(this.state.hydroAdminOutlineLayer);
-      this.state.hydroAdminOutlineLayer = null;
-      chip.classList.remove('active');
-      return;
-    }
-
-    const level = type === 'province' ? 1 : 2;
-    const src = this._src();
-    /* In CAD mode there is no separate province level — province outlines are
-       derived by dissolving the municipal features that share the Province. */
-    const useCad = this.state.activeSource === 'cad';
-
-    /* Use the active source's boundary data */
-    if (useCad) {
-      /* CAD only exposes level 1 (municipal). Province = dissolved municipalities. */
-      if (!this.state.rawData[1]) {
-        try {
-          const resp = await fetch('geoJSON/CAR CAD Municipal Boundary.geojson');
-          this.state.rawData[1] = await resp.json();
-        } catch (_) {
-          this._showToast('Failed to load boundary data');
-          return;
-        }
-      }
-    } else {
-      if (!this.state.rawData[level]) {
-        try {
-          const resp = await fetch('geoJSON/CAR NAMRIA ' + (level === 1 ? 'Provincial' : 'Municipal') + ' Boundary.geojson');
-          this.state.rawData[level] = await resp.json();
-        } catch (_) {
-          this._showToast('Failed to load boundary data');
-          return;
-        }
-      }
-    }
-
-    /* Resolve the target feature(s) for the slug. CAD provinces may need
-       multiple municipal features dissolved into one outline. */
-    let targetFeature = null;
-    let targetFeatures = null;
-    const norm = s => (s || '').toLowerCase().replace(/-/g, ' ').trim();
-    const wantSlug = type === 'province' ? slug : slug.split(':').pop();
-
-    if (useCad && type === 'province') {
-      /* CAD province: gather all municipal features whose Province slug matches */
-      const features = (this.state.rawData[1].features || []).filter(f => {
-        const provSlug = (f.properties || {}).Province.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        return provSlug === slug;
-      });
-      if (features.length) targetFeatures = features;
-    } else {
-      const features = (this.state.rawData[level].features || []);
-      targetFeature = features.find(f => (f.properties || {})._id === slug);
-      if (!targetFeature) {
-        /* Fallback: match by normalized name */
-        const want = norm(wantSlug);
-        targetFeature = features.find(f => {
-          const p = f.properties || {};
-          if (type === 'province') return norm(p.PROVINCE || p.Province || p.NAME_1) === want;
-          return norm(p.Municipali || p.NAME_2 || p.Muni_City) === want;
-        });
-      }
-    }
-
-    const outlineData = targetFeatures
-      ? { type: 'FeatureCollection', features: targetFeatures }
-      : (targetFeature ? targetFeature : null);
-    if (!outlineData) {
-      this._showToast('Boundary not found for ' + slug);
-      return;
-    }
-
-    /* Remove previous outline */
-    if (this.state.hydroAdminOutlineLayer) {
-      map.removeLayer(this.state.hydroAdminOutlineLayer);
-    }
-    document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
-
-    this.state.hydroAdminOutlineLayer = L.geoJSON(outlineData, {
-      interactive: false,
-      style: { color: '#dc2626', weight: 2.5, fillOpacity: 0.06, dashArray: '5 3', opacity: 0.9 },
-    }).addTo(map);
-    this.state.hydroAdminOutlineLayer.bringToFront();
-    if (chip) chip.classList.add('active');
-
-    /* Fly to the outlined unit */
-    try {
-      map.flyToBounds(this.state.hydroAdminOutlineLayer.getBounds(), { ...this._getPaddingOpts(), duration: 0.45, easeLinearity: 0.25 });
-    } catch (_) {}
-  },
-
-
-  /* ── Watershed Overlay Toggle ───────────── */
-  toggleWatershedMenu() {
-    const baseOpts = document.getElementById('basemap-options');
-    if (baseOpts) baseOpts.classList.remove('show');
-    this._closeBoundaryMenu();
-
-    const opts = document.getElementById('watershed-options');
-    if (!opts) return;
-    opts.classList.toggle('show');
-  },
-
-  _resetWatershedState() {
-    this.state.activeWatershedIds = [];
-    if (this.state.watershedLayer) {
-      this.state.map.removeLayer(this.state.watershedLayer);
-      this.state.watershedLayer = null;
-    }
-    const wsBtn = document.getElementById('watershed-btn');
-    if (wsBtn) wsBtn.classList.remove('active');
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.checked = false;
-    });
-  },
-
-  async updateWatersheds(checkbox) {
-    const val = checkbox.value;
-
-    /* Sync all checkboxes with this value across the DOM */
-    document.querySelectorAll(`input[type="checkbox"][value="${val}"]`).forEach(cb => {
-      if (cb !== checkbox) cb.checked = checkbox.checked;
-    });
-
-    if (checkbox.checked) {
-      if (!this.state.activeWatershedIds.includes(val)) {
-        this.state.activeWatershedIds.push(val);
-      }
-    } else {
-      this.state.activeWatershedIds = this.state.activeWatershedIds.filter(id => id !== val);
-    }
-
-    const btn = document.getElementById('watershed-btn');
-    if (btn) btn.classList.toggle('active', this.state.activeWatershedIds.length > 0);
-
-    /* ── Hydro mode: filter the basin layer to only checked basins ── */
-    if (this.state.viewMode === 'watersheds') {
-      this.state.hydroActiveFilterIds = [...this.state.activeWatershedIds];
-      this._applyHydroFilter();
-      return;
-    }
-
-    // Initial load if needed
-    if (!this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
-      if (this.state._fetchingWatersheds) {
-        await this.state._fetchingWatersheds;
-      } else {
-        this.state._fetchingWatersheds = (async () => {
-          try {
-            let data = this.state.rawData['watershed'];
-            if (!data) {
-              const response = await fetch('geoJSON/CAR Watersheds.geojson');
-              data = await response.json();
-              this.state.rawData['watershed'] = data;
-            }
-
-            // Instantiate all layers once, without a filter
-            this.state.watershedLayer = L.geoJSON(data, {
-              style: this.config.colors.watershed,
-              onEachFeature: (feature, layer) => {
-                layer.on({
-                  mouseover: (e) => {
-                    if (e.target._isHidden) return; // Ignore hidden layers
-                    if (this.state._outlineHighlight !== e.target) {
-                      const style = Object.assign({}, this.config.colors.watershedHighlight);
-                      style.weight = 3;
-                      e.target.setStyle(style);
-                    }
-                    const p = feature.properties;
-                    const name = p.Name || p.Old_Name || 'Unknown Watershed';
-                    const lbl = document.getElementById('map-hover-label');
-                    if (lbl) {
-                      lbl.innerHTML = `<span class="label-level">Watershed</span>${this._escHtml(name)}`;
-                      lbl.classList.add('visible');
-                      lbl.style.display = ''; /* Clear any inline display */
-                    }
-                  },
-                  mouseout: (e) => {
-                    if (e.target._isHidden) return;
-                    if (this.state._outlineHighlight !== e.target) {
-                      this.state.watershedLayer.resetStyle(e.target);
-                    }
-                    const lbl = document.getElementById('map-hover-label');
-                    if (lbl) {
-                      lbl.classList.remove('visible');
-                      lbl.style.display = ''; /* Clear any inline display */
-                    }
-                  },
-                  click: (e) => {
-                    if (e.target._isHidden) return;
-                    L.DomEvent.stopPropagation(e);
-                    if (this.state._outlineHighlight) {
-                      this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
-                    }
-                    this.state._outlineHighlight = e.target;
-                    e.target.setStyle(this.config.colors.watershedHighlight);
-                    this.state.map.flyToBounds(e.target.getBounds(), {
-                      ...this._getPaddingOpts(),
-                      duration: 0.45,
-                      easeLinearity: 0.25
-                    });
-                    this._openWatershedPanel(feature);
-                  }
-                });
-              }
-            });
-
-            // Store array of all child layers for quick filtering
-            this.state._allWatershedChildLayers = [];
-            this.state.watershedLayer.eachLayer(layer => {
-              layer._isHidden = true; // default to hidden
-              this.state._allWatershedChildLayers.push(layer);
-            });
-
-          } catch (err) {
-            console.error("Failed to load watersheds:", err);
-          }
-        })();
-        await this.state._fetchingWatersheds;
-        this.state._fetchingWatersheds = null;
-      }
-    }
-
-    if (this.state.watershedLayer) {
-      if (this.state.activeWatershedIds.length > 0) {
-        if (!this.state.map.hasLayer(this.state.watershedLayer)) {
-          this.state.map.addLayer(this.state.watershedLayer);
-        }
-        
-        // Fast layer toggling
-        this.state.watershedLayer.clearLayers();
-        this.state._allWatershedChildLayers.forEach(layer => {
-          const name = layer.feature.properties.Name || layer.feature.properties.Old_Name || '';
-          if (this.state.activeWatershedIds.includes(name)) {
-            layer._isHidden = false;
-            this.state.watershedLayer.addLayer(layer);
-          } else {
-            layer._isHidden = true;
-          }
-        });
-        
-        this.state.watershedLayer.bringToFront();
-      } else {
-        this.state.map.removeLayer(this.state.watershedLayer);
-        // Clear highlighted outline from watershed if any
-        if (this.state._outlineHighlight) {
-          this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
-          this.state._outlineHighlight = null;
-        }
-      }
-      
-      if (this.state.lastViewed && this.state.lastViewed.isWatershed) {
-        this.closePanel();
-      }
-    }
-  },
-
-  _updateSmartFilters(provinceId) {
-    if (!this.state.watershedIntersections) return;
-    let allowed = null;
-    if (provinceId && this.state.watershedIntersections[provinceId]) {
-      allowed = this.state.watershedIntersections[provinceId];
-    }
-    
-    const options = document.querySelectorAll('.watershed-option');
-    options.forEach(opt => {
-      const checkbox = opt.querySelector('input');
-      if (!checkbox) return;
-      
-      if (allowed) {
-        if (allowed.includes(checkbox.value)) {
-          opt.classList.remove('dimmed');
-        } else {
-          opt.classList.add('dimmed');
-          if (checkbox.checked) {
-            checkbox.checked = false;
-            this.updateWatersheds(checkbox);
-          }
-        }
-      } else {
-        opt.classList.remove('dimmed');
-      }
-    });
   },
 
   _clearWatershedHighlightAndReturn(level) {
@@ -2851,13 +1333,13 @@ const APP = {
       }
     }
     
-    // Store in global state for chart and panel toggle
     this.state.lastViewed = { feature, isWatershed: true };
     
     const panel = document.getElementById('info-panel');
     const content = document.getElementById('info-panel-content');
     
     this.state._wasExpandedBeforeWatershed = panel.classList.contains('expanded');
+    this._updatePanelHeader();
     
     let backButtonHTML = '';
     if (this.state.viewMode === 'watersheds' && this.state.hydroDrillLevel === 1) {
@@ -2873,17 +1355,19 @@ const APP = {
       </button>`;
     }
     
-    const html = `
-      <div class="panel-hero">
-        ${backButtonHTML}
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero';
+      hero.innerHTML = `${backButtonHTML}
         <div class="panel-badge-row" style="display:flex; align-items:center;">
           <span class="panel-badge">Watershed</span>
           <span class="panel-id-code" style="margin-left:8px;">${this._escHtml(id)}</span>
         </div>
         <h2 class="panel-title">${this._escHtml(name)}</h2>
-        <p class="panel-subtitle">Hydrological Boundary</p>
-      </div>
+        <p class="panel-subtitle">Hydrological Boundary</p>`;
+    }
 
+    const html = `
       <div class="panel-section">
         <div class="panel-section-title">Connectivity</div>
         <div class="stat-grid" style="grid-template-columns: 1fr;">
