@@ -1482,6 +1482,16 @@ const APP = {
     }
   },
 
+  /* Sync the left-edge toggle tab visibility with current panel state.
+     Tab is visible when panel is closed; hidden when open or peeking. */
+  _updatePanelToggleIcon() {
+    const tab = document.getElementById('panel-toggle-tab');
+    if (!tab) return;
+    const panel = document.getElementById('info-panel');
+    const isOpen = panel && (panel.classList.contains('open') || panel.classList.contains('peek'));
+    tab.classList.toggle('hidden', isOpen);
+  },
+
   toggleExpandedPanel(skipPan = false) {
     const panel = document.getElementById('info-panel');
     const btn = document.querySelector('.show-more-btn');
