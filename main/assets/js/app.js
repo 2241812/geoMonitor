@@ -2575,11 +2575,16 @@ const APP = {
           ${itemsHtml}
         </div>`;
     } else {
-      /* CAD: group municipalities by Province property */
+      /* CAD: group municipalities by Province property.
+         Skip disputed boundary overlays — features whose Muni_City or Province
+         contains " vs " are CADastre dispute polygons, not real municipalities. */
+      const isDisputed = (s) => /\s+vs\s+/i.test(s || '');
       const byProvince = {};
       data.features.forEach(f => {
         const prov = (f.properties.Province || '').trim();
+        const muni = (f.properties.Muni_City || '').trim();
         if (!prov) return;
+        if (isDisputed(muni) || isDisputed(prov)) return;
         if (!byProvince[prov]) byProvince[prov] = [];
         byProvince[prov].push(f);
       });
