@@ -6,11 +6,17 @@ export default function MapContainer() {
     // Only initialize once
     if (!window.APP.state.map) {
       // Small timeout ensures the DOM has fully rendered before Leaflet binds to it
-      setTimeout(() => {
+      setTimeout(async () => {
         window.APP.init();
         if (window.initLayers) {
-          window.initLayers();
+          try {
+            await window.initLayers();
+          } catch (err) {
+            console.error('Layer initialization failed:', err);
+          }
         }
+        const loading = document.getElementById('loading-overlay');
+        if (loading) loading.classList.add('hidden');
       }, 100);
     }
     
