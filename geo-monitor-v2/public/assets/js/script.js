@@ -1,17 +1,8 @@
-window.initLandingPageScripts = function() {
-(function () {
-  'use strict';
-
-  /* ── Scroll to Top on Refresh ── */
-  if (history.scrollRestoration) {
-    history.scrollRestoration = 'manual';
-  }
-  window.scrollTo(0, 0);
-
-  /* ── Lenis Smooth Scroll ── */
+/* ── Lenis Smooth Scroll (standalone init for React) ── */
+window.initLenis = function() {
   if (typeof Lenis !== 'undefined') {
     var lenis = new Lenis({
-      duration: 1.0, 
+      duration: 1.0,
       easing: function(t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
       direction: 'vertical',
       gestureDirection: 'vertical',
@@ -29,6 +20,17 @@ window.initLandingPageScripts = function() {
 
     requestAnimationFrame(raf);
   }
+};
+
+window.initLandingPageScripts = function() {
+(function () {
+  'use strict';
+
+  /* ── Scroll to Top on Refresh ── */
+  if (history.scrollRestoration) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
 
   /* ── Scroll-triggered fade-in & scale-in ── */
   var observer = new IntersectionObserver(function (entries) {

@@ -436,6 +436,25 @@ export default function LandingPage() {
 
   </div>
 
-  
+  {/* Basin Lightbox Modal */}
+  <div id="basin-lightbox" className="basin-lightbox">
+    <div className="basin-lightbox-bg"></div>
+    <div className="basin-lightbox-content">
+      <img id="basin-lightbox-img" src="" alt="" />
+      <div className="basin-lightbox-overlay"></div>
+      <div className="basin-lightbox-text">
+        <span id="basin-lightbox-index" className="basin-card-index"></span>
+        <h3 id="basin-lightbox-name" className="basin-card-name"></h3>
+        <p id="basin-lightbox-desc" className="basin-card-desc">Description</p>
+      </div>
+      <button id="basin-lightbox-close" className="basin-lightbox-close" title="Close">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
   </>);
 }
