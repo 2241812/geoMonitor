@@ -5,7 +5,7 @@ Static HTML/CSS/JS web app. No build system, no linter, no tests, no CI.
 ## Quick start
 
 ```sh
-python3 -m http.server 8000 -d main
+npm start
 ```
 
 Open `http://localhost:8000`. A server is required (GeoJSON `fetch()`).
@@ -26,7 +26,7 @@ Open `http://localhost:8000`. A server is required (GeoJSON `fetch()`).
 - **`map-init.js`** exists but **not loaded** (compatibility shim)
 - **`EVENTS`** object in `app.js` is **unused** (dead legacy code)
 - **`dashboard.js`**: compatibility shim — delegates to `APP.openPanel`/`APP.closePanel`
-- **`package.json`**: empty `{}` — no npm dependencies
+- **`package.json`**: project config with npm scripts (`start`, `preprocess:all`, etc.)
 
 ## View modes
 
@@ -113,7 +113,7 @@ Additional files: `CAR CAD Provincial Boundary (Dissolved).geojson` (unused), `C
 
 | File | Description |
 |------|-------------|
-| `CAR Watersheds.geojson` | Merged 14 watershed features (merged from individual files by `preprocess-watersheds.js`) |
+| `CAR Watersheds.geojson` | Merged 14 watershed features (merged from individual files by `scripts/preprocess-watersheds.js`) |
 | `Watersheds/*.geojson` | Individual watershed boundaries (14 files) |
 | `watershed-intersections.json` | Cross-walk between watersheds and admin boundaries |
 | `zone-intersections.json` | Cross-walk between sub-watershed zones and admin boundaries |
@@ -124,17 +124,17 @@ Cabicungan River (`CAB/`) has only `CAB_Boundary.geojson` — no `CAB_SW.geojson
 
 ## Preprocessing scripts
 
+All scripts live in `scripts/`. Run individually or use `npm run preprocess:all`.
+
 ```sh
-node preprocess-hierarchy.js       # Cross-walks NAMRIA/CAD GeoJSON → hierarchy-*.json + _id/_parentId
-node preprocess-watersheds.js      # Merges Watersheds/*.geojson into CAR Watersheds.geojson
-node preprocess_watersheds.js      # Computes watershed-intersections.json (requires @turf/turf)
+npm run preprocess:hierarchy       # Cross-walks NAMRIA/CAD GeoJSON → hierarchy-*.json + _id/_parentId
+npm run preprocess:watersheds      # Merges Watersheds/*.geojson into CAR Watersheds.geojson
+npm run preprocess:watershed-intersections  # Computes watershed-intersections.json (requires @turf/turf)
+npm run preprocess:outline         # Dissolves watershed polygons into CAR Watersheds Outline.geojson
+npm run preprocess:zones           # Computes zone-intersections.json (requires @turf/turf)
 ```
 
 The hierarchy script strips diacritics and applies a manual name map (`LANGIDEN`→`LAGIDEN`, `LICUAN-BAAY`→`BAAY-LICUAN`). Run and re-deploy if GeoJSON source files change.
-
-## Patch scripts
-
-`src/mapEngine/patch_app.js` and `src/mapEngine/patch_notify.js` are Node.js scripts that inject `_notify()` calls and state-change callbacks into `app.js`. Run them when extending the APP state model.
 
 ## Deployment
 

@@ -3,3 +3,9 @@ tmp/
 .omo/
 node_modules/
 dist/
+.venv/
+.swarm/
+.opencode/
+scratch/
+*.patch
+*.zip

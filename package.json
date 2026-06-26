@@ -1,4 +1,15 @@
 {
+  "name": "geo-monitor",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8000 -d main",
+    "preprocess:hierarchy": "node scripts/preprocess-hierarchy.js",
+    "preprocess:watersheds": "node scripts/preprocess-watersheds.js",
+    "preprocess:watershed-intersections": "node scripts/preprocess_watersheds.js",
+    "preprocess:outline": "node scripts/preprocess-watershed-outline.js",
+    "preprocess:zones": "node scripts/preprocess-zone-intersections.js",
+    "preprocess:all": "npm run preprocess:hierarchy && npm run preprocess:watersheds && npm run preprocess:outline && npm run preprocess:zones && npm run preprocess:watershed-intersections"
+  },
   "dependencies": {
     "playwright": "^1.61.1"
   }
