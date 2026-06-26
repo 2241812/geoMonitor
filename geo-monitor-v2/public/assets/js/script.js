@@ -111,7 +111,9 @@ window.initLandingPageScripts = function() {
 
       // CTA Parallax
       if (ctaBg) {
-        var ctaRect = document.getElementById('dashboard-section').getBoundingClientRect();
+        var dashSection = document.getElementById('dashboard-section');
+        if (!dashSection) return;
+        var ctaRect = dashSection.getBoundingClientRect();
         if (ctaRect.top < window.innerHeight && ctaRect.bottom > 0) {
           var ctaProgress = 1 - (ctaRect.bottom / (window.innerHeight + ctaRect.height));
           ctaBg.style.transform = 'translateY(' + (ctaProgress * 25) + '%)';
