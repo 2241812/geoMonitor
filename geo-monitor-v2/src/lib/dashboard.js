@@ -1,0 +1,602 @@
+import { APP } from './app.js';
+/**
+ * dashboard.js
+ * The floating info panel and detail rendering methods.
+ */
+
+Object.assign(APP, {
+  /* ── Info Panel ───────────────────────────── */
+  openPanel(feature, level) {
+    if (level === 0 && this.state.viewMode === 'boundaries') {
+      this._showBoundaryPicker(feature, level);
+      return;
+    }
+
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+    
+    this._updatePanelHeader();
+    this.state.lastViewed = { feature, level };
+
+    const name = this._toTitleCase(this._featureName(feature, level));
+    const p = feature.properties || {};
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero';
+      hero.innerHTML = `<div class="panel-level-badge">${this._src().levelNames[level]}</div>
+        <h2 class="panel-title">${this._escHtml(name)}</h2>
+        <p class="panel-subtitle">Administrative Boundary</p>`;
+    }
+
+    /* Details Section */
+    const isCAD = this.state.activeMode === 'cad';
+    let html = `<div class="panel-section">`; 
+    
+    const details = this._resolveDetails(p, level, name);
+    Object.entries(details).forEach(([k, v]) => {
+      html += `<div class="panel-row">
+        <span class="panel-row-label">${this._escHtml(k)}</span>
+        <span class="panel-row-value">${this._escHtml(v)}</span>
+      </div>`;
+    });
+
+    html += `</div>`;
+
+    const chartData = this._resolveChartData(p);
+    if (chartData.values.length > 0) {
+      html += `<div class="panel-section">
+        <div class="panel-section-title">Measurements</div>
+        <div class="chart-wrap"><canvas id="panel-chart"></canvas></div>
+      </div>`;
+    }
+
+    /* Add Map Legend to Side Panel */
+    html += `<div class="panel-section">
+      <div class="panel-section-title">Legend</div>
+      <div class="panel-legend">
+        <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
+        <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
+        <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
+        <div class="legend-item"><span class="legend-dot watershed-dot"></span>Watershed</div>
+      </div>
+    </div>`;
+
+    /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
+    const id = p._id;
+    let intersectingWs = null;
+    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+      intersectingWs = this.state.watershedIntersections[id];
+    } else if (level === 0 && this.state.rawData['watershed']) {
+      /* Show all watersheds for the region */
+      intersectingWs = this.state.rawData['watershed'].features
+        .map(f => f.properties.Name || f.properties.Old_Name)
+        .filter(Boolean);
+    }
+
+    if (intersectingWs && intersectingWs.length > 0) {
+      html += `<div class="panel-section">
+        <div class="panel-section-title">Watersheds <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${intersectingWs.length}</span></div>
+        <div class="watershed-summary-list">
+          ${intersectingWs.slice(0, 5).map(ws => {
+            let areaText = '';
+            let outflowText = '';
+            if (this.state.rawData['watershed']) {
+              const wsFeature = this.state.rawData['watershed'].features.find(f => {
+                const n = f.properties.Name || f.properties.Old_Name || '';
+                return n === ws;
+              });
+              if (wsFeature && wsFeature.properties.Area_Ha) {
+                areaText = `<span class="ws-area">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
+              }
+              outflowText = this.config.watershedConnections[ws] || '';
+            }
+            return `<div class="watershed-summary-item">
+              <div class="ws-summary-name">${this._escHtml(ws)}</div>
+              <div class="ws-summary-meta">${areaText}${outflowText ? `<span class="ws-outflow-inline">→ ${this._escHtml(outflowText)}</span>` : ''}</div>
+            </div>`;
+          }).join('')}
+          ${intersectingWs.length > 5 ? `<div class="watershed-summary-more">+ ${intersectingWs.length - 5} more watersheds</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    /* Add Show More Button and Expanded Content — for drilling into specific admin boundaries */
+    let expandedHtml = '';
+    if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
+      const wsForCheckboxes = this.state.watershedIntersections[id];
+      if (wsForCheckboxes.length > 0) {
+        expandedHtml = `<div class="expanded-content">
+          <div class="panel-section-title">Overlay on Map <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${wsForCheckboxes.length}</span></div>
+          <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; margin-top: -4px;">Toggle watersheds to highlight them on the map:</p>
+          <div class="watershed-list">
+            ${wsForCheckboxes.map(ws => {
+              let areaText = '';
+              if (this.state.rawData['watershed']) {
+                const wsFeature = this.state.rawData['watershed'].features.find(f => {
+                  const n = f.properties.Name || f.properties.Old_Name || '';
+                  return n === ws;
+                });
+                if (wsFeature && wsFeature.properties.Area_Ha) {
+                  areaText = `<span style="font-size: 0.8rem; color: #6b7280; margin-left: auto;">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
+                }
+              }
+              return `
+              <div class="watershed-list-item">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
+                  <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${this.state.activeWatershedIds && this.state.activeWatershedIds.includes(ws) ? 'checked' : ''} style="accent-color: #0284c7; width: 16px; height: 16px;">
+                  <span style="font-weight: 500;">${this._escHtml(ws)}</span>
+                  ${areaText}
+                </label>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+
+        html += `<div class="panel-show-more">
+          <button class="show-more-btn view-ws-btn" onclick="APP.toggleExpandedPanel()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View Watersheds on Map (${wsForCheckboxes.length})
+          </button>
+        </div>`;
+        html += expandedHtml;
+      }
+    }
+
+    content.innerHTML = html;
+    panel.classList.remove('open');
+    panel.classList.add('open');
+    this.state.panelState = 'open';
+
+    /* Hide toggle tab when panel is open */
+    const tab = document.getElementById('panel-toggle-tab');
+    if (tab) tab.classList.add('hidden');
+
+    if (chartData.values.length > 0) {
+      const ctx = document.getElementById('panel-chart');
+      if (ctx) {
+        if (this.state._chart) this.state._chart.destroy();
+        this.state._chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: chartData.labels,
+            datasets: [{
+              data: chartData.values,
+              backgroundColor: ['#059669', '#0d9488', '#0891b2', '#7c3aed'],
+              borderRadius: 5,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { type: 'logarithmic', ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+              x: { ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { display: false } },
+            },
+          },
+        });
+      }
+    }
+  },
+
+  closePanel() {
+    const panel = document.getElementById('info-panel');
+    if (!panel) return;
+    
+    panel.classList.remove('open', 'expanded', 'peek');
+    panel.classList.add('closed');
+    this.state.panelState = 'closed';
+    document.body.classList.remove('panel-open', 'panel-expanded');
+    const tab = document.getElementById('panel-toggle-tab');
+    if (tab) tab.classList.remove('hidden');
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) hero.innerHTML = '';
+
+    this._updatePanelToggleIcon();
+    
+    if (this.state._chart) {
+      this.state._chart.destroy();
+      this.state._chart = null;
+    }
+  },
+
+  togglePanel() {
+    const panel = document.getElementById('info-panel');
+    if (!panel) return;
+    const isMobile = window.innerWidth <= 640;
+    
+    if (isMobile) {
+      if (panel.classList.contains('open')) {
+        this.closePanel();
+      } else if (panel.classList.contains('peek')) {
+        panel.classList.remove('peek');
+        panel.classList.add('open');
+        document.body.classList.add('panel-open');
+      } else if (this.state.lastViewed) {
+        if (this.state.lastViewed.isWatershed) {
+          this._openWatershedPanel(this.state.lastViewed.feature);
+        } else {
+          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+        }
+      } else {
+        this.closePanel();
+      }
+    } else {
+      if (panel.classList.contains('open')) {
+        this.closePanel();
+      } else if (this.state.lastViewed) {
+        if (this.state.lastViewed.isWatershed) {
+          this._openWatershedPanel(this.state.lastViewed.feature);
+        } else {
+          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
+        }
+      } else {
+        /* Default: show CAR region details */
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
+      }
+    }
+  },
+
+  /* Sync the left-edge toggle tab visibility with current panel state.
+     Tab is visible when panel is closed; hidden when open or peeking. */
+  _updatePanelToggleIcon() {
+    const tab = document.getElementById('panel-toggle-tab');
+    if (!tab) return;
+    const panel = document.getElementById('info-panel');
+    const isOpen = panel && (panel.classList.contains('open') || panel.classList.contains('peek'));
+    tab.classList.toggle('hidden', isOpen);
+  },
+
+  toggleExpandedPanel(skipPan = false) {
+    const panel = document.getElementById('info-panel');
+    const btn = document.querySelector('.show-more-btn');
+    if (!panel) return;
+    const isExpanded = panel.classList.contains('expanded');
+    
+    const panelCheckboxes = panel.querySelectorAll('.panel-ws-checkbox');
+
+    if (isExpanded) {
+      panel.classList.remove('expanded');
+      document.body.classList.remove('panel-expanded');
+      if (btn) btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> View Watersheds on Map`;
+      
+      /* Turn off all visible watersheds in the panel */
+      const promises = [];
+      panelCheckboxes.forEach(cb => {
+        if (cb.checked) {
+          cb.checked = false;
+          cb.dataset.autoChecked = 'false';
+          promises.push(this.updateWatersheds(cb));
+        }
+      });
+      
+      Promise.all(promises).then(() => {
+        if (skipPan) return;
+        if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
+          this.state.map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), {
+            ...this._getPaddingOpts(),
+            duration: 0.45,
+            easeLinearity: 0.25
+          });
+        }
+      });
+    } else {
+      panel.classList.add('expanded');
+      document.body.classList.remove('panel-expanded');
+      document.body.classList.add('panel-expanded');
+      if (btn) btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hide Watersheds`;
+      
+      /* Turn on all unchecked watersheds */
+      const promises = [];
+      panelCheckboxes.forEach(cb => {
+        if (!cb.checked) {
+          cb.checked = true;
+          cb.dataset.autoChecked = 'true';
+          promises.push(this.updateWatersheds(cb));
+        }
+      });
+      
+      Promise.all(promises).then(() => {
+        if (skipPan) return;
+        if (this.state.watershedLayer && this.state.activeWatershedIds.length > 0) {
+          let activeBounds = L.latLngBounds([]);
+          this.state.watershedLayer.eachLayer(layer => {
+            const name = layer.feature.properties.Name || layer.feature.properties.Old_Name || '';
+            if (this.state.activeWatershedIds.includes(name)) {
+              activeBounds.extend(layer.getBounds());
+            }
+          });
+          
+          if (activeBounds.isValid()) {
+            this.state.map.flyToBounds(activeBounds, {
+              ...this._getPaddingOpts(),
+              duration: 0.45,
+              easeLinearity: 0.25
+            });
+          }
+        }
+      });
+    }
+  },
+
+  _resolveDetails(props, level, name) {
+    const d = {};
+    const hierarchy = this.state.hierarchy;
+    const childCount = (id) => {
+      if (!hierarchy || !hierarchy.children) return null;
+      const kids = hierarchy.children[id];
+      return kids ? kids.length : null;
+    };
+
+    if (this.state.activeSource === 'cad') {
+      if (level === 1) {
+        d['Municipality/City'] = props.Muni_City || name;
+        if (props.Province) d['Province'] = props.Province;
+      } else {
+        d['Region'] = props.Region || 'Cordillera Administrative Region';
+      }
+      if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
+      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
+    } else {
+      if (level === 2) {
+        d['Municipality/City'] = props.Municipali || name;
+        if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
+        if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
+        if (props.X_Coord && props.Y_Coord) {
+          d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
+        }
+      } else if (level === 1) {
+        d['Province'] = props.PROVINCE || props.Province || name;
+        if (props.REGION) d['Region'] = props.REGION;
+        const cc = childCount(props._id);
+        if (cc !== null) d['Municipalities'] = String(cc);
+      } else {
+        d['Region'] = props.Region || 'Cordillera Administrative Region';
+        const cc = childCount(props._id);
+        if (cc !== null) d['Provinces'] = String(cc);
+      }
+    }
+    
+    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
+    if (sqMeters > 0) d['Square Meters'] = sqMeters.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    let hectares = parseFloat(props.Hectares || props.Area || 0);
+    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
+    if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
+    if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    return d;
+  },
+
+  _resolveChartData(props) {
+    const labels = [], values = [];
+    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
+    if (sqMeters > 0) { labels.push('Square Meters'); values.push(sqMeters); }
+    
+    let hectares = parseFloat(props.Hectares || props.Area || 0);
+    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
+    if (hectares > 0) { labels.push('Hectares'); values.push(hectares); }
+    
+    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
+    if (perimeter > 0) { labels.push('Perimeter'); values.push(perimeter); }
+    
+    return { labels, values };
+  },
+
+  _heroSubtitle(props, level) {
+    if (this.state.activeSource === 'cad') {
+      if (level === 1) return props.Province || props.REGION || '';
+      return 'Cordillera Administrative Region';
+    }
+    if (level === 2) return props.Province || props.PROVINCE || 'Province';
+    if (level === 1) return 'Province — Cordillera Administrative Region';
+    return 'Watershed Cradle of Northern Luzon';
+  },
+
+  /* ── R1: Boundary Picker Panel (Boundary mode, level 0) ── */
+  _showBoundaryPicker(feature, level) {
+    const panel = document.getElementById('info-panel');
+    const content = document.getElementById('info-panel-content');
+    if (!panel || !content) return;
+
+    this.state.lastViewed = null;
+    this._updatePanelHeader();
+
+    const src = this._src();
+    const data = this.state.rawData[1];
+    if (!data || !data.features) return;
+
+    let groupHtml = '';
+
+    if (src.maxLevel >= 2) {
+      /* NAMRIA: provinces list — filter to CAR children */
+      const provinces = this._filterToParent(data, 1, { properties: { _id: 'CAR' } });
+      const header = `Provinces (${provinces.features.length})`;
+      let itemsHtml = '';
+      provinces.features.forEach(f => {
+        const name = this._toTitleCase(this._featureName(f, 1));
+        const id = f.properties._id;
+        const muniCount = this.state.hierarchy?.children?.[id]?.length || 0;
+        const areaM2 = parseFloat(f.properties.Shape_Area || 0);
+        const areaStr = areaM2 > 0 ? (areaM2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+        itemsHtml += `
+          <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
+            <div class="basin-picker-info">
+              <span class="basin-picker-name">${this._escHtml(name)}</span>
+              <span class="basin-picker-meta">
+                ${muniCount ? `<span class="basin-size">${muniCount} municipalities</span>` : ''}
+                ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
+              </span>
+            </div>
+            <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>`;
+      });
+      groupHtml += `
+        <div class="basin-picker-group">
+          <div class="basin-picker-group-title">${this._escHtml(header)}</div>
+          ${itemsHtml}
+        </div>`;
+    } else {
+      /* CAD: group municipalities by Province property.
+         Skip disputed boundary overlays — features whose Muni_City or Province
+         contains " vs " are CADastre dispute polygons, not real municipalities. */
+      const isDisputed = (s) => /\s+vs\s+/i.test(s || '');
+      const byProvince = {};
+      data.features.forEach(f => {
+        const prov = (f.properties.Province || '').trim();
+        const muni = (f.properties.Muni_City || '').trim();
+        if (!prov) return;
+        if (isDisputed(muni) || isDisputed(prov)) return;
+        if (!byProvince[prov]) byProvince[prov] = [];
+        byProvince[prov].push(f);
+      });
+      Object.keys(byProvince).sort().forEach(provName => {
+        const titleProv = this._toTitleCase(provName);
+        let itemsHtml = '';
+        byProvince[provName].forEach(f => {
+          const name = this._toTitleCase(this._featureName(f, 1));
+          itemsHtml += `
+            <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
+              <div class="basin-picker-info">
+                <span class="basin-picker-name">${this._escHtml(name)}</span>
+              </div>
+              <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>`;
+        });
+        groupHtml += `
+          <div class="basin-picker-group">
+            <div class="basin-picker-group-title">${this._escHtml(titleProv)}</div>
+            ${itemsHtml}
+          </div>`;
+      });
+    }
+
+    const hero = document.getElementById('panel-hero');
+    if (hero) {
+      hero.className = 'panel-hero basin-picker-hero';
+      hero.innerHTML = `<div class="panel-level-badge">Administrative Boundaries</div>
+        <h2 class="panel-title">Cordillera Administrative Region</h2>
+        <p class="panel-subtitle">Tap a province/municipality to drill in</p>`;
+    }
+
+    const html = `
+      <div class="panel-section basin-picker-section">
+        ${groupHtml}
+      </div>`;
+
+    content.innerHTML = html;
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded', 'open', 'closed', 'peek');
+    
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
+    this._updatePanelToggleIcon();
+  },
+
+  /* Click handler for boundary picker items — mimics the map polygon click pattern */
+  _drillBoundaryFromPicker(childName, childLevel) {
+    const childData = this.state.rawData[childLevel];
+    if (!childData || !childName) return;
+    const lookup = childName.toLowerCase();
+    const childFeature = childData.features.find(f => this._featureName(f, childLevel).toLowerCase() === lookup);
+    if (!childFeature) return;
+    let childLayer = null;
+    const layerGroup = this.state.layers[childLevel];
+    if (layerGroup) {
+      layerGroup.eachLayer(lf => {
+        if (lf.feature === childFeature) childLayer = lf;
+      });
+    }
+    this.openPanel(childFeature, childLevel);
+    /* Always zoom to the selected feature's bounds */
+    if (childLayer && childLayer.getBounds) {
+      this.state.map.fitBounds(childLayer.getBounds(), {
+        padding: [50, 50],
+        maxZoom: 12,
+      });
+    } else if (childFeature.geometry) {
+      try {
+        const temp = L.geoJSON(childFeature);
+        this.state.map.fitBounds(temp.getBounds(), {
+          padding: [50, 50],
+          maxZoom: 12,
+        });
+      } catch (_) {}
+    }
+    if (childLevel >= this._src().maxLevel) {
+      this._highlightAndDim(childFeature, childLayer, childLevel);
+    } else {
+      this.drillDown(childFeature, childLayer);
+    }
+  },
+
+  /* Highlight a child boundary on the map when its chip is clicked */
+  _highlightBoundaryChild(childId, level, chipEl) {
+    /* Toggle active class on chips */
+    if (chipEl && chipEl.parentNode) {
+      chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+    }
+    if (chipEl) chipEl.classList.add('active');
+
+    if (!childId) return;
+    const layer = this.state.layers[level];
+    if (!layer) return;
+
+    /* Reset previous highlights on this level, then highlight the matched feature */
+    this._resetLevelStyle(level);
+    layer.eachLayer(lf => {
+      if (lf.feature && lf.feature.properties && lf.feature.properties._id === childId) {
+        lf.setStyle({
+          color: '#dc2626',
+          weight: 2.5,
+          fillOpacity: 0.06,
+          dashArray: '5 3',
+          lineCap: 'round',
+          opacity: 0.9,
+        });
+        lf.bringToFront();
+        if (lf.getBounds) {
+          this.state.map.fitBounds(lf.getBounds(), {
+            padding: [50, 50],
+            maxZoom: 12,
+          });
+        }
+      }
+    });
+  },
+
+  /* Force Zone A (the white header bar) to match the current global mode.
+     Called at the top of every panel-open method so the header is never stale. */
+  _updatePanelHeader() {
+    const mode = this.state.viewMode;
+    const labelEl = document.getElementById('panel-header-label');
+    if (labelEl) {
+      labelEl.textContent = mode === 'watersheds' ? 'Watershed Monitor' : 'Administrative Boundaries';
+    }
+    const iconEl = document.getElementById('panel-header-icon');
+    if (iconEl) {
+      iconEl.innerHTML = mode === 'watersheds'
+        ? '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>'
+        : '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>';
+    }
+  }
+});
+
+// Legacy shims
+function initDashboard() {}
+function updateDashboard(feature) { if (feature && APP) APP.openPanel(feature, APP.state.currentLevel); }
+function clearDashboard() { APP.closePanel(); }
