@@ -25,12 +25,9 @@ export default function MapPage() {
       <div className="top-right-controls">
         <button 
           className="map-request-btn-top map-icon-btn" 
+          id="map-request-btn-top"
           title="Request Data"
-          onClick={() => {
-            const subject = encodeURIComponent("Data Request: geoMonitor");
-            const body = encodeURIComponent("I would like to request data export for...");
-            window.location.href = `mailto:data-request@denr.gov.ph?subject=${subject}&body=${body}`;
-          }}
+          onClick={() => window.APP?._openRequestFromToolbar()}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
