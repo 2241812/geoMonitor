@@ -140,5 +140,7 @@ Object.assign(APP, {
         attr: 'Tiles &copy; <a href="https://esri.com">Esri</a>',
       },
     },
+
+    dataRequestEmail: 'car@denr.gov.ph',
   }
 });
