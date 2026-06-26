@@ -10,12 +10,6 @@ export default function MapPage() {
 
   return (
     <div className="map-app">
-      {/* 
-        This is a placeholder for the actual MapContainer component.
-        By using the exact classes from map.css ('map-app', 'map-loading', 'top-right-controls'),
-        the UI remains 100% pixel-perfect identical to the vanilla JS version.
-      */}
-      {/* React-Leaflet or Vanilla Map Wrapper */}
       <MapContainer />
 
       <Link className="map-back-btn map-icon-btn" to="/" title="Back to home page">
@@ -96,22 +90,22 @@ export default function MapPage() {
           <button className="map-icon-btn boundary-btn" id="boundary-btn" onClick={() => window.APP?._toggleBoundaryMenu()} title="Toggle boundary overlays">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </button>
-          <div className="boundary-menu" id="boundary-menu">
-            <div className="boundary-menu-header">Boundary Overlays</div>
-            <label className="boundary-item"><input type="checkbox" value="region" onChange={(e) => window.APP?._toggleAdminOverlay('region', e.target.checked)} /> Region Boundary</label>
-            <label className="boundary-item"><input type="checkbox" value="province" onChange={(e) => window.APP?._toggleAdminOverlay('province', e.target.checked)} /> Province Boundary</label>
-            <label className="boundary-item"><input type="checkbox" value="municipality" onChange={(e) => window.APP?._toggleAdminOverlay('municipality', e.target.checked)} /> Municipality Boundary</label>
+          <div className="boundary-options" id="boundary-options">
+            <div className="boundary-options-header">Boundary Overlays</div>
+            <label className="boundary-option"><input type="checkbox" data-type="region" onChange={(e) => window.APP?._toggleBoundaryLayer('region', e.target)} /><span>Region</span></label>
+            <label className="boundary-option"><input type="checkbox" data-type="province" onChange={(e) => window.APP?._toggleBoundaryLayer('province', e.target)} /><span>Province</span></label>
+            <label className="boundary-option"><input type="checkbox" data-type="municipality" onChange={(e) => window.APP?._toggleBoundaryLayer('municipality', e.target)} /><span>Municipality</span></label>
           </div>
         </div>
 
         <div className="watershed-switcher" id="watershed-switcher">
-          <button className="map-icon-btn filter-btn" id="filter-btn" onClick={() => window.APP?._toggleWatershedMenu()} title="Filter Watersheds">
+          <button className="map-icon-btn watershed-btn" id="watershed-btn" onClick={() => window.APP?.toggleWatershedMenu()} title="Filter Watersheds">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
           </button>
-          <div className="watershed-menu" id="watershed-menu">
-            <div className="watershed-menu-header">
+          <div className="watershed-options" id="watershed-options">
+            <div className="watershed-options-header">
               <span>Filter Basins</span>
-              <button className="watershed-clear-btn" id="watershed-clear-btn" onClick={() => window.APP?._clearWatershedFilter()} style={{display: 'none'}}>Clear</button>
+              <button className="watershed-clear-btn" id="watershed-clear-btn" onClick={() => window.APP?._resetWatershedState()} style={{display: 'none'}}>Clear</button>
             </div>
             <div className="watershed-list" id="watershed-list"></div>
           </div>
