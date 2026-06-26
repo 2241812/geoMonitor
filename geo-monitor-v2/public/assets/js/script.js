@@ -1,4 +1,5 @@
-window.initLandingPageScripts = function() {\n(function () {
+window.initLandingPageScripts = function() {
+(function () {
   'use strict';
 
   /* ── Scroll to Top on Refresh ── */
@@ -39,7 +40,12 @@ window.initLandingPageScripts = function() {\n(function () {
     });
   }, { threshold: 0.15 });
 
-  
+  setTimeout(function () {
+    var els = document.querySelectorAll('.fade-in-up, .scale-in');
+    for (var i = 0; i < els.length; i++) {
+      observer.observe(els[i]);
+    }
+  });
 
   /* ── Animated counters ── */
   function animateCounter(el) {
@@ -60,7 +66,17 @@ window.initLandingPageScripts = function() {\n(function () {
     requestAnimationFrame(tick);
   }
 
-  
+  setTimeout(function () {
+    var counterObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var counters = entry.target.querySelectorAll('.stat-number[data-target]');
+          for (var i = 0; i < counters.length; i++) {
+            animateCounter(counters[i]);
+          }
+          counterObserver.unobserve(entry.target);
+        }
+      });
     }, { threshold: 0.3 });
 
     var statsSection = document.querySelector('.stats-inner');
@@ -68,11 +84,73 @@ window.initLandingPageScripts = function() {\n(function () {
   });
 
   /* ── Sticky header shadow on scroll & Parallax ── */
-  
+  setTimeout(function () {
+    var header = document.getElementById('site-header');
+    var heroBg = document.querySelector('.hero-bg');
+    var heroContent = document.querySelector('.hero-content');
+    var ctaBg = document.querySelector('.cta-bg');
+
+    window.addEventListener('scroll', function () {
+      var scrollY = window.scrollY;
+      
+      // Header transparent state (threshold: 50px)
+      if (scrollY > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+
+      // Hero Parallax
+      if (heroBg && heroContent) {
+        var heroProgress = Math.min(scrollY / window.innerHeight, 1);
+        heroBg.style.transform = 'translateY(' + (heroProgress * 40) + '%)';
+        heroContent.style.opacity = Math.max(1 - (heroProgress / 0.7), 0);
+      }
+
+      // CTA Parallax
+      if (ctaBg) {
+        var ctaRect = document.getElementById('dashboard-section').getBoundingClientRect();
+        if (ctaRect.top < window.innerHeight && ctaRect.bottom > 0) {
+          var ctaProgress = 1 - (ctaRect.bottom / (window.innerHeight + ctaRect.height));
+          ctaBg.style.transform = 'translateY(' + (ctaProgress * 25) + '%)';
+        }
+      }
+
+      // 3-state navigation arrows
+      var downArrow = document.getElementById('nav-arrow-down');
+      var upArrow = document.getElementById('nav-arrow-up');
+      var dashboardSection = document.getElementById('dashboard-section');
+      if (downArrow && upArrow && dashboardSection) {
+        var dashRect = dashboardSection.getBoundingClientRect();
+        var isAtBottom = dashRect.top <= window.innerHeight - 100;
+
+        if (isAtBottom) {
+          downArrow.classList.add('nav-arrow-hidden');
+          downArrow.classList.remove('nav-arrow-visible');
+        } else {
+          downArrow.classList.add('nav-arrow-visible');
+          downArrow.classList.remove('nav-arrow-hidden');
+        }
+
+        if (scrollY > 50 || isAtBottom) {
+          upArrow.classList.add('nav-arrow-visible');
+          upArrow.classList.remove('nav-arrow-hidden');
+        } else {
+          upArrow.classList.add('nav-arrow-hidden');
+          upArrow.classList.remove('nav-arrow-visible');
+        }
+      }
+    }, { passive: true });
   });
 
   /* ── Navigation arrows click handlers ── */
-  
+  setTimeout(function () {
+    var downArrow = document.getElementById('nav-arrow-down');
+    var upArrow = document.getElementById('nav-arrow-up');
+
+    if (downArrow) {
+      downArrow.addEventListener('click', function () {
+        document.getElementById('dashboard-section').scrollIntoView({ behavior: 'smooth' });
       });
     }
 
@@ -84,7 +162,27 @@ window.initLandingPageScripts = function() {\n(function () {
   });
 
   /* ── River basins expand/collapse ── */
-  
+  setTimeout(function () {
+    var toggleBtn = document.getElementById('basins-toggle');
+    var toggleText = document.getElementById('basins-toggle-text');
+    var toggleIcon = document.getElementById('basins-toggle-icon');
+    var extraGrid = document.getElementById('basins-extra-grid');
+    var isExpanded = false;
+
+    if (!toggleBtn || !extraGrid || !toggleText || !toggleIcon) return;
+
+    toggleBtn.addEventListener('click', function () {
+      isExpanded = !isExpanded;
+
+      if (isExpanded) {
+        extraGrid.classList.remove('hidden');
+        toggleText.textContent = 'Show Less';
+        toggleIcon.classList.add('rotated');
+      } else {
+        extraGrid.classList.add('hidden');
+        toggleText.textContent = 'View All 13 River Basins';
+        toggleIcon.classList.remove('rotated');
+        document.getElementById('basins').scrollIntoView({ behavior: 'smooth' });
       }
     });
   });
@@ -92,7 +190,35 @@ window.initLandingPageScripts = function() {\n(function () {
 })();
 
   /* ── Basin Card Lightbox ── */
-  
+  setTimeout(function () {
+    var basinCards = document.querySelectorAll('.basin-card');
+    var lightbox = document.getElementById('basin-lightbox');
+    if (!lightbox) return;
+
+    var lightboxImg = document.getElementById('basin-lightbox-img');
+    var lightboxIndex = document.getElementById('basin-lightbox-index');
+    var lightboxName = document.getElementById('basin-lightbox-name');
+    var lightboxDesc = document.getElementById('basin-lightbox-desc');
+    var lightboxClose = document.getElementById('basin-lightbox-close');
+    var lightboxBg = document.querySelector('.basin-lightbox-bg');
+
+    basinCards.forEach(function(card) {
+      card.addEventListener('click', function() {
+        var img = this.querySelector('.basin-card-image');
+        var index = this.querySelector('.basin-card-index');
+        var name = this.querySelector('.basin-card-name');
+        var desc = this.querySelector('.basin-card-desc');
+
+        if (img) lightboxImg.src = img.src;
+        if (img) lightboxImg.alt = img.alt;
+        if (index) lightboxIndex.textContent = index.textContent;
+        if (name) lightboxName.textContent = name.textContent;
+        if (desc) lightboxDesc.textContent = desc.textContent;
+
+        lightbox.classList.add('active');
+        // Disable body scroll when lightbox is open
+        document.body.style.overflow = 'hidden';
+      });
     });
 
     function closeLightbox() {
@@ -119,4 +245,5 @@ window.initLandingPageScripts = function() {\n(function () {
       if (e.key === 'Escape') closeLightbox();
     });
   });
-\n};
+
+};
