@@ -1,0 +1,5643 @@
+{
+  "ABR:22": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:danglas",
+      "abra:lagayan",
+      "abra:san-juan",
+      "abra:tineg"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:danglas",
+      "abra:lagayan",
+      "abra:san-juan",
+      "abra:tineg"
+    ]
+  },
+  "ABR:21": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:bangued",
+      "abra:danglas",
+      "abra:lagayan"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:bangued",
+      "abra:danglas"
+    ]
+  },
+  "ABR:20": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:bangued",
+      "abra:danglas"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:bangued",
+      "abra:danglas"
+    ]
+  },
+  "ABR:32": {
+    "namria_provinces": [
+      "abra",
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:lacub",
+      "abra:malibcong",
+      "abra:tineg",
+      "apayao:conner",
+      "apayao:kabugao",
+      "kalinga:balbalan"
+    ],
+    "cad_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "abra:lacub",
+      "abra:tineg",
+      "apayao:conner",
+      "apayao:kabugao"
+    ]
+  },
+  "ABR:19": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:danglas",
+      "abra:la-paz",
+      "abra:lagayan"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:bangued",
+      "abra:danglas",
+      "abra:dolores",
+      "abra:la-paz",
+      "abra:lagayan"
+    ]
+  },
+  "ABR:24": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:danglas",
+      "abra:dolores",
+      "abra:la-paz",
+      "abra:lagayan",
+      "abra:san-juan"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:danglas",
+      "abra:dolores",
+      "abra:la-paz",
+      "abra:lagangilang",
+      "abra:lagayan",
+      "abra:san-juan",
+      "abra:tineg"
+    ]
+  },
+  "ABR:25": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:baay-licuan",
+      "abra:lacub",
+      "abra:lagayan",
+      "abra:san-juan",
+      "abra:tineg"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan",
+      "abra:lacub",
+      "abra:tineg"
+    ]
+  },
+  "ABR:26": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:bangued",
+      "abra:danglas",
+      "abra:dolores",
+      "abra:la-paz",
+      "abra:lagangilang",
+      "abra:san-juan",
+      "abra:tayum"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:bangued",
+      "abra:danglas",
+      "abra:dolores",
+      "abra:la-paz",
+      "abra:lagangilang",
+      "abra:san-juan",
+      "abra:tayum"
+    ]
+  },
+  "ABR:18": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:dolores",
+      "abra:lagangilang",
+      "abra:san-juan",
+      "abra:tayum"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan",
+      "abra:dolores",
+      "abra:lagangilang"
+    ]
+  },
+  "ABR:16": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:baay-licuan",
+      "abra:bucay",
+      "abra:manabo",
+      "abra:penarrubia",
+      "abra:sallapadan",
+      "abra:san-isidro",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan",
+      "abra:bucay",
+      "abra:pearrubia",
+      "abra:sallapadan",
+      "abra:san-isidro",
+      "abra:villaviciosa"
+    ]
+  },
+  "ABR:17": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:bucay",
+      "abra:lagangilang",
+      "abra:penarrubia",
+      "abra:sallapadan",
+      "abra:tayum"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan",
+      "abra:bangued",
+      "abra:bucay",
+      "abra:bucay-vs-lagangilang",
+      "abra:lagangilang",
+      "abra:pearrubia",
+      "abra:sallapadan",
+      "abra:tayum"
+    ]
+  },
+  "ABR:27": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:bangued",
+      "abra:danglas",
+      "abra:lagiden",
+      "abra:pidigan",
+      "abra:san-quintin"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:bangued",
+      "abra:danglas",
+      "abra:langiden",
+      "abra:pidigan",
+      "abra:san-quintin"
+    ]
+  },
+  "ABR:33": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:lagiden",
+      "abra:san-quintin"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:san-quintin"
+    ]
+  },
+  "ABR:23": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:baay-licuan",
+      "abra:daguioman",
+      "abra:dolores",
+      "abra:lacub",
+      "abra:lagangilang",
+      "abra:malibcong",
+      "abra:san-juan",
+      "abra:tineg"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan",
+      "abra:baay-licuan-vs-lacub-vs-lagangilang",
+      "abra:baay-licuan-vs-lacub-vs-malibcong",
+      "abra:daguioman",
+      "abra:dolores",
+      "abra:lacub",
+      "abra:lagangilang",
+      "abra:lagayan",
+      "abra:malibcong",
+      "abra:san-juan",
+      "abra:tineg"
+    ]
+  },
+  "ABR:29": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:lagiden",
+      "abra:pidigan",
+      "abra:san-quintin"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:langiden",
+      "abra:pidigan",
+      "abra:san-quintin"
+    ]
+  },
+  "ABR:37": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:baay-licuan",
+      "abra:bucay",
+      "abra:daguioman",
+      "abra:lagangilang",
+      "abra:sallapadan"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan",
+      "abra:bucay",
+      "abra:bucay-vs-lagangilang",
+      "abra:daguioman",
+      "abra:lagangilang",
+      "abra:malibcong",
+      "abra:malibcong-vs-daguioman",
+      "abra:sallapadan"
+    ]
+  },
+  "ABR:34": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:baay-licuan",
+      "abra:daguioman",
+      "abra:lacub",
+      "abra:malibcong",
+      "abra:tineg",
+      "kalinga:balbalan"
+    ],
+    "cad_provinces": [
+      "abra",
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan-vs-lacub-vs-malibcong",
+      "abra:daguioman",
+      "abra:lacub",
+      "abra:malibcong",
+      "abra:tineg",
+      "apayao:conner",
+      "kalinga:balbalan"
+    ]
+  },
+  "ABR:36": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:baay-licuan",
+      "abra:bucloc",
+      "abra:daguioman",
+      "abra:manabo",
+      "abra:sallapadan"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:baay-licuan",
+      "abra:bucloc",
+      "abra:daguioman",
+      "abra:manabo",
+      "abra:sallapadan"
+    ]
+  },
+  "ABR:15": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:bucay",
+      "abra:manabo",
+      "abra:sallapadan",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:bucay",
+      "abra:manabo",
+      "abra:sallapadan",
+      "abra:villaviciosa"
+    ]
+  },
+  "ABR:28": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:bangued",
+      "abra:bucay",
+      "abra:la-paz",
+      "abra:lagiden",
+      "abra:manabo",
+      "abra:penarrubia",
+      "abra:pidigan",
+      "abra:pilar",
+      "abra:san-isidro",
+      "abra:tayum",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:bangued",
+      "abra:bucay",
+      "abra:la-paz",
+      "abra:langiden",
+      "abra:pearrubia",
+      "abra:pidigan",
+      "abra:pilar",
+      "abra:san-isidro",
+      "abra:tayum",
+      "abra:villaviciosa"
+    ]
+  },
+  "ABR:35": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:baay-licuan",
+      "abra:boliney",
+      "abra:bucloc",
+      "abra:daguioman",
+      "abra:luba",
+      "abra:manabo",
+      "abra:sallapadan",
+      "kalinga:balbalan"
+    ],
+    "cad_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "abra:bucloc",
+      "abra:daguioman",
+      "abra:luba",
+      "abra:manabo",
+      "abra:manabo-vs-sallapadan",
+      "abra:sallapadan",
+      "abra:tubo",
+      "kalinga:balbalan"
+    ]
+  },
+  "ABR:14": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:boliney",
+      "abra:luba",
+      "abra:manabo",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:luba",
+      "abra:manabo",
+      "abra:tubo",
+      "abra:villaviciosa"
+    ]
+  },
+  "ABR:38": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:boliney",
+      "abra:bucloc",
+      "abra:daguioman",
+      "abra:tubo",
+      "kalinga:lubuagan",
+      "kalinga:pasil"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "abra:bucloc",
+      "abra:daguioman",
+      "abra:tubo",
+      "mountain-province:sadanga"
+    ]
+  },
+  "ABR:10": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:tubo"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "abra:luba",
+      "abra:tubo"
+    ]
+  },
+  "ABR:13": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:boliney",
+      "abra:luba",
+      "abra:tubo"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "abra:luba",
+      "abra:tubo",
+      "mountain-province:sadanga"
+    ]
+  },
+  "ABR:12": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:luba",
+      "abra:tubo",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:luba",
+      "abra:tubo",
+      "abra:villaviciosa"
+    ]
+  },
+  "ABR:11": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:luba",
+      "abra:tubo"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:luba",
+      "abra:tubo",
+      "abra:villaviciosa"
+    ]
+  },
+  "ABR:9": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:tubo"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:tubo"
+    ]
+  },
+  "ABR:39": {
+    "namria_provinces": [
+      "abra",
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "abra:tubo",
+      "kalinga:lubuagan",
+      "mountain-province:besao",
+      "mountain-province:sadanga",
+      "mountain-province:sagada"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "abra:tubo",
+      "mountain-province:besao",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga",
+      "mountain-province:sagada"
+    ]
+  },
+  "ABR:40": {
+    "namria_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "abra:tubo",
+      "mountain-province:besao"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:tubo",
+      "mountain-province:besao"
+    ]
+  },
+  "ABR:8": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:tubo"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:tubo",
+      "mountain-province:besao"
+    ]
+  },
+  "ABR:6": {
+    "namria_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "abra:tubo",
+      "mountain-province:besao",
+      "mountain-province:sagada",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:tubo",
+      "mountain-province:bauko",
+      "mountain-province:besao",
+      "mountain-province:bontoc",
+      "mountain-province:sagada",
+      "mountain-province:tadian"
+    ]
+  },
+  "ABR:7": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ABR:5": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:tadian"
+    ]
+  },
+  "ABR:4": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:besao",
+      "mountain-province:sagada",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:besao",
+      "mountain-province:sagada",
+      "mountain-province:tadian"
+    ]
+  },
+  "ABR:3": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:tadian"
+    ]
+  },
+  "ABR:2": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:mankayan",
+      "mountain-province:bauko",
+      "mountain-province:tadian"
+    ]
+  },
+  "ABR:30": {
+    "namria_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "benguet:mankayan",
+      "mountain-province:bauko",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:mankayan",
+      "mountain-province:bauko",
+      "mountain-province:tadian"
+    ]
+  },
+  "ABR:1": {
+    "namria_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun",
+      "benguet:mankayan",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun",
+      "benguet:mankayan",
+      "mountain-province:tadian"
+    ]
+  },
+  "ABR:31": {
+    "namria_provinces": [
+      "benguet",
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun",
+      "benguet:buguias",
+      "benguet:mankayan",
+      "ifugao:tinoc",
+      "mountain-province:bauko",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun",
+      "benguet:buguias",
+      "benguet:mankayan",
+      "mountain-province:bauko"
+    ]
+  },
+  "ABU:21": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan"
+    ]
+  },
+  "ABU:2": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna",
+      "apayao:santa-marcela"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:luna",
+      "apayao:sta-marcela"
+    ]
+  },
+  "ABU:1": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:flora",
+      "apayao:santa-marcela"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:sta-marcela"
+    ]
+  },
+  "ABU:17": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan"
+    ]
+  },
+  "ABU:18": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan"
+    ]
+  },
+  "ABU:20": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan"
+    ]
+  },
+  "ABU:19": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan"
+    ]
+  },
+  "ABU:15": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:16": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:3": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:flora",
+      "apayao:santa-marcela"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:flora",
+      "apayao:sta-marcela"
+    ]
+  },
+  "ABU:4": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:flora",
+      "apayao:luna",
+      "apayao:pudtol",
+      "apayao:santa-marcela"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:flora",
+      "apayao:luna",
+      "apayao:pudtol",
+      "apayao:sta-marcela"
+    ]
+  },
+  "ABU:14": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:5": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao",
+      "apayao:pudtol"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao",
+      "apayao:pudtol"
+    ]
+  },
+  "ABU:6": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:flora"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:flora"
+    ]
+  },
+  "ABU:12": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:7": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:flora",
+      "apayao:kabugao",
+      "apayao:pudtol"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:flora",
+      "apayao:kabugao",
+      "apayao:pudtol"
+    ]
+  },
+  "ABU:9": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:22": {
+    "namria_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "abra:tineg",
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "abra:tineg",
+      "apayao:calanasan",
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:8": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "apayao:flora",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "apayao:flora",
+      "apayao:kabugao",
+      "apayao:pudtol"
+    ]
+  },
+  "ABU:10": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:11": {
+    "namria_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "abra:tineg",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "abra:lacub",
+      "abra:tineg",
+      "apayao:calanasan",
+      "apayao:conner",
+      "apayao:kabugao"
+    ]
+  },
+  "ABU:13": {
+    "namria_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "abra:tineg",
+      "apayao:conner",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "abra:lacub",
+      "apayao:conner",
+      "apayao:kabugao"
+    ]
+  },
+  "AGN:1": {
+    "namria_provinces": [
+      "benguet",
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "benguet:buguias",
+      "benguet:mankayan",
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:buguias",
+      "benguet:mankayan",
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ]
+  },
+  "AGN:2": {
+    "namria_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:buguias",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun",
+      "benguet:buguias",
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ]
+  },
+  "AGN:3": {
+    "namria_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:buguias",
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:buguias",
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ]
+  },
+  "AGN:4": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:buguias",
+      "benguet:kabayan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:bakun",
+      "benguet:buguias",
+      "benguet:kabayan",
+      "benguet:kibungan"
+    ]
+  },
+  "AGN:5": {
+    "namria_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ]
+  },
+  "AGN:6": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kabayan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:10": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:kabayan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:12": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:8": {
+    "namria_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ]
+  },
+  "AGN:13": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:bokod"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:7": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kabayan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:11": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:9": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:14": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod"
+    ]
+  },
+  "AGN:16": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:tublay"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:tublay"
+    ]
+  },
+  "AGN:15": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AGN:18": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon",
+      "benguet:la-trinidad",
+      "benguet:tublay"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon",
+      "benguet:la-trinidad",
+      "benguet:tublay"
+    ]
+  },
+  "AGN:19": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon"
+    ]
+  },
+  "AGN:23": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon"
+    ]
+  },
+  "AGN:22": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:itogon",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:itogon",
+      "benguet:tuba"
+    ]
+  },
+  "AGN:21": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:itogon",
+      "benguet:la-trinidad"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:itogon",
+      "benguet:la-trinidad"
+    ]
+  },
+  "AGN:17": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon"
+    ]
+  },
+  "AGN:20": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon"
+    ]
+  },
+  "AGN:24": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "benguet:itogon"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon"
+    ]
+  },
+  "AGN:25": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:itogon",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon",
+      "benguet:tuba"
+    ]
+  },
+  "AGN:26": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:itogon"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon"
+    ]
+  },
+  "AGN:27": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:itogon",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon",
+      "benguet:tuba"
+    ]
+  },
+  "AGN:28": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:itogon"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon"
+    ]
+  },
+  "AGN:29": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "AMB:2": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "AMB:6": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "AMB:5": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "AMB:1": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun"
+    ]
+  },
+  "AMB:4": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "AMB:7": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun"
+    ]
+  },
+  "AMB:10": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun"
+    ]
+  },
+  "AMB:8": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun"
+    ]
+  },
+  "AMB:3": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun"
+    ]
+  },
+  "AMB:16": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun",
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:11": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:9": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "AMB:12": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun",
+      "benguet:buguias",
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bakun",
+      "benguet:buguias",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:15": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:14": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bakun",
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:21": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:17": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:13": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:20": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:kapangan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:18": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan"
+    ]
+  },
+  "AMB:22": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:bokod"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:kabayan"
+    ]
+  },
+  "AMB:19": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:kapangan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:kapangan"
+    ]
+  },
+  "AMB:23": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:buguias",
+      "benguet:kabayan",
+      "benguet:kapangan",
+      "benguet:kibungan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:buguias",
+      "benguet:kabayan",
+      "benguet:kibungan"
+    ]
+  },
+  "AMB:24": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan",
+      "benguet:tublay"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:kapangan",
+      "benguet:tublay"
+    ]
+  },
+  "AMB:25": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:kapangan",
+      "benguet:tublay"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:atok",
+      "benguet:bokod",
+      "benguet:tublay"
+    ]
+  },
+  "ARI:12": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:sablan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:sablan"
+    ]
+  },
+  "ARI:5": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "ARI:11": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ARI:10": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ARI:7": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:la-trinidad",
+      "benguet:sablan",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:la-trinidad",
+      "benguet:sablan",
+      "benguet:tuba"
+    ]
+  },
+  "ARI:6": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:sablan",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:la-trinidad",
+      "benguet:sablan",
+      "benguet:tuba"
+    ]
+  },
+  "ARI:9": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ARI:4": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:sablan",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:sablan",
+      "benguet:tuba"
+    ]
+  },
+  "ARI:19": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ARI:8": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:tuba"
+    ]
+  },
+  "ARI:1": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ARI:16": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "ARI:2": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "ARI:15": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "ARI:18": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "ARI:13": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ARI:3": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "ARI:14": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "ARI:17": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:2": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:tuba"
+    ]
+  },
+  "BUD:1": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:tuba"
+    ]
+  },
+  "BUD:3": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:4": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:itogon",
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:itogon",
+      "benguet:tuba"
+    ]
+  },
+  "BUD:9": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:5": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon",
+      "benguet:tuba"
+    ]
+  },
+  "BUD:7": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:6": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:itogon",
+      "benguet:tuba"
+    ]
+  },
+  "BUD:11": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:8": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:12": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:10": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:13": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:14": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:15": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:16": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:18": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "BUD:20": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "BUD:19": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "BUD:17": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:tuba"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:tuba"
+    ]
+  },
+  "MLG:56": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city"
+    ]
+  },
+  "MLG:57": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk",
+      "kalinga:tanudan"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "kalinga:tanudan"
+    ]
+  },
+  "MLG:245": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city"
+    ]
+  },
+  "MLG:244": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk",
+      "kalinga:tanudan",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "kalinga:tanudan",
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:68": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "MLG:69": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:67": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:66": {
+    "namria_provinces": [],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "MLG:243": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city"
+    ]
+  },
+  "MLG:64": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "MLG:70": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk",
+      "kalinga:tanudan",
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "kalinga:tanudan",
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:65": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:71": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:73": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:63": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "MLG:75": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "MLG:72": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "MLG:76": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "MLG:237": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:tanudan",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tanudan",
+      "mountain-province:natonin"
+    ]
+  },
+  "MLG:58": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tanudan"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "kalinga:tanudan"
+    ]
+  },
+  "MLG:62": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "NAG:223": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "NAG:222": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan"
+    ]
+  },
+  "NAG:149": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan"
+    ]
+  },
+  "NAG:141": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan",
+      "benguet:sablan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan",
+      "benguet:sablan",
+      "benguet:tublay"
+    ]
+  },
+  "NAG:146": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan",
+      "benguet:tublay"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan",
+      "benguet:tublay"
+    ]
+  },
+  "NAG:139": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "NAG:140": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:sablan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:sablan"
+    ]
+  },
+  "NAG:144": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:kapangan",
+      "benguet:la-trinidad",
+      "benguet:sablan",
+      "benguet:tublay"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:kapangan",
+      "benguet:la-trinidad",
+      "benguet:tublay"
+    ]
+  },
+  "NAG:142": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:sablan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:la-trinidad",
+      "benguet:sablan",
+      "benguet:tuba",
+      "benguet:tublay"
+    ]
+  },
+  "NAG:125": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:la-trinidad",
+      "benguet:tublay"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:la-trinidad",
+      "benguet:tublay"
+    ]
+  },
+  "NAG:143": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:la-trinidad",
+      "benguet:sablan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:la-trinidad",
+      "benguet:sablan",
+      "benguet:tublay"
+    ]
+  },
+  "NAG:126": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:la-trinidad"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:la-trinidad"
+    ]
+  },
+  "NAG:136": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio",
+      "benguet:la-trinidad",
+      "benguet:sablan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city",
+      "benguet:la-trinidad",
+      "benguet:sablan",
+      "benguet:tuba"
+    ]
+  },
+  "NAG:138": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:sablan"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:sablan"
+    ]
+  },
+  "NAG:134": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:baguio"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:baguio-city"
+    ]
+  },
+  "SIF:69": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:67": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:237": {
+    "namria_provinces": [
+      "ifugao",
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:banaue",
+      "ifugao:mayoyao",
+      "kalinga:tanudan",
+      "mountain-province:barlig",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao",
+      "kalinga:tanudan",
+      "mountain-province:barlig",
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:70": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:65": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:71": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:73": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:63": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "SIF:75": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "SIF:72": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista",
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "ifugao-vs-mt-province",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
+      "ifugao:aguinaldo",
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:74": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista",
+      "mountain-province:paracelis"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista",
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:76": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "SIF:77": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "SIF:93": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao",
+      "mountain-province:barlig"
+    ]
+  },
+  "SIF:236": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "ifugao-vs-mt-province",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
+      "ifugao:aguinaldo",
+      "mountain-province:barlig",
+      "mountain-province:natonin",
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:58": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:tanudan",
+      "mountain-province:barlig",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tanudan",
+      "mountain-province:barlig",
+      "mountain-province:natonin"
+    ]
+  },
+  "SIF:81": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista",
+      "mountain-province:paracelis"
+    ]
+  },
+  "SIF:84": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "SIF:85": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "SIF:62": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "SIF:82": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo"
+    ]
+  },
+  "SIF:87": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "SMR:214": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:pilar",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:pilar",
+      "abra:villaviciosa"
+    ]
+  },
+  "SMR:220": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:pilar",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:pilar",
+      "abra:villaviciosa"
+    ]
+  },
+  "SMR:189": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:villaviciosa"
+    ]
+  },
+  "SMR:218": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "SMR:221": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:luba",
+      "abra:pilar",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:pilar",
+      "abra:villaviciosa"
+    ]
+  },
+  "SMR:219": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:pilar"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:pilar"
+    ]
+  },
+  "SMR:174": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:luba",
+      "abra:villaviciosa"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:villaviciosa"
+    ]
+  },
+  "SMR:173": {
+    "namria_provinces": [
+      "abra"
+    ],
+    "namria_municipalities": [
+      "abra:luba"
+    ],
+    "cad_provinces": [
+      "abra"
+    ],
+    "cad_municipalities": [
+      "abra:villaviciosa"
+    ]
+  },
+  "UCH:21": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "apayao:kabugao"
+    ]
+  },
+  "UCH:233": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UCH:232": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "apayao:flora",
+      "apayao:kabugao"
+    ]
+  },
+  "UCH:39": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "apayao:kabugao"
+    ]
+  },
+  "UCH:41": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:conner"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner"
+    ]
+  },
+  "UCH:44": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UCH:40": {
+    "namria_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "abra:lacub",
+      "abra:tineg",
+      "apayao:conner",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "apayao:kabugao"
+    ]
+  },
+  "UCH:205": {
+    "namria_provinces": [
+      "abra",
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "abra:tineg",
+      "apayao:conner"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner"
+    ]
+  },
+  "UCH:45": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "apayao:kabugao"
+    ],
+    "cad_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "apayao:flora",
+      "apayao:kabugao",
+      "kalinga:pinukpuk"
+    ]
+  },
+  "UCH:46": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:conner"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner"
+    ]
+  },
+  "UCH:43": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UCH:53": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:conner"
+    ],
+    "cad_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "kalinga:pinukpuk"
+    ]
+  },
+  "UCH:206": {
+    "namria_provinces": [
+      "abra",
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:lacub",
+      "abra:malibcong",
+      "abra:tineg",
+      "apayao:conner",
+      "kalinga:balbalan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner"
+    ]
+  },
+  "UCH:42": {
+    "namria_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "kalinga:pinukpuk"
+    ],
+    "cad_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "kalinga:pinukpuk"
+    ]
+  },
+  "UCH:54": {
+    "namria_provinces": [
+      "abra",
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:lacub",
+      "apayao:conner",
+      "kalinga:balbalan"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:conner"
+    ]
+  },
+  "UCH:241": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UCH:47": {
+    "namria_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "kalinga:pinukpuk"
+    ],
+    "cad_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "kalinga:pinukpuk"
+    ]
+  },
+  "UCH:240": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:rizal"
+    ]
+  },
+  "UCH:199": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:malibcong"
+    ],
+    "cad_provinces": [
+      "abra",
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "abra:malibcong",
+      "apayao:conner",
+      "kalinga:balbalan"
+    ]
+  },
+  "UCH:52": {
+    "namria_provinces": [
+      "abra",
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:lacub",
+      "abra:malibcong",
+      "apayao:conner",
+      "kalinga:balbalan",
+      "kalinga:pinukpuk"
+    ],
+    "cad_provinces": [
+      "abra",
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "abra:malibcong",
+      "apayao:conner",
+      "kalinga:balbalan",
+      "kalinga:pinukpuk"
+    ]
+  },
+  "UCH:51": {
+    "namria_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "kalinga:balbalan",
+      "kalinga:pinukpuk"
+    ],
+    "cad_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "kalinga:balbalan",
+      "kalinga:pinukpuk"
+    ]
+  },
+  "UCH:200": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:daguioman",
+      "abra:malibcong",
+      "kalinga:balbalan"
+    ],
+    "cad_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "abra:daguioman",
+      "abra:malibcong",
+      "kalinga:balbalan"
+    ]
+  },
+  "UCH:48": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:rizal-liwan",
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:rizal",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:239": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:rizal-liwan",
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:rizal",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:61": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:balbalan",
+      "kalinga:pinukpuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:balbalan",
+      "kalinga:pasil",
+      "kalinga:pinukpuk"
+    ]
+  },
+  "UCH:238": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:rizal",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:58": {
+    "namria_provinces": [
+      "ifugao",
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "kalinga:balbalan",
+      "kalinga:lubuagan",
+      "kalinga:pasil",
+      "kalinga:tabuk",
+      "kalinga:tanudan",
+      "kalinga:tinglayan",
+      "mountain-province:barlig",
+      "mountain-province:bontoc",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "kalinga:balbalan",
+      "kalinga:lubuagan",
+      "kalinga:pasil",
+      "kalinga:tabuk-city",
+      "kalinga:tanudan",
+      "kalinga:tinglayan",
+      "mountain-province:barlig",
+      "mountain-province:bontoc",
+      "mountain-province:natonin",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:50": {
+    "namria_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "apayao:conner",
+      "kalinga:balbalan",
+      "kalinga:pinukpuk",
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "apayao",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "apayao:conner",
+      "kalinga:balbalan",
+      "kalinga:pinukpuk",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:55": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:49": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:56": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:rizal-liwan",
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:pinukpuk",
+      "kalinga:rizal",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:245": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:190": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:daguioman",
+      "abra:malibcong",
+      "kalinga:balbalan",
+      "kalinga:pasil"
+    ],
+    "cad_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "abra:daguioman",
+      "abra:malibcong",
+      "kalinga:balbalan",
+      "kalinga:pasil"
+    ]
+  },
+  "UCH:187": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:daguioman",
+      "kalinga:balbalan"
+    ],
+    "cad_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "abra:daguioman",
+      "kalinga:balbalan"
+    ]
+  },
+  "UCH:57": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk",
+      "kalinga:tanudan"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "kalinga:tanudan"
+    ]
+  },
+  "UCH:186": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:boliney",
+      "kalinga:pasil"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:185": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:tubo"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:175": {
+    "namria_provinces": [
+      "abra",
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "abra:tubo"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:tubo",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:244": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk",
+      "kalinga:tanudan"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city",
+      "kalinga:tanudan"
+    ]
+  },
+  "UCH:59": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:balbalan",
+      "kalinga:lubuagan",
+      "kalinga:pasil",
+      "kalinga:tabuk",
+      "kalinga:tanudan",
+      "kalinga:tinglayan"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:balbalan",
+      "kalinga:lubuagan",
+      "kalinga:pasil",
+      "kalinga:tabuk-city",
+      "kalinga:tanudan",
+      "kalinga:tinglayan"
+    ]
+  },
+  "UCH:69": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:60": {
+    "namria_provinces": [
+      "abra",
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "abra:boliney",
+      "abra:tubo",
+      "kalinga:balbalan",
+      "kalinga:lubuagan",
+      "kalinga:pasil",
+      "mountain-province:sadanga"
+    ],
+    "cad_provinces": [
+      "abra",
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:boliney",
+      "abra:tubo",
+      "kalinga:balbalan",
+      "kalinga:lubuagan",
+      "kalinga:pasil",
+      "kalinga:tinglayan",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:172": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "abra:tubo",
+      "kalinga:lubuagan",
+      "mountain-province:sadanga",
+      "mountain-province:sagada"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:tubo",
+      "mountain-province:besao",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga",
+      "mountain-province:sagada"
+    ]
+  },
+  "UCH:243": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tabuk"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:rizal",
+      "kalinga:tabuk-city"
+    ]
+  },
+  "UCH:176": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:lubuagan",
+      "kalinga:tanudan",
+      "kalinga:tinglayan",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:pasil",
+      "kalinga:tinglayan",
+      "mountain-province:barlig",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:70": {
+    "namria_provinces": [
+      "kalinga"
+    ],
+    "namria_municipalities": [
+      "kalinga:tanudan"
+    ],
+    "cad_provinces": [
+      "kalinga"
+    ],
+    "cad_municipalities": [
+      "kalinga:tanudan"
+    ]
+  },
+  "UCH:177": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:lubuagan",
+      "kalinga:tinglayan",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tinglayan",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:181": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "abra:tubo",
+      "kalinga:lubuagan",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga",
+      "mountain-province:sagada"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:tubo",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga",
+      "mountain-province:sagada"
+    ]
+  },
+  "UCH:167": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:besao",
+      "mountain-province:sagada"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:besao",
+      "mountain-province:sagada"
+    ]
+  },
+  "UCH:178": {
+    "namria_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "kalinga:tanudan",
+      "kalinga:tinglayan",
+      "mountain-province:barlig",
+      "mountain-province:bontoc",
+      "mountain-province:natonin",
+      "mountain-province:sadanga"
+    ],
+    "cad_provinces": [
+      "kalinga",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "kalinga:tinglayan",
+      "mountain-province:barlig",
+      "mountain-province:bontoc",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:182": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "abra:tubo",
+      "mountain-province:besao",
+      "mountain-province:bontoc",
+      "mountain-province:sagada"
+    ],
+    "cad_provinces": [
+      "abra",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "abra:tubo",
+      "mountain-province:besao",
+      "mountain-province:bontoc",
+      "mountain-province:sagada"
+    ]
+  },
+  "UCH:237": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:barlig",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:barlig",
+      "mountain-province:natonin"
+    ]
+  },
+  "UCH:184": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:besao",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan",
+      "mountain-province:sagada"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:bauko-vs-sabangan-vs-sagada",
+      "mountain-province:besao",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan",
+      "mountain-province:sagada"
+    ]
+  },
+  "UCH:163": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:besao",
+      "mountain-province:sagada",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:sagada",
+      "mountain-province:tadian"
+    ]
+  },
+  "UCH:180": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:hungduan",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan"
+    ]
+  },
+  "UCH:94": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "mountain-province:barlig"
+    ],
+    "cad_provinces": [
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "mountain-province:barlig"
+    ]
+  },
+  "UCH:161": {
+    "namria_provinces": [
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:bauko",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:mankayan",
+      "mountain-province:bauko",
+      "mountain-province:tadian"
+    ]
+  },
+  "UCH:183": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bauko",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan",
+      "mountain-province:tadian"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:buguias",
+      "benguet:mankayan",
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bauko",
+      "mountain-province:bauko-vs-sabangan-vs-sagada",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan",
+      "mountain-province:sagada",
+      "mountain-province:tadian"
+    ]
+  },
+  "UCH:179": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bauko",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "mountain-province:barlig",
+      "mountain-province:bauko",
+      "mountain-province:bontoc",
+      "mountain-province:sabangan",
+      "mountain-province:sadanga"
+    ]
+  },
+  "UCH:101": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "mountain-province:bontoc"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "mountain-province:barlig",
+      "mountain-province:bontoc"
+    ]
+  },
+  "UCH:118": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:buguias",
+      "benguet:mankayan",
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ]
+  },
+  "UCH:156": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "mountain-province:bauko"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:mankayan",
+      "mountain-province:bauko"
+    ]
+  },
+  "UCH:117": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ]
+  },
+  "UMT:72": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "ifugao-vs-mt-province",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
+      "ifugao:aguinaldo",
+      "mountain-province:paracelis"
+    ]
+  },
+  "UMT:74": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista",
+      "mountain-province:paracelis"
+    ]
+  },
+  "UMT:76": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UMT:77": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:237": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:mayoyao",
+      "mountain-province:barlig",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao",
+      "mountain-province:barlig"
+    ]
+  },
+  "UMT:236": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "ifugao-vs-mt-province",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
+      "ifugao:aguinaldo",
+      "mountain-province:barlig"
+    ]
+  },
+  "UMT:58": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "mountain-province:barlig",
+      "mountain-province:bontoc"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "mountain-province:barlig"
+    ]
+  },
+  "UMT:83": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:81": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "ifugao-vs-mt-province",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista",
+      "mountain-province:paracelis"
+    ]
+  },
+  "UMT:84": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:85": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UMT:92": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao"
+    ]
+  },
+  "UMT:93": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao",
+      "mountain-province:barlig",
+      "mountain-province:natonin"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao",
+      "mountain-province:barlig"
+    ]
+  },
+  "UMT:86": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UMT:80": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:94": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:mayoyao",
+      "mountain-province:barlig"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:mayoyao",
+      "mountain-province:barlig"
+    ]
+  },
+  "UMT:78": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:82": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:95": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hingyon"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hingyon",
+      "ifugao:mayoyao"
+    ]
+  },
+  "UMT:79": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:96": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:banaue",
+      "ifugao:hingyon",
+      "ifugao:lagawe",
+      "ifugao:mayoyao"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:banaue",
+      "ifugao:mayoyao"
+    ]
+  },
+  "UMT:183": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ]
+  },
+  "UMT:179": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bauko",
+      "mountain-province:bontoc"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "mountain-province:barlig",
+      "mountain-province:bauko",
+      "mountain-province:bontoc"
+    ]
+  },
+  "UMT:101": {
+    "namria_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "namria_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bontoc"
+    ],
+    "cad_provinces": [
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hungduan",
+      "mountain-province:barlig",
+      "mountain-province:bauko",
+      "mountain-province:bontoc"
+    ]
+  },
+  "UMT:89": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UMT:88": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:alfonso-lista"
+    ]
+  },
+  "UMT:91": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:lagawe"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:mayoyao"
+    ]
+  },
+  "UMT:97": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:lagawe",
+      "ifugao:mayoyao"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:banaue",
+      "ifugao:lagawe",
+      "ifugao:mayoyao"
+    ]
+  },
+  "UMT:100": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:banaue",
+      "ifugao:hingyon",
+      "ifugao:hungduan",
+      "ifugao:kiangan",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hingyon",
+      "ifugao:hungduan",
+      "ifugao:kiangan",
+      "ifugao:tinoc"
+    ]
+  },
+  "UMT:99": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:banaue",
+      "ifugao:hingyon",
+      "ifugao:hungduan",
+      "ifugao:kiangan",
+      "ifugao:lagawe"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:banaue",
+      "ifugao:hingyon",
+      "ifugao:hungduan",
+      "ifugao:kiangan",
+      "ifugao:lagawe"
+    ]
+  },
+  "UMT:118": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:buguias",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:buguias",
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ]
+  },
+  "UMT:117": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:buguias",
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao",
+      "mountain-province"
+    ],
+    "cad_municipalities": [
+      "benguet:buguias",
+      "benguet:kabayan",
+      "ifugao:asipulo",
+      "ifugao:hungduan",
+      "ifugao:tinoc",
+      "mountain-province:bauko"
+    ]
+  },
+  "UMT:90": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista",
+      "ifugao:lagawe"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:aguinaldo",
+      "ifugao:alfonso-lista",
+      "ifugao:mayoyao"
+    ]
+  },
+  "UMT:119": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:buguias",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:buguias",
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ]
+  },
+  "UMT:104": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:kiangan",
+      "ifugao:lamut"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:kiangan",
+      "ifugao:lamut"
+    ]
+  },
+  "UMT:98": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:lagawe",
+      "ifugao:lamut"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:lagawe",
+      "ifugao:mayoyao"
+    ]
+  },
+  "UMT:105": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:kiangan",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:kiangan",
+      "ifugao:lamut",
+      "ifugao:tinoc"
+    ]
+  },
+  "UMT:106": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:asipulo"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:lamut"
+    ]
+  },
+  "UMT:107": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:lamut"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:asipulo",
+      "ifugao:lamut"
+    ]
+  },
+  "UMT:103": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:lamut"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:lamut"
+    ]
+  },
+  "UMT:120": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:kabayan",
+      "ifugao:tinoc"
+    ]
+  },
+  "UMT:116": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan",
+      "ifugao:asipulo",
+      "ifugao:tinoc"
+    ]
+  },
+  "UMT:102": {
+    "namria_provinces": [
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "ifugao:kiangan",
+      "ifugao:lagawe",
+      "ifugao:lamut"
+    ],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:kiangan",
+      "ifugao:lagawe",
+      "ifugao:lamut"
+    ]
+  },
+  "UMT:109": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "ifugao:asipulo"
+    ]
+  },
+  "UMT:115": {
+    "namria_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod",
+      "ifugao:asipulo",
+      "ifugao:tinoc"
+    ],
+    "cad_provinces": [
+      "benguet",
+      "ifugao"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod",
+      "benguet:kabayan",
+      "ifugao:asipulo",
+      "ifugao:tinoc"
+    ]
+  },
+  "UMT:122": {
+    "namria_provinces": [
+      "benguet"
+    ],
+    "namria_municipalities": [
+      "benguet:bokod"
+    ],
+    "cad_provinces": [
+      "benguet"
+    ],
+    "cad_municipalities": [
+      "benguet:bokod"
+    ]
+  },
+  "UMT:114": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UMT:124": {
+    "namria_provinces": [],
+    "namria_municipalities": [
+      "benguet:bokod"
+    ],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UMT:113": {
+    "namria_provinces": [],
+    "namria_municipalities": [
+      "benguet:bokod"
+    ],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "UMT:87": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ZUM:15": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:2": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan"
+    ]
+  },
+  "ZUM:17": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:5": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:4": {
+    "namria_provinces": [],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:luna"
+    ]
+  },
+  "ZUM:1": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:16": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:3": {
+    "namria_provinces": [],
+    "namria_municipalities": [],
+    "cad_provinces": [],
+    "cad_municipalities": []
+  },
+  "ZUM:19": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:6": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:luna"
+    ]
+  },
+  "ZUM:18": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:9": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:13": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:7": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:12": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao",
+      "apayao:luna",
+      "apayao:pudtol"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:kabugao",
+      "apayao:luna",
+      "apayao:pudtol"
+    ]
+  },
+  "ZUM:14": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:calanasan",
+      "apayao:luna"
+    ]
+  },
+  "ZUM:11": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:luna"
+    ]
+  },
+  "ZUM:10": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:luna"
+    ]
+  },
+  "ZUM:8": {
+    "namria_provinces": [
+      "apayao"
+    ],
+    "namria_municipalities": [
+      "apayao:luna"
+    ],
+    "cad_provinces": [
+      "apayao"
+    ],
+    "cad_municipalities": [
+      "apayao:luna"
+    ]
+  }
+}
