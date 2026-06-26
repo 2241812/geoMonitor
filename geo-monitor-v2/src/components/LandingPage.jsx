@@ -4,12 +4,10 @@ import { Link } from "react-router-dom";
 export default function LandingPage() {
   useEffect(() => {
     if(window.initLenis) window.initLenis();
-    setTimeout(() => {
-      window.document.dispatchEvent(new Event('DOMContentLoaded', {
-        bubbles: true,
-        cancelable: true
-      }));
-    }, 100);
+    if(window.initLandingPageScripts) {
+      // Small timeout ensures the DOM has fully painted before we query selectors
+      setTimeout(window.initLandingPageScripts, 100);
+    }
   }, []);
 
   return (<>
