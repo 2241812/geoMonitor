@@ -83,18 +83,18 @@ export const APP = {
     this._loadHierarchy();
     
     fetch('geoJSON/watershed-intersections.json')
-      .then(r => r.json())
+      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
       .then(w => { this.state.watershedIntersections = w; })
       .catch(() => {});
 
     fetch('geoJSON/zone-intersections.json')
-      .then(r => r.json())
+      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
       .then(z => { this.state.zoneIntersections = z; })
       .catch(() => {});
       
     // Prefetch watershed data for area lookups and hydro mode
-    fetch('geoJSON/CAR Watersheds.geojson')
-      .then(r => r.json())
+    fetch('geoJSON/CAR Watersheds.topojson')
+      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
       .then(d => {
         if (!this.state.rawData['watershed']) this.state.rawData['watershed'] = d;
         /* If we start in watersheds view mode, enter hydro mode now that data is ready */
@@ -183,7 +183,7 @@ export const APP = {
 
   _loadHierarchy() {
     fetch(this._src().hierarchy)
-      .then(r => r.json())
+      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
       .then(h => { this.state.hierarchy = h; })
       .catch(() => {});
   },
@@ -300,7 +300,7 @@ export const APP = {
     let loaded = 0;
     pending.forEach(lvl => {
       fetch(src.geoJSON[lvl])
-        .then(r => r.json())
+        .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
         .then(d => {
           this.state.rawData[lvl] = d;
           loaded++;
@@ -561,7 +561,7 @@ export const APP = {
       if (!src.geoJSON[level]) return;
       const resp = await fetch(src.geoJSON[level]);
       if (!resp.ok) throw new Error('Failed to load level ' + level);
-      this.state.rawData[geoKey] = await resp.json();
+      this.state.rawData[geoKey] = window.decodeGeo(window.decodeGeo(await resp.json()));
     }
 
     let data = this.state.rawData[geoKey];
@@ -840,7 +840,7 @@ export const APP = {
       const src = this._src();
       if (!src.geoJSON[level]) return;
       const resp = await fetch(src.geoJSON[level]);
-      if (resp.ok) this.state.rawData[level] = await resp.json();
+      if (resp.ok) this.state.rawData[level] = window.decodeGeo(window.decodeGeo(await resp.json()));
     } catch (_) { }
   },
 
@@ -1202,7 +1202,7 @@ export const APP = {
       try {
         const resp = await fetch(src.geoJSON[lvl]);
         if (!resp.ok) throw new Error('Failed to load');
-        data = await resp.json();
+        data = window.decodeGeo(window.decodeGeo(await resp.json()));
         this.state.rawData[cacheKey] = data;
       } catch (_) {
         return;
