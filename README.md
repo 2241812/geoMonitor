@@ -1,120 +1,88 @@
 # DENR CAR Watershed Monitoring (geoMonitor)
 
-Interactive web map for exploring administrative boundaries of the Cordillera Administrative Region (CAR), Philippines — built for DENR.
+Interactive web map for exploring watersheds and administrative boundaries of the Cordillera Administrative Region (CAR), Philippines — built for DENR.
 
 **Live**: https://geo-monitor-ten.vercel.app
 
 ## Quick Start
 
 ```sh
-python3 -m http.server 8000 -d main
+cd geo-monitor-v2
+npm install
+npm run dev
 ```
 
-Open `http://localhost:8000`. A server is required (`fetch()` loads GeoJSON).
+Open the URL shown by Vite (default `http://localhost:5173`).
 
 ## Tech Stack
 
+- **Framework**: React + Vite (SPA with React Router)
 - **Mapping**: Leaflet 1.9.4 (Canvas renderer), Esri World Topo / OSM / Satellite basemaps
 - **Charts**: Chart.js 4.4.7
-- **Font**: Inter via Google Fonts
-- **Build**: None — static HTML/CSS/JS, edit and refresh
-- **Data**: GeoJSON (converted from ArcGIS Shapefiles)
+- **State**: Zustand (React UI state) + `window.APP` global (Leaflet/interaction state)
+- **Smooth Scroll**: Lenis 1.0.42
+- **Font**: Inter + Outfit via Google Fonts
+- **Build**: Vite 8.x — `npm run build` outputs to `dist/`
+- **Data**: TopoJSON (converted from ArcGIS Shapefiles via GeoJSON)
 
 ## What It Does
 
-Drill-down map of CAR administrative boundaries with two data sources:
+Dual-mode map with two views:
+
+### Watersheds mode (default)
+Renders 14 colored basin polygons. Click a basin to drill into sub-watersheds + stream order. Supports zone isolation, Spans chips (admin boundaries within a watershed), and admin outline overlays.
+
+### Boundaries mode
+Drill-down of CAR administrative boundaries with two data sources:
 
 | Source | Levels | Drill Path |
 |--------|--------|------------|
 | **NAMRIA** | 3 | Region → Province → Municipality |
 | **CAD** | 2 | Region → Municipality |
 
-Click any polygon to open an info panel with property details + bar chart of numeric measurements. Click empty space to drill back up. Toggle data sources via the NAMRIA/CAD button in the breadcrumb.
-
-Boundary overlays (Province / Municipality outlines) can be toggled as a floating dark panel — mutually exclusive radio mode.
+Click any polygon to open an info panel with property details + bar chart of numeric measurements. Click empty space to drill back up. Toggle data sources via the NAMRIA/CAD toggle.
 
 ## Repository Structure
 
 ```
-main/
-├── assets/
-│   ├── css/map.css           # All styles (landing, map, dashboard, responsive)
-│   └── js/
-│       ├── app.js            # APP object — state, config, drill logic, panels, overlays
-│       ├── map-layers.js     # initLayers() — fetches and renders levels 0 and 1
-│       └── dashboard.js      # Compatibility shim — delegates to APP.openPanel / closePanel
-├── geoJSON/
-│   ├── CAR NAMRIA Boundary.geojson
-│   ├── CAR NAMRIA Provincial Boundary.geojson
-│   ├── CAR NAMRIA Municipal Boundary.geojson
-│   ├── CAR CAD Boundary.geojson
-│   ├── CAR CAD Municipal Boundary.geojson
-│   ├── hierarchy-namria.json              # Preprocessed parent/child/name lookup
-│   └── hierarchy-cad.json                 # Same for CAD source
-├── index.html                # Landing page
-├── map.html                  # Map + dashboard page
-└── preprocess-hierarchy.js   # Build-time script (node) — cross-walks GeoJSON → hierarchy
+├── geo-monitor-v2/
+│   ├── src/
+│   │   ├── components/        # React components (LandingPage, MapPage, MapContainer)
+│   │   ├── lib/               # Leaflet logic (app.js, config.js, dashboard.js, hydro-mode.js, map-layers.js)
+│   │   ├── store/             # Zustand store (useMapStore.js)
+│   │   └── assets/css/        # Styles (map.css, style.css)
+│   ├── public/
+│   │   ├── assets/js/script.js  # Landing page JS (Lenis, scroll animations, lightbox, counters)
+│   │   └── geoJSON/             # TopoJSON + GeoJSON boundary/watershed data
+│   ├── index.html             # Vite entry point
+│   ├── vite.config.js
+│   └── package.json
+├── dist/                      # Build output (synced from geo-monitor-v2/dist)
+├── archive/                   # Legacy static HTML/CSS/JS (pre-Vite)
+└── VERCEL_DEPLOYMENT.md
 ```
 
-## Data Sources
+## Map Architecture
 
-- **NAMRIA** — National Mapping and Resource Information Authority (3 levels: Region, Province, Municipality)
-- **CAD** — Cadastral (2 levels: Region, Municipality; no separate province geometry)
-
-Both cover CAR administrative boundaries at multiple levels with different property schemas.
-
-## Key Architecture
-
-- **Global state** lives on `APP` object (`app.js`) — all config, layers, drill path, panel state
-- **No build system** — edit directly, refresh to see changes
-- **Script load order** (strict, `map.html`): `app.js` → `map-layers.js` → `dashboard.js`, then inline `DOMContentLoaded` calls `APP.init()` → `initLayers()`
-- **No programmatic zoom** — all zoom/pan is user-controlled (scroll, pinch)
-- **Canvas renderer** (`preferCanvas: true`) — `_suppressMapClick` flag prevents double drill-up
-- **`_drilling` guard** — prevents concurrent drillDown/drillUp calls
-
-### Source Toggle
-
-A NAMRIA/CAD button in the breadcrumb switches data sources. Switching clears all layers, loads the correct hierarchy file, and re-initializes the map.
-
-### Hierarchy Preprocessing
-
-A build-time script cross-walks all GeoJSON files, computing stable `_id` / `_parentId` for every feature:
-
-```sh
-node preprocess-hierarchy.js
-```
-
-Outputs `hierarchy-namria.json` and `hierarchy-cad.json` with `{ parents, children, names }` maps. Each GeoJSON file is updated in-place with `_id` / `_parentId`. The runtime `_filterToParent` is a simple:
-
-```js
-data.features.filter(f => f.properties._parentId === parentId)
-```
-
-Run this script and re-deploy if GeoJSON source files are updated.
-
-### Drill-Down Flow
-
-1. **init**: Levels 0 (CAR boundary) and 1 (provinces / municipalities) fetched in parallel
-2. **Click a feature**: opens info panel, drills to next level filtered to parent
-3. **Deepest level**: isolates the selected feature (dimmed background)
-4. **Click hidden feature**: swallowed — no drill-up
-5. **Click empty space**: drills up one level (to region from province, to province from municipality, etc.)
-6. **Breadcrumb**: click any ancestor to jump back
+- **Global state**: `window.APP` object (Leaflet map, layers, drill state, panel state)
+- **View modes**: Two mutually exclusive modes controlled by `state.viewMode` (`watersheds` | `boundaries`)
+- **Script load order**: `index.html` loads Vite bundle → React mounts → `MapContainer` calls `APP.init()` → `initLayers()`
+- **Data request modal**: Click the Request Data button (top-right) to open an enquiry form that populates a `mailto:` link with feature details
+- **Security**: Screenshot/print prevention, app blur on focus loss
 
 ## Deployment
 
 ```sh
+cd geo-monitor-v2
+npm run build
 vercel --prod --yes
 ```
 
-Auto-deploys from GitHub via Vercel CLI (v54.x, Node.js 18).
+Auto-deploys from GitHub via Vercel CLI (v54.x, Node.js 18). See `VERCEL_DEPLOYMENT.md` for details.
 
 ## Development Notes
 
-- GeoJSON files are single-line JSON (no trailing newline)
-- `map-init.js` exists on disk but is **not loaded** (compatibility shim)
-- `EVENTS` object in `app.js` is **unused** (dead legacy code)
-- `dashboard.js` is a **compatibility shim** — all real logic is in `app.js`
+- TopoJSON files are in `public/geoJSON/` — the `replace.cjs` script handles `.geojson` → `.topojson` conversion
+- GeoJSON source files live in `archive/main/geoJSON/` and `main/geoJSON/` (git-main branch)
 - No tests, CI, linter, or formatter configured
-
-<!-- git config test -->
+- `package.json` in root is empty `{}` — all dependencies are in `geo-monitor-v2/`
