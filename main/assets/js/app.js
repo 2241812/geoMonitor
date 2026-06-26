@@ -1385,7 +1385,7 @@ const APP = {
       }
     }
 
-    html += '<div class="panel-section" style="padding-top:8px;padding-bottom:8px;"><button class="request-data-btn" onclick="APP._showDataRequestForm(feature,level,\'boundary\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Request This Data (Email Enquiry)</button></div>';
+    // Request button moved to top toolbar
 
     content.innerHTML = html;
     panel.classList.remove('open');
@@ -2809,7 +2809,7 @@ const APP = {
         </div>
       </div>
       ${spansHTML}
-      <div class="panel-section" style="padding-top:8px;padding-bottom:8px;"><button class="request-data-btn" onclick="APP._showDataRequestForm(feature,0,'subwatershed')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Request This Data (Email Enquiry)</button></div>`;
+      <!-- Request button moved to top toolbar -->`;
 
     content.innerHTML = html;
     document.body.classList.add('panel-open');
@@ -3356,7 +3356,7 @@ const APP = {
         <div class="panel-section-title">Basin Overview</div>
         <p>${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
       </div>
-      <div class="panel-section" style="padding-top:8px;padding-bottom:8px;"><button class="request-data-btn" onclick="APP._showDataRequestForm(feature,0,'watershed')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Request This Data (Email Enquiry)</button></div>
+      <!-- Request button moved to top toolbar -->
     `;
 
     content.innerHTML = html;
@@ -3399,6 +3399,10 @@ const APP = {
       const areaM2 = parseFloat(p.Shape_Area || 0);
       if (areaM2 > 0) details.push('Area: ' + (areaM2 / 10000).toLocaleString(undefined, {maximumFractionDigits:2}) + ' Ha');
       if (gc != null) details.push('Zone Code: ' + gc);
+    } else if (panelType === 'general') {
+      typeLabel = 'General Map Data';
+      name = 'General Enquiry';
+      details.push('Please specify exactly what data you need in the notes below.');
     } else {
       typeLabel = src.levelNames[level] || 'Boundary';
       name = this._toTitleCase(this._featureName(feature, level));
@@ -3412,6 +3416,33 @@ const APP = {
     }
 
     return { typeLabel, name, details };
+  },
+
+  _openRequestFromToolbar() {
+    // If a feature is currently selected in the panel, use it
+    if (this.state.viewMode === 'watersheds') {
+      if (this.state.hydroSelectedZone && this.state.hydroSelectedZone.feature) {
+        return this._showDataRequestForm(
+          this.state.hydroSelectedZone.feature, 0, 'subwatershed'
+        );
+      }
+      if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+        return this._showDataRequestForm(
+          this.state.hydroSelectedBasin.feature, 0, 'watershed'
+        );
+      }
+    } else {
+      // Boundaries mode — check if a feature is selected via selectedPath
+      const lastSelected = this.state.selectedPath &&
+                           this.state.selectedPath[this.state.selectedPath.length - 1];
+      if (lastSelected && lastSelected.feature) {
+        return this._showDataRequestForm(
+          lastSelected.feature, this.state.currentLevel, 'boundary'
+        );
+      }
+    }
+    // No feature selected — open a "general" request form (using an empty feature object)
+    this._showDataRequestForm({}, 0, 'general');
   },
 
   _showDataRequestForm(feature, level, panelType) {
