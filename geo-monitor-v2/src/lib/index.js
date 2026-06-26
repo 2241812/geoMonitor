@@ -8,4 +8,12 @@ import './map-layers.js';
 // alongside the new React components.
 window.APP = APP;
 
+window.decodeGeo = function(data) {
+  if (data && data.type === 'Topology') {
+    const key = Object.keys(data.objects)[0];
+    return window.topojson.feature(data, data.objects[key]);
+  }
+  return data;
+};
+
 export default APP;

@@ -70,8 +70,8 @@ Object.assign(APP, {
 
     if (!this.state.rawData['watershed']) {
       try {
-        const resp = await fetch('geoJSON/CAR Watersheds.geojson');
-        this.state.rawData['watershed'] = await resp.json();
+        const resp = await fetch('geoJSON/CAR Watersheds.topojson');
+        this.state.rawData['watershed'] = window.decodeGeo(await resp.json());
       } catch (_) {
         this._showToast('Failed to load watershed data');
         return;
@@ -80,8 +80,8 @@ Object.assign(APP, {
     /* R3: Load merged watershed outline if not already cached */
     if (!this.state.rawData['watershedOutline']) {
       try {
-        const resp = await fetch('geoJSON/CAR Watersheds Outline.geojson');
-        this.state.rawData['watershedOutline'] = await resp.json();
+        const resp = await fetch('geoJSON/CAR Watersheds Outline.topojson');
+        this.state.rawData['watershedOutline'] = window.decodeGeo(await resp.json());
       } catch (_) {}
     }
     
@@ -381,8 +381,8 @@ Object.assign(APP, {
     const map = this.state.map;
     const basePath = 'geoJSON/Watersheds/' + encodeURIComponent(folder) + '/';
     const self = this;
-    const swPath = basePath + code + '_SW.geojson';
-    const soPath = basePath + code + '_StreamOrder.geojson';
+    const swPath = basePath + code + '_SW.topojson';
+    const soPath = basePath + code + '_StreamOrder.topojson';
 
     /* Remove any previous level-1 layers */
     [1, 2].forEach(l => {
@@ -668,8 +668,8 @@ Object.assign(APP, {
       if (!this.state.hydroBoundaryLayer) {
         try {
           if (!this.state.rawData[0]) {
-            const resp = await fetch('geoJSON/CAR NAMRIA Boundary.geojson');
-            this.state.rawData[0] = await resp.json();
+            const resp = await fetch('geoJSON/CAR NAMRIA Boundary.topojson');
+            this.state.rawData[0] = window.decodeGeo(await resp.json());
           }
           this.state.hydroBoundaryLayer = L.geoJSON(this.state.rawData[0], {
             interactive: false,
@@ -957,10 +957,10 @@ Object.assign(APP, {
     if (!this.state.rawData[cacheKey]) {
       try {
         const url = useCad
-          ? 'geoJSON/CAR CAD Municipal Boundary.geojson'
-          : 'geoJSON/CAR NAMRIA ' + (adminLvl === 1 ? 'Provincial' : 'Municipal') + ' Boundary.geojson';
+          ? 'geoJSON/CAR CAD Municipal Boundary.topojson'
+          : 'geoJSON/CAR NAMRIA ' + (adminLvl === 1 ? 'Provincial' : 'Municipal') + ' Boundary.topojson';
         const resp = await fetch(url);
-        this.state.rawData[cacheKey] = await resp.json();
+        this.state.rawData[cacheKey] = window.decodeGeo(await resp.json());
       } catch (_) {
         this._showToast('Failed to load boundary data');
         return;
@@ -1083,7 +1083,7 @@ Object.assign(APP, {
           try {
             let data = this.state.rawData['watershed'];
             if (!data) {
-              const response = await fetch('geoJSON/CAR Watersheds.geojson');
+              const response = await fetch('geoJSON/CAR Watersheds.topojson');
               data = await response.json();
               this.state.rawData['watershed'] = data;
             }

@@ -11,8 +11,8 @@ export async function initLayers() {
 
   /* Fetch level 0 and 1 GeoJSON in parallel (cache for boundaries mode) */
   const [geo0, geo1] = await Promise.all([
-    fetch(src.geoJSON[0]).then(r => r.json()),
-    fetch(src.geoJSON[1]).then(r => r.json()),
+    fetch(src.geoJSON[0]).then(r => r.json()).then(window.decodeGeo),
+    fetch(src.geoJSON[1]).then(r => r.json()).then(window.decodeGeo),
   ]);
   APP.state.rawData[0] = geo0;
   APP.state.rawData[1] = geo1;
