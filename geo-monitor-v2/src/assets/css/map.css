@@ -367,10 +367,14 @@ body.mode-explore .outline-toggles {
    FULLSCREEN BUTTON — top-right
    ============================================= */
 
-.map-fullscreen-btn {
+.top-right-controls {
   position: absolute;
   top: 16px;
   right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 500;
 }
 
 /* =============================================
@@ -1481,8 +1485,9 @@ body.panel-open .bottom-left-controls {
 }
 
 /* =============================================
-   SOURCE TOGGLE CONTROL (NAMRIA/CAD) — top-left
+   SOURCE TOGGLE CONTROL (NAMRIA/CAD) — top-right
    ============================================= */
+.body.mode-watersheds .source-toggle-control { display: none; }
 .source-toggle-control {
   display: flex;
   background: rgba(255, 255, 255, 0.95);
