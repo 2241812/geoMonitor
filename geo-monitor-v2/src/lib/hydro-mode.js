@@ -162,9 +162,9 @@ Object.assign(APP, {
     if (interactive) {
       opts.onEachFeature = function(feature, layer) {
         layer.on('click', function(e) {
-          L.DomEvent.stopPropagation(e);
           if (self.state._drilling) return;
           if (self.state.hydroDrillLevel !== 0) return;
+          L.DomEvent.stopPropagation(e);
           self._silhouetteClick();
         });
         layer.on('mouseover', function() {
@@ -286,9 +286,9 @@ Object.assign(APP, {
         });
 
         leafletLayer.on('click', function(e) {
-          L.DomEvent.stopPropagation(e);
           if (self.state._drilling) return;
           if (self.state.hydroDrillLevel !== 0) return;
+          L.DomEvent.stopPropagation(e);
           self._hydroDrillDown(feature, leafletLayer);
         });
       },
@@ -491,6 +491,17 @@ Object.assign(APP, {
     this.state.hydroSelectedZoneLayer = null;
     if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
       this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
+      /* Fly back to the parent basin bounds */
+      try {
+        const basinLayer = L.geoJSON(this.state.hydroSelectedBasin.feature);
+        if (basinLayer.getBounds().isValid()) {
+          this.state.map.flyToBounds(basinLayer.getBounds(), {
+            ...this._getPaddingOpts(),
+            duration: 0.45,
+            easeLinearity: 0.25,
+          });
+        }
+      } catch (_) {}
     }
     this._updateBreadcrumb();
   },
