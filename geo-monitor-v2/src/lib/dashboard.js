@@ -27,22 +27,24 @@ Object.assign(APP, {
       hero.className = 'panel-hero';
       hero.innerHTML = `<div class="panel-level-badge">${this._src().levelNames[level]}</div>
         <h2 class="panel-title">${this._escHtml(name)}</h2>
-        <p class="panel-subtitle">Administrative Boundary</p>`;
+        <p class="panel-subtitle">${this._src().levelNames[level]}</p>`;
     }
 
     /* Details Section */
     const isCAD = this.state.activeMode === 'cad';
-    let html = `<div class="panel-section">`; 
+    let html = `<div class="panel-section">
+      <div class="panel-section-title">Details</div>
+      <div class="stat-grid">`;
     
     const details = this._resolveDetails(p, level, name);
     Object.entries(details).forEach(([k, v]) => {
-      html += `<div class="panel-row">
-        <span class="panel-row-label">${this._escHtml(k)}</span>
-        <span class="panel-row-value">${this._escHtml(v)}</span>
+      html += `<div class="stat-box">
+        <div class="stat-label">${this._escHtml(k)}</div>
+        <div class="stat-value">${this._escHtml(v)}</div>
       </div>`;
     });
 
-    html += `</div>`;
+    html += `</div></div>`;
 
     const chartData = this._resolveChartData(p);
     if (chartData.values.length > 0) {
@@ -594,7 +596,7 @@ Object.assign(APP, {
     const mode = this.state.viewMode;
     const labelEl = document.getElementById('panel-header-label');
     if (labelEl) {
-      labelEl.textContent = mode === 'watersheds' ? 'Watershed Monitor' : 'Administrative Boundaries';
+      labelEl.textContent = mode === 'watersheds' ? 'Watershed Monitor' : 'Boundary Monitor';
     }
     const iconEl = document.getElementById('panel-header-icon');
     if (iconEl) {
