@@ -51,6 +51,8 @@ export const APP = {
 
   /* ── Init ────────────────────────────────── */
   init() {
+    const el = document.getElementById('map');
+    if (!el || el._leaflet_id) return;
     document.body.classList.add('mode-explore');
     document.body.classList.add('mode-' + this.state.viewMode); /* R2: initial body class for source-toggle */
 
