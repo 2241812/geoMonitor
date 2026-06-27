@@ -6,6 +6,8 @@
  * Extracted from app.js + dashboard.js so that boundaries mode UI and
  * functionality can be modified independently from watershed/hydro code.
  */
+import { APP } from './app.js';
+
 Object.assign(APP, {
   /* ── Drill DOWN ──────────────────────────────── */
   async drillDown(feature, leafletLayer) {
