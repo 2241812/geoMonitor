@@ -1,8 +1,9 @@
-import L from 'leaflet';
+﻿import L from 'leaflet';
 import { APP } from './app.js';
 window.L = L;
 import './config.js';
 import './dashboard.js';
+import './boundary-mode.js';
 import './hydro-mode.js';
 import './map-layers.js';
 
@@ -19,3 +20,4 @@ window.decodeGeo = function(data) {
 };
 
 export default APP;
+
