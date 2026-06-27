@@ -1487,7 +1487,7 @@ body.panel-open .bottom-left-controls {
 /* =============================================
    SOURCE TOGGLE CONTROL (NAMRIA/CAD) — top-right
    ============================================= */
-.body.mode-watersheds .source-toggle-control { display: none; }
+body.mode-watersheds .source-toggle-control { display: none; }
 .source-toggle-control {
   display: flex;
   background: rgba(255, 255, 255, 0.95);
