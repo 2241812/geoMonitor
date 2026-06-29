@@ -560,14 +560,18 @@ export const APP = {
         <div class="panel-section">
           <div class="panel-section-title">Spans — Administrative Boundaries</div>
           ${this._renderSourceToggleHTML()}
-          <div class="span-group">
-            <div class="span-group-label">Provinces<span class="span-count-badge">${spans.provinces.length}</span></div>
-            <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+          <div class="span-group collapsed">
+            <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">Provinces<span class="span-count-badge">${spans.provinces.length}</span></div>
+            <div class="span-group-content">
+              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+            </div>
           </div>
           ${spans.municipalities.length ? `
-          <div class="span-group">
-            <div class="span-group-label">Municipalities<span class="span-count-badge">${spans.municipalities.length}</span></div>
-            ${muniGroupsHTML}
+          <div class="span-group collapsed">
+            <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">Municipalities<span class="span-count-badge">${spans.municipalities.length}</span></div>
+            <div class="span-group-content">
+              ${muniGroupsHTML}
+            </div>
           </div>` : ''}
           <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
         </div>`;

@@ -1872,6 +1872,23 @@ body.mode-watersheds .source-toggle-control { display: none; }
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
+}
+
+.span-group-label::after {
+  content: '▼';
+  margin-left: auto;
+  font-size: 10px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.span-group.collapsed .span-group-label::after {
+  transform: rotate(-90deg);
+}
+
+.span-group.collapsed .span-group-content {
+  display: none;
 }
 
 .span-count-badge {
