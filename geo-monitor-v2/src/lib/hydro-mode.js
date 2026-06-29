@@ -269,6 +269,12 @@ Object.assign(APP, {
         const idx = self._hydroBasinIndex(feature);
         const basinColor = colors[idx] || '#6b7280';
 
+        leafletLayer.bindTooltip(name, {
+          permanent: true,
+          direction: 'center',
+          className: 'watershed-label',
+        });
+
         leafletLayer.on('mouseover', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
           e.target.setStyle({ fillColor: basinColor, fillOpacity: 0.4, weight: 3, opacity: 1 });
@@ -401,6 +407,14 @@ Object.assign(APP, {
       this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
         style: { fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 },
         onEachFeature(feature, layer) {
+          const gc = feature.properties.gridcode;
+          if (gc != null) {
+            layer.bindTooltip('Zone ' + gc, {
+              permanent: true,
+              direction: 'center',
+              className: 'watershed-label',
+            });
+          }
           layer.on('mouseover', function(e) {
             if (layer._hiddenByIsolation) return;
             e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.55, weight: 2.5, opacity: 1 });
