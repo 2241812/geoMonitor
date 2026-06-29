@@ -93,7 +93,7 @@ export default function MapPage() {
 
         <div className="boundary-switcher" id="boundary-switcher">
           <button className="map-icon-btn boundary-btn" id="boundary-btn" onClick={() => window.APP?._toggleBoundaryMenu()} title="Toggle boundary overlays">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline><polyline points="2 17 12 22 22 17"></polyline></svg>
           </button>
           <div className="boundary-options" id="boundary-options">
             <div className="boundary-options-header">Boundary Overlays</div>
