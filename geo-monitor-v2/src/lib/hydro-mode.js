@@ -85,14 +85,16 @@ Object.assign(APP, {
       } catch (_) {}
     }
     
-    /* Level 0: seamless basin fill underneath + interactive silhouette border on top */
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
     this._clearHydroLayers();
-    this._renderHydroBasins(true); /* uniform fill, no stroke, non-interactive */
-    this._renderHydroSilhouette(true); /* border only, interactive — click to reveal basins */
+    this._renderHydroBasins();
+    if (this.state.hydroActiveFilterIds && this.state.hydroActiveFilterIds.length > 0) {
+      this._applyHydroFilter();
+    }
+    this._showBasinPickerPanel();
     this._updateBreadcrumb();
   },
 
@@ -604,10 +606,12 @@ Object.assign(APP, {
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
 
-    /* Re-render basins in silhouette mode + silhouette border */
+    /* Re-render basins interactively (no silhouette) */
     this._clearHydroLayers();
-    this._renderHydroBasins(true);
-    this._renderHydroSilhouette(true);
+    this._renderHydroBasins();
+    if (this.state.hydroActiveFilterIds && this.state.hydroActiveFilterIds.length > 0) {
+      this._applyHydroFilter();
+    }
 
     /* Fly back to CAR bounds */
     const wsData = this.state.rawData['watershed'];
@@ -780,10 +784,6 @@ Object.assign(APP, {
   _hydroDrillDownByName(name) {
     const wsData = this.state.rawData['watershed'];
     if (!wsData) return;
-    /* If basins are in silhouette mode, reveal them first */
-    if (this.state.hydroSilhouetteLayer) {
-      this._silhouetteClick();
-    }
     if (!this.state.hydroLayers[0]) {
       this._renderHydroBasins();
     }
