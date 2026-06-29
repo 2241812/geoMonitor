@@ -547,22 +547,30 @@ export const APP = {
       muniByProvince[key].push(m);
     });
 
-    let provinceChipsHTML = '';
+    let accordionHTML = '';
     (spans.provinces || []).forEach(prov => {
       const escapedName = this._escHtml(prov.name || prov.slug);
       const escapedSlug = this._escHtml(prov.slug).replace(/'/g, '&#39;');
-      provinceChipsHTML += `<button class="span-chip province-tab" onclick="APP._outlineAdminUnit('province','${escapedSlug}'); APP._toggleProvinceMuni('${escapedSlug}', this)">${escapedName}</button>`;
-    });
+      const munis = muniByProvince[prov.name] || muniByProvince[prov.slug] || [];
+      
+      let muniChips = '';
+      if (munis.length) {
+        muniChips = this._renderSpansChips(munis, 'municipality');
+      } else {
+        muniChips = '<div style="font-size: 11px; color: #9ca3af; padding: 4px;">No municipalities shown.</div>';
+      }
 
-    let muniColumnsHTML = '';
-    Object.keys(muniByProvince).sort().forEach(prov => {
-      const matchedProv = spans.provinces.find(p => p.name === prov || p.slug === prov) || { slug: prov };
-      const escapedSlug = this._escHtml(matchedProv.slug).replace(/'/g, '&#39;');
-
-      muniColumnsHTML += `
-          <div class="span-muni-column" id="muni-col-${escapedSlug}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-            <div class="span-province-header" style="margin-bottom: 8px;">${this._escHtml(prov)} Municipalities</div>
-            <div class="span-chip-row">${this._renderSpansChips(muniByProvince[prov], 'municipality')}</div>
+      accordionHTML += `
+          <div class="province-accordion collapsed">
+            <div class="province-accordion-header" onclick="this.parentElement.classList.toggle('collapsed'); APP._outlineAdminUnit('province', '${escapedSlug}')">
+              ${escapedName}
+              <span class="province-muni-count">${munis.length}</span>
+            </div>
+            <div class="province-accordion-wrapper">
+              <div class="province-accordion-content">
+                <div class="span-chip-row">${muniChips}</div>
+              </div>
+            </div>
           </div>`;
     });
 
@@ -577,29 +585,14 @@ export const APP = {
             </div>
             <div class="span-group-wrapper">
               <div class="span-group-content">
-                <div class="span-group-enclosed">
-                  <div class="span-chip-row span-province-tabs">
-                    ${provinceChipsHTML}
-                  </div>
-                  <div class="span-muni-container">
-                    ${muniColumnsHTML}
-                  </div>
+                <div class="span-group-enclosed province-accordion-list">
+                  ${accordionHTML}
                 </div>
               </div>
             </div>
           </div>
           <p class="span-hint">Tap a province to explore its municipalities and overlay its outline.</p>
         </div>`;
-  },
-
-  _toggleProvinceMuni(provinceSlug, btnElement) {
-    document.querySelectorAll('.span-muni-column').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.province-tab').forEach(el => el.classList.remove('active'));
-    const targetCol = document.getElementById(`muni-col-${provinceSlug}`);
-    if (targetCol) targetCol.style.display = 'block';
-    if (btnElement) btnElement.classList.add('active');
-    
-    // Adjust max-height/grid layout triggers if needed, but grid 1fr should just adapt to content.
   },
 
   _clearWatershedHighlightAndReturn(level) {
