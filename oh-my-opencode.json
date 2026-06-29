@@ -1,0 +1,6 @@
+{
+  "models": {
+    "default": "antigravity-gemini-3-pro"
+  },
+  "google_auth": false
+}
