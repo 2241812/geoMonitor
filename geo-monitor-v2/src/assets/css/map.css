@@ -1092,6 +1092,8 @@ body.panel-open .bottom-left-controls {
   padding: 24px 20px 20px;
   color: #fff;
   position: relative;
+  height: 105px;
+  box-sizing: content-box;
 }
 
 .panel-level-badge {
