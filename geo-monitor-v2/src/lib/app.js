@@ -549,9 +549,10 @@ export const APP = {
 
     let accordionHTML = '';
     (spans.provinces || []).forEach(prov => {
-      const escapedName = this._escHtml(prov.name || prov.slug);
+      const provName = prov.label || prov.name || prov.slug;
+      const escapedName = this._escHtml(provName);
       const escapedSlug = this._escHtml(prov.slug).replace(/'/g, '&#39;');
-      const munis = muniByProvince[prov.name] || muniByProvince[prov.slug] || [];
+      const munis = muniByProvince[provName] || muniByProvince[prov.slug] || [];
       
       let muniChips = '';
       if (munis.length) {
