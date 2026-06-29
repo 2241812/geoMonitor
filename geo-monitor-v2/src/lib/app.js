@@ -697,6 +697,13 @@ export const APP = {
             <span class="toggle-knob"></span>
           </label>
         </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Slope</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
       </div>` : ''}
 
       <div class="panel-section">

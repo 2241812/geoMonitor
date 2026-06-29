@@ -77,6 +77,7 @@ Object.assign(APP, {
       this.state.hydroSelectedZoneLayer = null;
       this.state.hydroActiveFilterIds = [];
       this.state.showStreamOrder = false;
+      this.state.showSlope = false;
       this._clearHydroLayers();
       this._renderHydroBasins();
       this._showBasinPickerPanel();
@@ -443,15 +444,17 @@ Object.assign(APP, {
     const self = this;
     const swPath = basePath + code + '_SW.topojson';
     const soPath = basePath + code + '_StreamOrder.topojson';
+    const slopePath = 'temp_assets/' + code + '_Slope.geojson';
 
     /* Remove any previous level-1 layers */
-    [1, 2].forEach(l => {
+    [1, 2, 3].forEach(l => {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
 
     const results = await Promise.allSettled([
       fetch(swPath).then(r => { if (!r.ok) throw new Error('No SW'); return r.json(); }).then(window.decodeGeo),
       fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }).then(window.decodeGeo),
+      fetch(slopePath).then(r => { if (!r.ok) throw new Error('No Slope'); return r.json(); })
     ]);
 
     /* Sub-watershed polygons */
@@ -507,6 +510,28 @@ Object.assign(APP, {
       }
     } else {
       this._showToast('Stream order data not available for this basin');
+    }
+
+    /* Slope layer — loaded but only added to map if toggled on */
+    if (results[2] && results[2].status === 'fulfilled') {
+      this.state.hydroLayers[3] = L.geoJSON(results[2].value, {
+        style: (feature) => {
+          const cat = feature.properties.gridcode || 1;
+          let color = '#4ade80'; // 1: 0-8
+          if (cat === 2) color = '#facc15'; // 8-18
+          else if (cat === 3) color = '#fb923c'; // 18-30
+          else if (cat === 4) color = '#f87171'; // 30-50
+          else if (cat >= 5) color = '#991b1b'; // >50
+          return { color: color, fillColor: color, weight: 0.5, opacity: 0.8, fillOpacity: 0.5 };
+        },
+      });
+      if (this.state.showSlope) {
+        this.state.hydroLayers[3].addTo(map);
+        // keep slope below stream order
+        this.state.hydroLayers[3].bringToBack();
+      }
+    } else {
+      console.warn('Slope data not available for this basin');
     }
 
     /* Open the basin detail panel */
@@ -644,6 +669,19 @@ Object.assign(APP, {
     }
   },
 
+  /* Toggle slope overlay on/off */
+  _toggleSlope() {
+    this.state.showSlope = !this.state.showSlope;
+    const sl = this.state.hydroLayers[3];
+    if (!sl) return;
+    if (this.state.showSlope) {
+      this.state.map.addLayer(sl);
+      sl.bringToBack();
+    } else {
+      this.state.map.removeLayer(sl);
+    }
+  },
+
   /* Drill back up to the basins overview */
   _hydroDrillUp(targetLevel) {
     if (this.state._drilling) return;
@@ -722,6 +760,7 @@ Object.assign(APP, {
     this._closeBoundaryMenu();
     this.state.hydroActiveFilterIds = [];
     this.state.showStreamOrder = false;
+    this.state.showSlope = false;
     this.state.hydroShowBoundary = false;
     this.state.activeOutline = null;
     this.state.outlineLayers = {};
@@ -938,6 +977,23 @@ Object.assign(APP, {
             <div class="stat-label">Area (Ha)</div>
             <div class="stat-value">${areaHa.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
           </div>` : ''}
+        </div>
+      </div>
+      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
+        <div class="panel-section-title">Map Overlays</div>
+        <div class="toggle-row">
+          <span>Stream Order</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Slope</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
+            <span class="toggle-knob"></span>
+          </label>
         </div>
       </div>
       ${spansHTML}`;
