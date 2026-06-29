@@ -604,6 +604,7 @@ Object.assign(APP, {
   _dimSubWatersheds(selectedFeature) {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
+    const self = this;
     layer.eachLayer(function(leafletLayer) {
       if (leafletLayer.feature !== selectedFeature) {
         leafletLayer._hiddenByIsolation = true;
