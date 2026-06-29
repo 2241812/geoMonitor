@@ -454,7 +454,7 @@ Object.assign(APP, {
     const results = await Promise.allSettled([
       fetch(swPath).then(r => { if (!r.ok) throw new Error('No SW'); return r.json(); }).then(window.decodeGeo),
       fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }).then(window.decodeGeo),
-      fetch(slopePath).then(r => { if (!r.ok) throw new Error('No Slope'); return r.json(); })
+      fetch(slopePath).then(r => { if (!r.ok) throw new Error('No Slope'); return r.json(); }).then(window.decodeGeo)
     ]);
 
     /* Sub-watershed polygons */
