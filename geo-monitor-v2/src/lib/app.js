@@ -562,7 +562,7 @@ export const APP = {
       }
 
       accordionHTML += `
-          <div class="province-accordion collapsed">
+          <div class="province-accordion collapsed" data-province-slug="${escapedSlug}">
             <div class="province-accordion-header" onclick="this.parentElement.classList.toggle('collapsed'); APP._outlineAdminUnit('province', '${escapedSlug}')">
               ${escapedName}
               <span class="province-muni-count">${munis.length}</span>

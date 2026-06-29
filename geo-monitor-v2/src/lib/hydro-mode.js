@@ -1024,6 +1024,20 @@ Object.assign(APP, {
       this.state.hydroAdminOutlineSlug = null;
       document.querySelectorAll('.span-chip.active, .province-accordion-header.active').forEach(c => c.classList.remove('active'));
       
+      let parentProvSlug = null;
+      if (type === 'municipality') {
+        const chip = document.querySelector(`.span-chip[onclick*="'${slug}'"]`);
+        if (chip) {
+          const accordion = chip.closest('.province-accordion');
+          if (accordion) parentProvSlug = accordion.getAttribute('data-province-slug');
+        }
+      }
+
+      if (parentProvSlug) {
+        this._outlineAdminUnit('province', parentProvSlug);
+        return;
+      }
+
       /* Reset zoom to active watershed or full basins */
       if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
         map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), { ...this._getPaddingOpts(), duration: 0.45, easeLinearity: 0.25 });
