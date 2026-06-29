@@ -55,8 +55,7 @@ Object.assign(APP, {
 
       this._updateBreadcrumb();
 
-      /* Fly into the selected feature with smooth animation, except for 0->1 where bounds are identical */
-      if (currentLevel > 0 && leafletLayer && leafletLayer.getBounds) {
+      if (leafletLayer && leafletLayer.getBounds) {
         this.state.map.flyToBounds(leafletLayer.getBounds(), {
           ...this._getPaddingOpts(),
           duration: 0.45,
@@ -111,8 +110,7 @@ Object.assign(APP, {
         /* Only rebuild if layers don't exist yet (avoids visual flicker) */
         if (!this.state.layers[0]) await this._showLevel(0);
         this.state.currentLevel = 0;
-        /* Jump back to CAR bounds, except when coming from level 1 where bounds are identical */
-        if (this.state.layers[0] && previousLevel > 1) {
+        if (this.state.layers[0]) {
           this.state.map.flyTo(this.config.mapCenter, this.config.mapZoom, {
             duration: 0.45,
             easeLinearity: 0.25
@@ -141,6 +139,16 @@ Object.assign(APP, {
       if (targetLevel > 0 && this.state.layers[targetLevel]) {
         this._resetLevelStyle(targetLevel);
         this.state.layers[targetLevel]._hiddenByDrill = false;
+      }
+
+      if (targetLevel === 1 && this.state.layers[1]) {
+        this.state.layers[1].eachLayer(lf => {
+          lf.bindTooltip(this._featureName(lf.feature, 1), {
+            permanent: true,
+            direction: 'center',
+            className: 'boundary-label',
+          });
+        });
       }
 
       /* Re-add level 0 (CAR) if it was removed at maxLevel */
@@ -253,11 +261,22 @@ Object.assign(APP, {
       }),
 
       onEachFeature(feature, leafletLayer) {
+        if (level === 1) {
+          const labelName = self._featureName(feature, level);
+          leafletLayer.bindTooltip(labelName, {
+            permanent: true,
+            direction: 'center',
+            className: 'boundary-label',
+          });
+        }
+
         if (useHover) {
           leafletLayer.on('mouseover', function (e) {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
             if (self.state.activeOutline === level) return;
+            
+            if (level === 1) leafletLayer.unbindTooltip();
             
             self._showHoverLabel(feature, level);
             
@@ -271,6 +290,14 @@ Object.assign(APP, {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
             if (self.state.activeOutline === level) return;
+
+            if (level === 1) {
+              leafletLayer.bindTooltip(self._featureName(feature, level), {
+                permanent: true,
+                direction: 'center',
+                className: 'boundary-label',
+              });
+            }
             
             self._hideHoverLabel();
 
