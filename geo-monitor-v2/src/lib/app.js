@@ -20,7 +20,7 @@ export const APP = {
     watershedIntersections: null,
     hierarchy: null,
     activeSource: 'namria',
-    activeMode: 'explore',
+    activeMode: 'boundary',
     viewMode: 'watersheds', /* 'watersheds' or 'boundaries' */
     watershedsActive: false,
     watershedLayer: null,
@@ -53,7 +53,7 @@ export const APP = {
   init() {
     const el = document.getElementById('map');
     if (!el || el._leaflet_id) return;
-    document.body.classList.add('mode-explore');
+    document.body.classList.add('mode-boundary');
     document.body.classList.add('mode-' + this.state.viewMode); /* R2: initial body class for source-toggle */
 
     const map = L.map('map', {
