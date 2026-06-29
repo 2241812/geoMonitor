@@ -1016,12 +1016,20 @@ Object.assign(APP, {
     const map = this.state.map;
     if (!map) return;
 
-    /* If the same chip is tapped again, remove the outline */
-    const chip = document.querySelector(`.span-chip[onclick*="'${type}','${slug}'"]`);
-    if (this.state.hydroAdminOutlineLayer && chip && chip.classList.contains('active')) {
+    /* If the same boundary is tapped again, remove the outline and reset zoom */
+    const currentSlug = type + ':' + slug;
+    if (this.state.hydroAdminOutlineLayer && this.state.hydroAdminOutlineSlug === currentSlug) {
       map.removeLayer(this.state.hydroAdminOutlineLayer);
       this.state.hydroAdminOutlineLayer = null;
-      chip.classList.remove('active');
+      this.state.hydroAdminOutlineSlug = null;
+      document.querySelectorAll('.span-chip.active, .province-accordion-header.active').forEach(c => c.classList.remove('active'));
+      
+      /* Reset zoom to active watershed or full basins */
+      if (this.state._selectedLeafletLayer && this.state._selectedLeafletLayer.getBounds) {
+        map.flyToBounds(this.state._selectedLeafletLayer.getBounds(), { ...this._getPaddingOpts(), duration: 0.45, easeLinearity: 0.25 });
+      } else if (this.state.hydroLayers && this.state.hydroLayers[0]) {
+        map.flyToBounds(this.state.hydroLayers[0].getBounds(), { ...this._getPaddingOpts(), duration: 0.45, easeLinearity: 0.25 });
+      }
       return;
     }
 
@@ -1088,13 +1096,17 @@ Object.assign(APP, {
     if (this.state.hydroAdminOutlineLayer) {
       map.removeLayer(this.state.hydroAdminOutlineLayer);
     }
-    document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.span-chip.active, .province-accordion-header.active').forEach(c => c.classList.remove('active'));
+    this.state.hydroAdminOutlineSlug = currentSlug;
 
     this.state.hydroAdminOutlineLayer = L.geoJSON(outlineData, {
       interactive: false,
       style: { color: '#dc2626', weight: 2.5, fillOpacity: 0.06, dashArray: '5 3', opacity: 0.9 },
     }).addTo(map);
     this.state.hydroAdminOutlineLayer.bringToFront();
+    
+    /* Mark the newly clicked element as active */
+    const chip = document.querySelector(`.span-chip[onclick*="'${slug}'"], .province-accordion-header[onclick*="'${slug}'"]`);
     if (chip) chip.classList.add('active');
 
     /* Fly to the outlined unit */
