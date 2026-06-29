@@ -865,7 +865,7 @@ body.panel-open .bottom-left-controls {
   margin-bottom: 2px;
 }
 
-/* ── Province-level permanent labels ── */
+/* ── Permanent boundary labels ── */
 .boundary-label {
   background: rgba(255, 255, 255, 0.85) !important;
   border: none !important;
