@@ -844,7 +844,7 @@ Object.assign(APP, {
       hero.className = 'panel-hero basin-picker-hero';
       hero.innerHTML = `<div class="panel-level-badge">14 Major Basins</div>
         <h2 class="panel-title">Watersheds</h2>
-        <p class="panel-subtitle">Tap a basin to explore sub-watersheds &amp; stream network</p>`;
+        <p class="panel-subtitle">Tap a basin to explore sub-watersheds &amp; stream networks</p>`;
     }
 
     const html = `

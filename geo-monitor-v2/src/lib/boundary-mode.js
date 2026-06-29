@@ -869,7 +869,7 @@ Object.assign(APP, {
       hero.className = 'panel-hero basin-picker-hero';
       hero.innerHTML = `<div class="panel-level-badge">Administrative Boundaries</div>
         <h2 class="panel-title">Cordillera Administrative Region</h2>
-        <p class="panel-subtitle">Tap a province/municipality to drill in</p>`;
+        <p class="panel-subtitle">Tap a province or municipality to explore boundaries and regional data</p>`;
     }
 
     const html = `
