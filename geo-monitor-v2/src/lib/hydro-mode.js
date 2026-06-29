@@ -1137,6 +1137,25 @@ Object.assign(APP, {
 
     const opts = document.getElementById('watershed-options');
     if (!opts) return;
+    
+    const list = document.getElementById('watershed-list');
+    if (list && list.children.length === 0 && this.state.rawData['watershed']) {
+      const features = this.state.rawData['watershed'].features || [];
+      const names = features.map(f => f.properties.Name || f.properties.Old_Name || '').filter(Boolean).sort();
+      let html = '';
+      names.forEach(ws => {
+        const isChecked = this.state.activeWatershedIds && this.state.activeWatershedIds.includes(ws);
+        html += `
+        <div class="watershed-list-item">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
+            <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${isChecked ? 'checked' : ''} style="accent-color: #0284c7; width: 16px; height: 16px;">
+            <span style="font-weight: 500;">${this._escHtml(ws)}</span>
+          </label>
+        </div>`;
+      });
+      list.innerHTML = html;
+    }
+    
     opts.classList.toggle('show');
   },
 
@@ -1148,10 +1167,19 @@ Object.assign(APP, {
     }
     const wsBtn = document.getElementById('watershed-btn');
     if (wsBtn) wsBtn.classList.remove('active');
-    const wsOpts = document.getElementById('watershed-options');
-    if (wsOpts) wsOpts.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    
+    // Uncheck all checkboxes in the menu
+    document.querySelectorAll('.panel-ws-checkbox').forEach(cb => {
       cb.checked = false;
     });
+    
+    const clearBtn = document.getElementById('watershed-clear-btn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    
+    if (this.state.viewMode === 'watersheds') {
+      this.state.hydroActiveFilterIds = [];
+      this._applyHydroFilter();
+    }
   },
 
   async updateWatersheds(checkbox) {
@@ -1172,6 +1200,9 @@ Object.assign(APP, {
 
     const btn = document.getElementById('watershed-btn');
     if (btn) btn.classList.toggle('active', this.state.activeWatershedIds.length > 0);
+    
+    const clearBtn = document.getElementById('watershed-clear-btn');
+    if (clearBtn) clearBtn.style.display = this.state.activeWatershedIds.length > 0 ? 'inline-block' : 'none';
 
     /* ── Hydro mode: filter the basin layer to only checked basins ── */
     if (this.state.viewMode === 'watersheds') {
