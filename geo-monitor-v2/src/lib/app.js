@@ -536,6 +536,43 @@ export const APP = {
     }).join('');
   },
 
+  /* Render the full Spans section HTML with count badges and province-grouped municipalities */
+  _renderSpansSection(spans) {
+    if (!spans || (!spans.provinces.length && !spans.municipalities.length)) return '';
+
+    const muniByProvince = {};
+    (spans.municipalities || []).forEach(m => {
+      const key = m.province || 'Other';
+      if (!muniByProvince[key]) muniByProvince[key] = [];
+      muniByProvince[key].push(m);
+    });
+
+    let muniGroupsHTML = '';
+    Object.keys(muniByProvince).sort().forEach(prov => {
+      muniGroupsHTML += `
+          <div class="span-province-group">
+            <div class="span-province-header">${this._escHtml(prov)}</div>
+            <div class="span-chip-row">${this._renderSpansChips(muniByProvince[prov], 'municipality')}</div>
+          </div>`;
+    });
+
+    return `
+        <div class="panel-section">
+          <div class="panel-section-title">Spans — Administrative Boundaries</div>
+          ${this._renderSourceToggleHTML()}
+          <div class="span-group">
+            <div class="span-group-label">Provinces<span class="span-count-badge">${spans.provinces.length}</span></div>
+            <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+          </div>
+          ${spans.municipalities.length ? `
+          <div class="span-group">
+            <div class="span-group-label">Municipalities<span class="span-count-badge">${spans.municipalities.length}</span></div>
+            ${muniGroupsHTML}
+          </div>` : ''}
+          <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
+        </div>`;
+  },
+
   _clearWatershedHighlightAndReturn(level) {
     if (this.state._outlineHighlight && this.state.watershedLayer) {
       this.state.watershedLayer.resetStyle(this.state._outlineHighlight);
@@ -577,24 +614,7 @@ export const APP = {
     /* Build the Spans section (only in hydro mode, where it's most useful) */
     let spansHTML = '';
     if (this.state.viewMode === 'watersheds') {
-      const spans = this._watershedSpans(name);
-      if (spans.provinces.length || spans.municipalities.length) {
-        spansHTML = `
-          <div class="panel-section">
-            <div class="panel-section-title">Spans — Administrative Boundaries</div>
-            ${this._renderSourceToggleHTML()}
-            <div class="span-group">
-              <div class="span-group-label">Provinces (${spans.provinces.length})</div>
-              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
-            </div>
-            ${spans.municipalities.length ? `
-            <div class="span-group">
-              <div class="span-group-label">Municipalities (${spans.municipalities.length})</div>
-              <div class="span-chip-row span-muni-scroll">${this._renderSpansChips(spans.municipalities, 'municipality')}</div>
-            </div>` : ''}
-            <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
-          </div>`;
-      }
+      spansHTML = this._renderSpansSection(this._watershedSpans(name));
     }
     
     this.state.lastViewed = { feature, isWatershed: true };
