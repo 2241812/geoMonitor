@@ -444,7 +444,7 @@ Object.assign(APP, {
     const self = this;
     const swPath = basePath + code + '_SW.topojson';
     const soPath = basePath + code + '_StreamOrder.topojson';
-    const slopePath = 'temp_assets/' + code + '_Slope.geojson';
+    const slopePath = 'temp_assets/' + code + '_Slope.topojson';
 
     /* Remove any previous level-1 layers */
     [1, 2, 3].forEach(l => {
