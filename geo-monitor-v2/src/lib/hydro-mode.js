@@ -460,11 +460,11 @@ Object.assign(APP, {
     /* Sub-watershed polygons */
     if (results[0].status === 'fulfilled') {
       this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
-        style: { fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 },
+        style: () => ({ fillColor: '#0ea5e9', fillOpacity: self.state.showSlope ? 0 : 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 }),
         onEachFeature(feature, layer) {
           layer.on('mouseover', function(e) {
             if (layer._hiddenByIsolation) return;
-            e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.55, weight: 2.5, opacity: 1 });
+            e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: self.state.showSlope ? 0.15 : 0.55, weight: 2.5, opacity: 1 });
             const lbl = document.getElementById('map-hover-label');
             if (lbl) {
               const p = feature.properties;
@@ -475,7 +475,12 @@ Object.assign(APP, {
           });
           layer.on('mouseout', function(e) {
             if (layer._hiddenByIsolation) return;
-            e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 });
+            const isSelected = (self.state.hydroSelectedZoneLayer === layer);
+            if (isSelected) {
+              e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: self.state.showSlope ? 0.15 : 0.55, color: '#0369a1', weight: 3, opacity: 1 });
+            } else {
+              e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: self.state.showSlope ? 0 : 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 });
+            }
             self._hideHoverLabel();
           });
           layer.on('click', function(e) {
@@ -500,8 +505,8 @@ Object.assign(APP, {
       this.state.hydroLayers[2] = L.geoJSON(results[1].value, {
         style: (feature) => {
           const order = feature.properties.grid_code || 1;
-          const weight = Math.max(1, Math.min(order * 0.8, 3.5));
-          return { color: '#1d4ed8', weight, opacity: 0.85 };
+          const weight = Math.max(2, Math.min(order * 1.2, 4.5));
+          return { color: '#0022ff', weight, opacity: 1 };
         },
       });
       if (this.state.showStreamOrder) {
@@ -607,7 +612,7 @@ Object.assign(APP, {
         leafletLayer._hiddenByIsolation = false;
         leafletLayer.setStyle({
           fillColor: '#0ea5e9',
-          fillOpacity: 0.55,
+          fillOpacity: self.state.showSlope ? 0.15 : 0.55,
           color: '#0369a1',
           weight: 3,
           opacity: 1,
@@ -623,15 +628,32 @@ Object.assign(APP, {
   _restoreSubWatersheds() {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
+    const self = this;
     layer.eachLayer(function(leafletLayer) {
       delete leafletLayer._hiddenByIsolation;
       leafletLayer.setStyle({
         fillColor: '#0ea5e9',
-        fillOpacity: 0.3,
+        fillOpacity: self.state.showSlope ? 0 : 0.3,
         color: '#0284c7',
         weight: 1.2,
         opacity: 0.8,
       });
+    });
+  },
+
+  /* Update sub-watershed styles based on current slope visibility */
+  _updateSubWatershedStyles() {
+    const layer = this.state.hydroLayers[1];
+    if (!layer) return;
+    const showSlope = this.state.showSlope;
+    layer.eachLayer(leafletLayer => {
+      if (leafletLayer._hiddenByIsolation) {
+        leafletLayer.setStyle({ fillOpacity: 0 });
+      } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
+        leafletLayer.setStyle({ fillOpacity: showSlope ? 0.15 : 0.55 });
+      } else {
+        leafletLayer.setStyle({ fillOpacity: showSlope ? 0 : 0.3 });
+      }
     });
   },
 
@@ -673,6 +695,7 @@ Object.assign(APP, {
   _toggleSlope() {
     this.state.showSlope = !this.state.showSlope;
     const sl = this.state.hydroLayers[3];
+    this._updateSubWatershedStyles();
     if (!sl) return;
     if (this.state.showSlope) {
       this.state.map.addLayer(sl);
