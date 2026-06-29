@@ -96,6 +96,10 @@ Object.assign(APP, {
     }
     this._showBasinPickerPanel();
     this._updateBreadcrumb();
+    if (this.state.map) {
+      this.state.map.on('zoomend', this._onZoomChange, this);
+    }
+    this._updateHydroLabels();
   },
 
   /* Index of a basin in hydroBasinFolderMap (for color assignment) */
@@ -266,15 +270,10 @@ Object.assign(APP, {
       onEachFeature(feature, leafletLayer) {
         if (silhouetteMode) return;
         const name = feature.properties.Name || feature.properties.Old_Name || 'Unknown';
-        const labelName = name.replace(/ River Watershed$/, '');
+        const labelName = name.replace(/ Watershed$/, '');
         const idx = self._hydroBasinIndex(feature);
         const basinColor = colors[idx] || '#6b7280';
-
-        leafletLayer.bindTooltip(labelName, {
-          permanent: true,
-          direction: 'center',
-          className: 'watershed-label',
-        });
+        leafletLayer._labelText = labelName;
 
         leafletLayer.on('mouseover', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
@@ -354,6 +353,16 @@ Object.assign(APP, {
       this.state.hydroDrillLevel = 1;
       this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
 
+      /* Hide basin labels when drilling into sub-watersheds */
+      if (this.state.hydroLayers[0]) {
+        this.state.hydroLayers[0].eachLayer(function(lf) {
+          if (lf._labelBound) {
+            lf.unbindTooltip();
+            lf._labelBound = false;
+          }
+        });
+      }
+
       /* Dim all basins except the selected one */
       const idx = self._hydroBasinIndex(feature);
       const basinColor = self.config.hydroLevelColors[idx] || '#6b7280';
@@ -408,14 +417,6 @@ Object.assign(APP, {
       this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
         style: { fillColor: '#0ea5e9', fillOpacity: 0.3, color: '#0284c7', weight: 1.2, opacity: 0.8 },
         onEachFeature(feature, layer) {
-          const gc = feature.properties.gridcode;
-          if (gc != null) {
-            layer.bindTooltip('Zone ' + gc, {
-              permanent: true,
-              direction: 'center',
-              className: 'watershed-label',
-            });
-          }
           layer.on('mouseover', function(e) {
             if (layer._hiddenByIsolation) return;
             e.target.setStyle({ fillColor: '#0ea5e9', fillOpacity: 0.55, weight: 2.5, opacity: 1 });
@@ -642,6 +643,7 @@ Object.assign(APP, {
     }
     this._updateBreadcrumb();
     this._showBasinPickerPanel();
+    this._updateHydroLabels();
   },
 
   /* Remove all hydro layers from the map */
@@ -656,6 +658,9 @@ Object.assign(APP, {
 
   /* Full reset of hydro state (used when switching to Boundaries mode) */
   _clearHydroState(keepViewMode) {
+    if (this.state.map) {
+      this.state.map.off('zoomend', this._onZoomChange, this);
+    }
     this._clearHydroLayers();
     this._removeHydroSilhouette();
     this.state.hydroDrillLevel = 0;
@@ -683,6 +688,31 @@ Object.assign(APP, {
       this.state.viewMode = 'boundaries';
     }
     this._updateBreadcrumb();
+  },
+
+  /* Zoom-adaptive label visibility */
+  _updateHydroLabels() {
+    const layer = this.state.hydroLayers[0];
+    if (!layer || !this.state.map) return;
+    const show = this.state.map.getZoom() >= 9;
+    layer.eachLayer(lf => {
+      if (show && !lf._labelBound) {
+        lf.bindTooltip(lf._labelText || 'Unknown', {
+          permanent: true,
+          direction: 'center',
+          className: 'watershed-label',
+        });
+        lf._labelBound = true;
+      } else if (!show && lf._labelBound) {
+        lf.unbindTooltip();
+        lf._labelBound = false;
+      }
+    });
+  },
+
+  _onZoomChange() {
+    if (this.state.viewMode !== 'watersheds' || this.state.hydroDrillLevel !== 0) return;
+    this._updateHydroLabels();
   },
 
   /* ── Toggle CAR boundary outline in hydro mode ── */
