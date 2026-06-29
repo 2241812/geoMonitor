@@ -141,9 +141,9 @@ Object.assign(APP, {
         this.state.layers[targetLevel]._hiddenByDrill = false;
       }
 
-      if (targetLevel === 1 && this.state.layers[1]) {
-        this.state.layers[1].eachLayer(lf => {
-          lf.bindTooltip(this._featureName(lf.feature, 1), {
+      if (targetLevel >= 1 && this.state.layers[targetLevel]) {
+        this.state.layers[targetLevel].eachLayer(lf => {
+          lf.bindTooltip(this._featureName(lf.feature, targetLevel), {
             permanent: true,
             direction: 'center',
             className: 'boundary-label',
@@ -261,7 +261,7 @@ Object.assign(APP, {
       }),
 
       onEachFeature(feature, leafletLayer) {
-        if (level === 1) {
+        if (level >= 1) {
           const labelName = self._featureName(feature, level);
           leafletLayer.bindTooltip(labelName, {
             permanent: true,
@@ -276,7 +276,7 @@ Object.assign(APP, {
             if (e.target._hiddenByIsolation) return;
             if (self.state.activeOutline === level) return;
             
-            if (level === 1) leafletLayer.unbindTooltip();
+            if (level >= 1) leafletLayer.unbindTooltip();
             
             self._showHoverLabel(feature, level);
             
@@ -291,7 +291,7 @@ Object.assign(APP, {
             if (e.target._hiddenByIsolation) return;
             if (self.state.activeOutline === level) return;
 
-            if (level === 1) {
+            if (level >= 1) {
               leafletLayer.bindTooltip(self._featureName(feature, level), {
                 permanent: true,
                 direction: 'center',
