@@ -387,6 +387,18 @@ body.mode-explore .outline-toggles {
   left: 16px;
   z-index: 500;
   text-decoration: none;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), background 0.15s, color 0.15s;
+}
+
+body.panel-open .map-back-btn {
+  transform: translateX(calc(385px + 16px));
+}
+
+@media (max-width: 640px) {
+  body.panel-open .map-back-btn,
+  body.panel-expanded .map-back-btn {
+    transform: translateX(0);
+  }
 }
 
 /* =============================================
