@@ -302,10 +302,10 @@ Object.assign(APP, {
           /* Border mode: standard view with strokes */
           return {
             fillColor: '#d1d5db',
-            fillOpacity: APP.state.basinFillOpacity !== undefined ? APP.state.basinFillOpacity : 0.15,
+            fillOpacity: 0.15,
             color: '#000000',
             weight: 2,
-            opacity: APP.state.basinOutlineOpacity !== undefined ? APP.state.basinOutlineOpacity : 0.9,
+            opacity: 0.9,
             className: 'fade-in-path',
           };
         }
@@ -320,7 +320,7 @@ Object.assign(APP, {
 
         leafletLayer.on('mouseover', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: APP.state.basinFillOpacity !== undefined ? Math.min(1, APP.state.basinFillOpacity + 0.25) : 0.4, weight: 3, opacity: APP.state.basinOutlineOpacity !== undefined ? APP.state.basinOutlineOpacity : 1 });
+          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.4, weight: 3, opacity: 1 });
           e.target.bringToFront();
           const lbl = document.getElementById('map-hover-label');
           if (lbl) {
@@ -332,7 +332,7 @@ Object.assign(APP, {
 
         leafletLayer.on('mouseout', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: APP.state.basinFillOpacity !== undefined ? APP.state.basinFillOpacity : 0.15, color: '#000000', weight: 2, opacity: APP.state.basinOutlineOpacity !== undefined ? APP.state.basinOutlineOpacity : 0.9 });
+          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
           self._hideHoverLabel();
         });
 
@@ -460,16 +460,13 @@ Object.assign(APP, {
     /* Sub-watershed polygons */
     if (results[0].status === 'fulfilled') {
       this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
-        style: () => {
-          const outOpa = self.state.basinOutlineOpacity !== undefined ? self.state.basinOutlineOpacity : 0.8;
-          const fillOpa = self.state.basinFillOpacity !== undefined ? self.state.basinFillOpacity + 0.15 : 0.3;
-          return { fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0 : fillOpa, color: '#000000', weight: 1.2, opacity: outOpa };
-        },
+        style: () => ({ fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0 : 0.3, color: '#000000', weight: 1.2, opacity: 0.8 }),
         onEachFeature(feature, layer) {
           layer.on('mouseover', function(e) {
             if (layer._hiddenByIsolation) return;
-            const fillOpa = self.state.basinFillOpacity !== undefined ? self.state.basinFillOpacity + 0.15 : 0.3;
-            e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0.15 : Math.min(1, fillOpa + 0.25), weight: 2.5, opacity: 1 });
+            const isSelected = (self.state.hydroSelectedZoneLayer === layer);
+            const fillOpa = isSelected && self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
+            e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0.15 : fillOpa, weight: 2.5, opacity: 1 });
             const lbl = document.getElementById('map-hover-label');
             if (lbl) {
               const p = feature.properties;
@@ -481,12 +478,12 @@ Object.assign(APP, {
           layer.on('mouseout', function(e) {
             if (layer._hiddenByIsolation) return;
             const isSelected = (self.state.hydroSelectedZoneLayer === layer);
-            const outOpa = self.state.basinOutlineOpacity !== undefined ? self.state.basinOutlineOpacity : 0.8;
-            const fillOpa = self.state.basinFillOpacity !== undefined ? self.state.basinFillOpacity + 0.15 : 0.3;
             if (isSelected) {
-              e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0.15 : Math.min(1, fillOpa + 0.25), color: '#000000', weight: 3, opacity: 1 });
+              const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
+              const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
+              e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0.15 : fillOpa, color: '#000000', weight: 3, opacity: outOpa });
             } else {
-              e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0 : fillOpa, color: '#000000', weight: 1.2, opacity: outOpa });
+              e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: self.state.showSlope ? 0 : 0.3, color: '#000000', weight: 1.2, opacity: 0.8 });
             }
             self._hideHoverLabel();
           });
@@ -617,12 +614,14 @@ Object.assign(APP, {
         });
       } else {
         leafletLayer._hiddenByIsolation = false;
+        const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
+        const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
         leafletLayer.setStyle({
           fillColor: '#d1d5db',
-          fillOpacity: self.state.showSlope ? 0.15 : 0.55,
+          fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
           color: '#000000',
           weight: 3,
-          opacity: 1,
+          opacity: outOpa,
         });
         leafletLayer.bringToFront();
       }
@@ -636,16 +635,14 @@ Object.assign(APP, {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
     const self = this;
-    const outlineOpacity = this.state.basinOutlineOpacity !== undefined ? this.state.basinOutlineOpacity : 0.8;
-    const fillOpa = this.state.basinFillOpacity !== undefined ? this.state.basinFillOpacity + 0.15 : 0.3;
     layer.eachLayer(function(leafletLayer) {
       delete leafletLayer._hiddenByIsolation;
       leafletLayer.setStyle({
         fillColor: '#d1d5db',
-        fillOpacity: self.state.showSlope ? 0 : fillOpa,
+        fillOpacity: self.state.showSlope ? 0 : 0.3,
         color: '#000000',
         weight: 1.2,
-        opacity: outlineOpacity,
+        opacity: 0.8,
       });
     });
   },
@@ -655,35 +652,17 @@ Object.assign(APP, {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
     const showSlope = this.state.showSlope;
-    const outlineOpacity = this.state.basinOutlineOpacity !== undefined ? this.state.basinOutlineOpacity : 0.8;
-    const fillOpa = this.state.basinFillOpacity !== undefined ? this.state.basinFillOpacity + 0.15 : 0.3;
+    const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
+    const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
     layer.eachLayer(leafletLayer => {
       if (leafletLayer._hiddenByIsolation) {
         leafletLayer.setStyle({ fillOpacity: 0 });
       } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
-        leafletLayer.setStyle({ fillOpacity: showSlope ? 0.15 : Math.min(1, fillOpa + 0.25), opacity: 1 });
+        leafletLayer.setStyle({ fillOpacity: showSlope ? 0.15 : fillOpa, opacity: outOpa });
       } else {
-        leafletLayer.setStyle({ fillOpacity: showSlope ? 0 : fillOpa, opacity: outlineOpacity });
+        leafletLayer.setStyle({ fillOpacity: showSlope ? 0 : 0.3, opacity: 0.8 });
       }
     });
-  },
-
-  /* Update all boundary opacities from the settings panel */
-  _updateBoundaryOpacities() {
-    // 1. Update Basins
-    if (this.state.hydroLayers[0]) {
-      const fillOpa = this.state.basinFillOpacity !== undefined ? this.state.basinFillOpacity : 0.15;
-      const outOpa = this.state.basinOutlineOpacity !== undefined ? this.state.basinOutlineOpacity : 0.9;
-      this.state.hydroLayers[0].eachLayer(layer => {
-        // Skip hover override if it's currently hovered (though styling it is fine)
-        layer.setStyle({
-          fillOpacity: fillOpa,
-          opacity: outOpa
-        });
-      });
-    }
-    // 2. Update Sub-watersheds
-    this._updateSubWatershedStyles();
   },
 
   /* ── Zone-level admin boundary spans ── */
