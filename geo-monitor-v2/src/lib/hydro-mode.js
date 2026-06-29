@@ -266,10 +266,11 @@ Object.assign(APP, {
       onEachFeature(feature, leafletLayer) {
         if (silhouetteMode) return;
         const name = feature.properties.Name || feature.properties.Old_Name || 'Unknown';
+        const labelName = name.replace(/ River Watershed$/, '');
         const idx = self._hydroBasinIndex(feature);
         const basinColor = colors[idx] || '#6b7280';
 
-        leafletLayer.bindTooltip(name, {
+        leafletLayer.bindTooltip(labelName, {
           permanent: true,
           direction: 'center',
           className: 'watershed-label',
