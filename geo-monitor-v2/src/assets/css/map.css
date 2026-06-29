@@ -385,7 +385,7 @@ body.mode-explore .outline-toggles {
   position: absolute;
   top: 16px;
   left: 16px;
-  z-index: 500;
+  z-index: 1500;
   text-decoration: none;
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), background 0.15s, color 0.15s;
 }

@@ -31,9 +31,7 @@ export async function initLayers() {
       APP.openPanel(geo0.features[0], 0);
     }
   } else {
-    /* Watersheds mode — hide admin panel header, skip CAR boundary */
-    const header = document.querySelector('.info-panel-header');
-    if (header) header.style.display = 'none';
+    /* Watersheds mode — skip CAR boundary */
   }
 }
 
