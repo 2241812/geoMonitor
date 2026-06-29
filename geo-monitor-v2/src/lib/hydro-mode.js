@@ -27,6 +27,9 @@ Object.assign(APP, {
 
       this._clearAdminOverlays();
       this._enterHydroMode();
+      if (this.state.map) {
+        this.state.map.setView(this.config.mapCenter, this.config.mapZoom);
+      }
     } else {
       document.body.classList.add('boundaries-mode');
       document.body.classList.remove('watersheds-mode');
@@ -46,6 +49,45 @@ Object.assign(APP, {
         if (carData && carData.features && carData.features[0]) {
           this.openPanel(carData.features[0], 0);
         }
+      }
+      if (this.state.map) {
+        this.state.map.setView(this.config.mapCenter, this.config.mapZoom);
+      }
+    }
+  },
+
+  /* Reset view and state to defaults for the current mode */
+  _resetAll() {
+    if (!this.state.map || this.state._drilling) return;
+    const map = this.state.map;
+    map.setView(this.config.mapCenter, this.config.mapZoom);
+    this.closePanel();
+
+    if (this.state.viewMode === 'watersheds') {
+      if (this.state.hydroDrillLevel === 1) {
+        [1, 2].forEach(l => {
+          if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
+        });
+        if (this.state.hydroAdminOutlineLayer) { map.removeLayer(this.state.hydroAdminOutlineLayer); this.state.hydroAdminOutlineLayer = null; }
+        document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+      }
+      this.state.hydroDrillLevel = 0;
+      this.state.hydroSelectedBasin = null;
+      this.state.hydroSelectedZone = null;
+      this.state.hydroSelectedZoneLayer = null;
+      this.state.hydroActiveFilterIds = [];
+      this.state.showStreamOrder = false;
+      this._clearHydroLayers();
+      this._renderHydroBasins();
+      this._showBasinPickerPanel();
+      this._updateBreadcrumb();
+      this._updateHydroLabels();
+    } else {
+      this.state.currentLevel = 0;
+      this.state.selectedPath = [];
+      this._showLevel(0);
+      if (this.state.rawData[0] && this.state.rawData[0].features && this.state.rawData[0].features[0]) {
+        this.openPanel(this.state.rawData[0].features[0], 0);
       }
     }
   },
@@ -863,31 +905,13 @@ Object.assign(APP, {
     let spansHTML = '';
     if (this.state.viewMode === 'watersheds') {
       let spans = null;
-      /* Try zone-specific spans first */
       if (basinCode && gridcode != null) {
         spans = this._zoneSpans(basinCode, gridcode);
       }
-      /* Fall back to basin-level spans if zone data not available */
       if (!spans && basinName) {
         spans = this._watershedSpans(basinName);
       }
-      if (spans && (spans.provinces.length || spans.municipalities.length)) {
-        spansHTML = `
-          <div class="panel-section">
-            <div class="panel-section-title">Spans — Administrative Boundaries</div>
-            ${this._renderSourceToggleHTML()}
-            <div class="span-group">
-              <div class="span-group-label">Provinces (${spans.provinces.length})</div>
-              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
-            </div>
-            ${spans.municipalities.length ? `
-            <div class="span-group">
-              <div class="span-group-label">Municipalities (${spans.municipalities.length})</div>
-              <div class="span-chip-row span-muni-scroll">${this._renderSpansChips(spans.municipalities, 'municipality')}</div>
-            </div>` : ''}
-            <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
-          </div>`;
-      }
+      spansHTML = this._renderSpansSection(spans);
     }
 
     const hero = document.getElementById('panel-hero');
