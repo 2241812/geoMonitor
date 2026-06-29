@@ -1146,12 +1146,10 @@ Object.assign(APP, {
       names.forEach(ws => {
         const isChecked = this.state.activeWatershedIds && this.state.activeWatershedIds.includes(ws);
         html += `
-        <div class="watershed-list-item">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%;">
-            <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${isChecked ? 'checked' : ''} style="accent-color: #0284c7; width: 16px; height: 16px;">
-            <span style="font-weight: 500;">${this._escHtml(ws)}</span>
-          </label>
-        </div>`;
+        <label class="watershed-option">
+          <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${isChecked ? 'checked' : ''}> 
+          ${this._escHtml(ws).replace(/ River Watershed$/, ' River').replace(/ Watershed$/, '')}
+        </label>`;
       });
       list.innerHTML = html;
     }
