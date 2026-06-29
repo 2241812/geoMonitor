@@ -547,11 +547,21 @@ export const APP = {
       muniByProvince[key].push(m);
     });
 
-    let muniGroupsHTML = '';
+    let provinceChipsHTML = '';
+    (spans.provinces || []).forEach(prov => {
+      const escapedName = this._escHtml(prov.name || prov.slug);
+      const escapedSlug = this._escHtml(prov.slug).replace(/'/g, '&#39;');
+      provinceChipsHTML += `<button class="span-chip province-tab" onclick="APP._outlineAdminUnit('province','${escapedSlug}'); APP._toggleProvinceMuni('${escapedSlug}', this)">${escapedName}</button>`;
+    });
+
+    let muniColumnsHTML = '';
     Object.keys(muniByProvince).sort().forEach(prov => {
-      muniGroupsHTML += `
-          <div class="span-province-group">
-            <div class="span-province-header">${this._escHtml(prov)}</div>
+      const matchedProv = spans.provinces.find(p => p.name === prov || p.slug === prov) || { slug: prov };
+      const escapedSlug = this._escHtml(matchedProv.slug).replace(/'/g, '&#39;');
+
+      muniColumnsHTML += `
+          <div class="span-muni-column" id="muni-col-${escapedSlug}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+            <div class="span-province-header" style="margin-bottom: 8px;">${this._escHtml(prov)} Municipalities</div>
             <div class="span-chip-row">${this._renderSpansChips(muniByProvince[prov], 'municipality')}</div>
           </div>`;
     });
@@ -561,28 +571,35 @@ export const APP = {
           <div class="panel-section-title">Spans — Administrative Boundaries</div>
           ${this._renderSourceToggleHTML()}
           <div class="span-group collapsed">
-            <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">Provinces<span class="span-count-badge">${spans.provinces.length}</span></div>
+            <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">
+              Provinces & Municipalities
+              <span class="span-count-badge">${spans.provinces.length}</span>
+            </div>
             <div class="span-group-wrapper">
               <div class="span-group-content">
                 <div class="span-group-enclosed">
-                  <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+                  <div class="span-chip-row span-province-tabs">
+                    ${provinceChipsHTML}
+                  </div>
+                  <div class="span-muni-container">
+                    ${muniColumnsHTML}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          ${spans.municipalities.length ? `
-          <div class="span-group collapsed">
-            <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">Municipalities<span class="span-count-badge">${spans.municipalities.length}</span></div>
-            <div class="span-group-wrapper">
-              <div class="span-group-content">
-                <div class="span-group-enclosed">
-                  ${muniGroupsHTML}
-                </div>
-              </div>
-            </div>
-          </div>` : ''}
-          <p class="span-hint">Tap a unit to overlay its outline on the map.</p>
+          <p class="span-hint">Tap a province to explore its municipalities and overlay its outline.</p>
         </div>`;
+  },
+
+  _toggleProvinceMuni(provinceSlug, btnElement) {
+    document.querySelectorAll('.span-muni-column').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.province-tab').forEach(el => el.classList.remove('active'));
+    const targetCol = document.getElementById(`muni-col-${provinceSlug}`);
+    if (targetCol) targetCol.style.display = 'block';
+    if (btnElement) btnElement.classList.add('active');
+    
+    // Adjust max-height/grid layout triggers if needed, but grid 1fr should just adapt to content.
   },
 
   _clearWatershedHighlightAndReturn(level) {
