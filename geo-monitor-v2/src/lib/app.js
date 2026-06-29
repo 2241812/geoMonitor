@@ -562,15 +562,23 @@ export const APP = {
           ${this._renderSourceToggleHTML()}
           <div class="span-group collapsed">
             <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">Provinces<span class="span-count-badge">${spans.provinces.length}</span></div>
-            <div class="span-group-content">
-              <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+            <div class="span-group-wrapper">
+              <div class="span-group-content">
+                <div class="span-group-enclosed">
+                  <div class="span-chip-row">${this._renderSpansChips(spans.provinces, 'province')}</div>
+                </div>
+              </div>
             </div>
           </div>
           ${spans.municipalities.length ? `
           <div class="span-group collapsed">
             <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">Municipalities<span class="span-count-badge">${spans.municipalities.length}</span></div>
-            <div class="span-group-content">
-              ${muniGroupsHTML}
+            <div class="span-group-wrapper">
+              <div class="span-group-content">
+                <div class="span-group-enclosed">
+                  ${muniGroupsHTML}
+                </div>
+              </div>
             </div>
           </div>` : ''}
           <p class="span-hint">Tap a unit to overlay its outline on the map.</p>

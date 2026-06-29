@@ -1887,8 +1887,26 @@ body.mode-watersheds .source-toggle-control { display: none; }
   transform: rotate(-90deg);
 }
 
-.span-group.collapsed .span-group-content {
-  display: none;
+.span-group-wrapper {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.25s ease-in-out;
+}
+
+.span-group.collapsed .span-group-wrapper {
+  grid-template-rows: 0fr;
+}
+
+.span-group-content {
+  overflow: hidden;
+}
+
+.span-group-enclosed {
+  padding: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-top: 4px;
 }
 
 .span-count-badge {
