@@ -387,11 +387,13 @@ body.mode-explore .outline-toggles {
   left: 16px;
   z-index: 1500;
   text-decoration: none;
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), background 0.15s, color 0.15s;
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), background 0.15s, color 0.15s;
+  transition-delay: 0.03s;
 }
 
 body.panel-open .map-back-btn {
-  transform: translateX(calc(385px + 16px));
+  transform: translateX(401px);
 }
 
 @media (max-width: 640px) {
@@ -499,7 +501,9 @@ body.panel-open .map-back-btn {
   align-items: flex-end;
   gap: 12px;
   will-change: transform;
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  transition-delay: 0.03s;
 }
 
 .basemap-switcher {
@@ -510,7 +514,7 @@ body.panel-open .map-back-btn {
 }
 
 body.panel-open .bottom-left-controls {
-  transform: translateX(calc(385px + 16px));
+  transform: translateX(401px);
 }
 
 
@@ -942,38 +946,6 @@ body.panel-open .bottom-left-controls {
    INFO PANEL — collapsible left sidebar
    ============================================= */
 
-/* Toggle tab — always visible on left edge when panel closed */
-.panel-toggle-tab {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  z-index: 599;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px 10px 8px;
-  background: rgba(255, 255, 255, 0.97);
-  border: none;
-  border-radius: 0 8px 8px 0;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  font-family: var(--font-sans);
-  white-space: nowrap;
-  transition: color 0.15s, background 0.15s, transform 0.2s;
-}
-.panel-toggle-tab:hover {
-  color: #065f46;
-  background: #ecfdf5;
-  transform: translateX(4px);
-}
-.panel-toggle-tab.hidden {
-  display: none;
-}
-
 .info-panel {
   position: absolute;
   top: 16px;
@@ -987,12 +959,51 @@ body.panel-open .bottom-left-controls {
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   z-index: 1001;
-  overflow: hidden;
+  overflow: visible !important;
   transform: translateX(calc(-100% - 20px));
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease, width 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), width 0.35s cubic-bezier(0.25, 1, 0.5, 1);
   display: flex;
   flex-direction: column;
-  opacity: 0;
+}
+
+.info-panel-edge-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translate(100%, -50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: none !important;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 3px 0 5px rgba(0,0,0,0.05);
+  width: 28px;
+  height: 60px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.info-panel-edge-toggle .icon-open {
+  display: none;
+}
+.info-panel-edge-toggle .icon-closed {
+  display: block;
+}
+
+body.panel-open .info-panel-edge-toggle .icon-open {
+  display: block;
+}
+body.panel-open .info-panel-edge-toggle .icon-closed {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .info-panel-edge-toggle {
+    display: none !important;
+  }
 }
 
 .info-panel.expanded {
@@ -1001,7 +1012,6 @@ body.panel-open .bottom-left-controls {
 
 .info-panel.open {
   transform: translateX(0);
-  opacity: 1;
 }
 
 .expanded-content {
@@ -1049,9 +1059,20 @@ body.panel-open .bottom-left-controls {
 .info-panel-header {
   display: flex;
   align-items: center;
+  gap: 10px;
   padding: 10px 12px;
   flex-shrink: 0;
   border-bottom: 1px solid #f3f4f6;
+}
+
+.panel-header-icon {
+  color: #0f766e;
+}
+
+.panel-header-label {
+  color: #0f766e;
+  font-weight: 700;
+  font-family: var(--font-sans);
 }
 
 .header-brand {
@@ -1063,32 +1084,6 @@ body.panel-open .bottom-left-controls {
   font-weight: 700;
   color: var(--primary-dark);
   letter-spacing: 0.02em;
-}
-
-.info-panel-collapse {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 36px;
-  min-height: 36px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  font-family: var(--font-sans);
-  padding: 4px 6px;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.info-panel-collapse:hover {
-  background: #f3f4f6;
-  color: #111827;
-}
-.info-panel-collapse svg {
-  flex-shrink: 0;
 }
 
 .info-panel-content {

@@ -151,6 +151,7 @@ Object.assign(APP, {
     panel.classList.remove('open');
     panel.classList.add('open');
     this.state.panelState = 'open';
+    document.body.classList.add('panel-open');
 
     /* Hide toggle tab when panel is open */
     const tab = document.getElementById('panel-toggle-tab');
@@ -597,7 +598,7 @@ Object.assign(APP, {
     const mode = this.state.viewMode;
     const labelEl = document.getElementById('panel-header-label');
     if (labelEl) {
-      labelEl.textContent = mode === 'watersheds' ? 'Watershed Monitor' : 'Boundary Monitor';
+      labelEl.textContent = mode === 'watersheds' ? 'Watershed Monitor' : 'Boundary Explorer';
     }
     const iconEl = document.getElementById('panel-header-icon');
     if (iconEl) {
