@@ -1432,6 +1432,34 @@ body.panel-open .bottom-left-controls {
   accent-color: #2563eb;
 }
 
+/* ── Request Data button — top-right (inherits .map-icon-btn visual) ── */
+.map-request-btn-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.97);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.2s;
+  z-index: 500;
+}
+.map-request-btn-top:hover {
+  background: #f3f4f6;
+  color: #111827;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+.map-request-btn-top svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 /* =============================================
    RESPONSIVE
    ============================================= */
