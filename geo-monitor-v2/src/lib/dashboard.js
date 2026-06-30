@@ -148,7 +148,7 @@ Object.assign(APP, {
     }
 
     content.innerHTML = html;
-    panel.classList.remove('open');
+    panel.classList.remove('open', 'closed', 'peek');
     panel.classList.add('open');
     this.state.panelState = 'open';
     document.body.classList.add('panel-open');
@@ -196,15 +196,7 @@ Object.assign(APP, {
     const tab = document.getElementById('panel-toggle-tab');
     if (tab) tab.classList.remove('hidden');
 
-    const hero = document.getElementById('panel-hero');
-    if (hero) hero.innerHTML = '';
-
     this._updatePanelToggleIcon();
-    
-    if (this.state._chart) {
-      this.state._chart.destroy();
-      this.state._chart = null;
-    }
   },
 
   togglePanel() {
@@ -216,32 +208,33 @@ Object.assign(APP, {
       if (panel.classList.contains('open')) {
         this.closePanel();
       } else if (panel.classList.contains('peek')) {
-        panel.classList.remove('peek');
+        panel.classList.remove('peek', 'closed');
         panel.classList.add('open');
         document.body.classList.add('panel-open');
-      } else if (this.state.lastViewed) {
-        if (this.state.lastViewed.isWatershed) {
-          this._openWatershedPanel(this.state.lastViewed.feature);
-        } else {
-          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
-        }
       } else {
-        this.closePanel();
+        panel.classList.remove('closed');
+        panel.classList.add('peek');
+        this.state.panelState = 'peek';
+        this._updatePanelToggleIcon();
       }
     } else {
       if (panel.classList.contains('open')) {
         this.closePanel();
-      } else if (this.state.lastViewed) {
-        if (this.state.lastViewed.isWatershed) {
-          this._openWatershedPanel(this.state.lastViewed.feature);
-        } else {
-          this.openPanel(this.state.lastViewed.feature, this.state.lastViewed.level);
-        }
       } else {
-        /* Default: show CAR region details */
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
+        // Just slide it open without destroying the DOM
+        panel.classList.remove('closed', 'peek');
+        panel.classList.add('open');
+        this.state.panelState = 'open';
+        document.body.classList.add('panel-open');
+        this._updatePanelToggleIcon();
+        
+        // If the panel is completely empty (e.g. first load), show default fallback
+        const content = document.getElementById('info-panel-content');
+        if (!content || !content.innerHTML.trim()) {
+          const carData = this.state.rawData[0];
+          if (carData && carData.features) {
+            this.openPanel(carData.features[0], 0);
+          }
         }
       }
     }
