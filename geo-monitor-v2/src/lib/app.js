@@ -38,6 +38,7 @@ export const APP = {
     hydroSelectedZone: null, /* currently isolated sub-watershed zone feature */
     hydroSelectedZoneLayer: null, /* leaflet layer of the isolated zone */
     zoneIntersections: null, /* loaded from zone-intersections.json */
+    showSubWatersheds: true,
     showStreamOrder: false,
     adminLayers: {},
     boundaryMenuOpen: false,
@@ -693,6 +694,13 @@ export const APP = {
       <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
         <div class="panel-section-title">Map Overlays</div>
         <div class="toggle-row">
+          <span>Sub-watersheds</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showSubWatersheds ? 'checked' : ''} onchange="APP._toggleSubWatersheds()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
           <span>Stream Order</span>
           <label class="toggle-switch">
             <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">

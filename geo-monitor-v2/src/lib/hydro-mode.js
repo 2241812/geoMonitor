@@ -562,8 +562,11 @@ Object.assign(APP, {
             self._selectSubWatershed(feature, layer);
           });
         },
-      }).addTo(map);
-      this.state.hydroLayers[1].bringToFront();
+      });
+      if (this.state.showSubWatersheds) {
+        this.state.hydroLayers[1].addTo(map);
+        this.state.hydroLayers[1].bringToFront();
+      }
       this._applyCustomColors();
     } else {
       this._showToast('Sub-watershed data not available for this basin');
@@ -750,6 +753,19 @@ Object.assign(APP, {
         return { slug, province: this._prettySlug(parts[0]), label: this._prettySlug(parts[1] || '') };
       }),
     };
+  },
+
+  /* Toggle sub-watersheds overlay on/off */
+  _toggleSubWatersheds() {
+    this.state.showSubWatersheds = !this.state.showSubWatersheds;
+    const sl = this.state.hydroLayers[1];
+    if (!sl) return;
+    if (this.state.showSubWatersheds) {
+      this.state.map.addLayer(sl);
+      sl.bringToFront();
+    } else {
+      this.state.map.removeLayer(sl);
+    }
   },
 
   /* Toggle stream order overlay on/off */
@@ -1079,6 +1095,13 @@ Object.assign(APP, {
       <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
         <div class="panel-section-title">Map Overlays</div>
         <div class="toggle-row">
+          <span>Sub-watersheds</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showSubWatersheds ? 'checked' : ''} onchange="APP._toggleSubWatersheds()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
           <span>Stream Order</span>
           <label class="toggle-switch">
             <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
