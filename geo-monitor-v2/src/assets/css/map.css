@@ -1366,6 +1366,72 @@ body.panel-open .bottom-left-controls {
   display: none !important;
 }
 
+/* ── Opacity Menu ── */
+.opacity-menu-wrapper {
+  position: absolute;
+  bottom: 20px;
+  right: 50px;
+  z-index: 1000;
+}
+
+.opacity-menu-btn {
+  width: 40px;
+  height: 40px;
+}
+
+.opacity-menu-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  padding: 12px;
+  opacity: 0;
+  transform: translateY(10px);
+  z-index: 600;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.opacity-menu-popup.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.opacity-menu-header {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: #374151;
+}
+
+.opacity-menu-slider-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.opacity-menu-slider-group:last-child {
+  margin-bottom: 0;
+}
+
+.opacity-menu-slider-label {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.opacity-menu-slider {
+  width: 100%;
+  accent-color: #2563eb;
+}
+
 /* =============================================
    RESPONSIVE
    ============================================= */

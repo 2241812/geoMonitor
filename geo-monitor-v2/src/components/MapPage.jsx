@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { useMapStore } from '../store/useMapStore';
+import OpacityMenu from './OpacityMenu';
 import { Link } from 'react-router-dom';
 import MapContainer from './MapContainer';
 import '../assets/css/style.css';
@@ -8,27 +8,6 @@ import 'leaflet/dist/leaflet.css';
 
 export default function MapPage() {
   const { viewMode, setViewMode } = useMapStore();
-  const [opacityMenuOpen, setOpacityMenuOpen] = useState(false);
-  const [fillOpacity, setFillOpacity] = useState(0.55);
-  const [outlineOpacity, setOutlineOpacity] = useState(1.0);
-
-  const handleFillOpacityChange = (e) => {
-    const val = parseFloat(e.target.value);
-    setFillOpacity(val);
-    if (window.APP) {
-      window.APP.state.selectedFillOpacity = val;
-      if (window.APP._updateSubWatershedStyles) window.APP._updateSubWatershedStyles();
-    }
-  };
-
-  const handleOutlineOpacityChange = (e) => {
-    const val = parseFloat(e.target.value);
-    setOutlineOpacity(val);
-    if (window.APP) {
-      window.APP.state.selectedOutlineOpacity = val;
-      if (window.APP._updateSubWatershedStyles) window.APP._updateSubWatershedStyles();
-    }
-  };
 
   return (
     <div className="map-app">
@@ -38,41 +17,7 @@ export default function MapPage() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
       </Link>
 
-      <div style={{ position: 'absolute', bottom: '20px', right: '50px', zIndex: 1000 }}>
-        <button 
-          className="map-icon-btn" 
-          onClick={() => setOpacityMenuOpen(!opacityMenuOpen)}
-          title="Adjust Selected Boundary Opacity"
-          style={{ width: '34px', height: '34px', background: 'rgba(255,255,255,0.9)', borderRadius: '4px', border: '2px solid rgba(0,0,0,0.2)' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
-        </button>
-        {opacityMenuOpen && (
-          <div style={{
-            position: 'absolute', bottom: '40px', right: '0', 
-            background: 'rgba(255, 255, 255, 0.95)', 
-            padding: '12px', borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            width: '200px', fontSize: '13px', color: '#374151'
-          }}>
-            <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>Selected Zone Settings</div>
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Fill Opacity</span>
-                <span>{Math.round(fillOpacity * 100)}%</span>
-              </div>
-              <input type="range" min="0" max="1" step="0.05" value={fillOpacity} onChange={handleFillOpacityChange} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Outline Opacity</span>
-                <span>{Math.round(outlineOpacity * 100)}%</span>
-              </div>
-              <input type="range" min="0" max="1" step="0.05" value={outlineOpacity} onChange={handleOutlineOpacityChange} style={{ width: '100%' }} />
-            </div>
-          </div>
-        )}
-      </div>
+      <OpacityMenu />
 
       <div className="top-right-controls">
         <button 
