@@ -292,92 +292,6 @@ button, input, select, textarea {
 }
 
 /* =============================================
-   BOUNDARY CONTROLS — Hydrohub-style floating panel
-   ============================================= */
-
-.outline-toggles {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 500;
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-body.mode-explore .outline-toggles {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) translateY(-10px);
-}
-
-.boundary-controls {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 24px;
-  padding: 4px;
-  gap: 3px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
-}
-
-.boundary-header {
-  display: none;
-}
-
-.boundary-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border: none;
-  background: transparent;
-  border-radius: 20px;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #6b7280;
-  transition: all 0.18s ease;
-  white-space: nowrap;
-}
-
-.boundary-option:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: #374151;
-}
-
-.boundary-option.active {
-  color: #065f46;
-  background: #ecfdf5;
-  font-weight: 600;
-  box-shadow: 0 1px 4px rgba(5, 150, 105, 0.15);
-}
-
-.boundary-radio-dot {
-  display: none;
-}
-
-.boundary-option:hover .boundary-radio-dot {
-  border-color: #9ca3af;
-}
-
-.boundary-option.active .boundary-radio-dot {
-  border-color: #065f46;
-}
-
-.boundary-option.active .boundary-radio-dot::after {
-  content: '';
-  width: 10px;
-  height: 10px;
-  background: #065f46;
-  border-radius: 50%;
-}
-
-/* =============================================
    BACK BUTTON — top-left (uses .map-icon-btn)
    ============================================= */
 
@@ -1068,7 +982,10 @@ body.panel-open .bottom-left-controls {
 .info-panel-collapse {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-width: 36px;
+  min-height: 36px;
   background: transparent;
   border: none;
   cursor: pointer;

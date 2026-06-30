@@ -40,9 +40,8 @@ export default function MapContainer() {
       </div>
 
       {/*
-        The legacy dashboard and outline-toggles UI injects DOM dynamically into these containers
+        The legacy dashboard UI injects DOM dynamically into the containers below
       */}
-      <div className="outline-toggles" id="outline-toggles"></div>
       <div id="map-dashboard" className="map-dashboard closed"></div>
 
       <div className="map-hover-label" id="map-hover-label"></div>
@@ -54,7 +53,11 @@ export default function MapContainer() {
           </svg>
           <span id="panel-header-label">Watershed Monitor</span>
           <button className="info-panel-collapse" id="info-panel-collapse" onClick={() => window.APP?.closePanel()}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Close
           </button>
         </div>
         <div className="panel-hero" id="panel-hero"></div>
