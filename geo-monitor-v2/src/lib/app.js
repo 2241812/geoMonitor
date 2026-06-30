@@ -582,7 +582,7 @@ export const APP = {
         <div class="panel-section">
           <div class="panel-section-title">Spans — Administrative Boundaries</div>
           ${this._renderSourceToggleHTML()}
-          <div class="span-group collapsed">
+          <div class="span-group">
             <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">
               Provinces & Municipalities
               <span class="span-count-badge">${spans.provinces.length}</span>
@@ -647,6 +647,18 @@ export const APP = {
     
     const panel = document.getElementById('info-panel');
     const content = document.getElementById('info-panel-content');
+    
+    let wasSpansOpen = false;
+    const openProvinces = [];
+    let scrollTop = 0;
+    if (content) {
+      const spansGroup = content.querySelector('.span-group');
+      if (spansGroup) wasSpansOpen = !spansGroup.classList.contains('collapsed');
+      content.querySelectorAll('.province-accordion:not(.collapsed)').forEach(el => {
+        if (el.dataset.provinceSlug) openProvinces.push(el.dataset.provinceSlug);
+      });
+      scrollTop = content.scrollTop || 0;
+    }
     
     this.state._wasExpandedBeforeWatershed = panel.classList.contains('expanded');
     this._updatePanelHeader();
@@ -741,6 +753,19 @@ export const APP = {
 
     content.innerHTML = html;
     
+    if (wasSpansOpen) {
+      const newSpans = content.querySelector('.span-group');
+      if (newSpans) newSpans.classList.remove('collapsed');
+    }
+    openProvinces.forEach(slug => {
+      const acc = content.querySelector(`.province-accordion[data-province-slug="${slug}"]`);
+      if (acc) acc.classList.remove('collapsed');
+    });
+    if (scrollTop > 0) {
+      // Small timeout to ensure DOM is ready
+      setTimeout(() => { content.scrollTop = scrollTop; }, 0);
+    }
+
     document.body.classList.add('panel-open');
     document.body.classList.remove('panel-expanded');
     panel.classList.remove('expanded');
