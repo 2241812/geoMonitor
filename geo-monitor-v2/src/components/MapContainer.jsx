@@ -1,4 +1,4 @@
-﻿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import '../lib/index.js'; // Imports APP and its submodules
 
 export default function MapContainer() {
@@ -40,8 +40,9 @@ export default function MapContainer() {
       </div>
 
       {/*
-        The legacy dashboard UI injects DOM dynamically into the containers below
+        The legacy dashboard and outline-toggles UI injects DOM dynamically into these containers
       */}
+      <div className="outline-toggles" id="outline-toggles"></div>
       <div id="map-dashboard" className="map-dashboard closed"></div>
 
       <div className="map-hover-label" id="map-hover-label"></div>
