@@ -1349,6 +1349,133 @@ body.panel-open .bottom-left-controls {
   accent-color: #2563eb;
 }
 
+/* ── Opacity Menu: Colors Section ── */
+.opacity-menu-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.opacity-menu-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.opacity-menu-section-toggle svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s;
+}
+
+.opacity-menu-section-toggle.expanded svg {
+  transform: rotate(180deg);
+}
+
+.opacity-menu-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.opacity-menu-toggle-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.opacity-menu-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: #d1d5db;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.opacity-menu-toggle.active {
+  background: #2563eb;
+}
+
+.opacity-menu-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.opacity-menu-toggle.active::after {
+  transform: translateX(16px);
+}
+
+.opacity-menu-color-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.opacity-menu-color-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.opacity-menu-color-item span {
+  font-size: 10px;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opacity-menu-color-input {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.opacity-menu-color-input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.opacity-menu-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.opacity-menu-section-heading {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 12px 0 8px;
+}
+
 /* ── Request Data button — top-right (inherits .map-icon-btn visual) ── */
 .map-request-btn-top {
   display: flex;

@@ -138,6 +138,7 @@ Object.assign(APP, {
       this._applyHydroFilter();
     }
     this._showBasinPickerPanel();
+    this._applyCustomColors();
     this._updateBreadcrumb();
     if (this.state.map) {
       this.state.map.on('zoomend', this._onZoomChange, this);
@@ -380,6 +381,50 @@ Object.assign(APP, {
     });
   },
 
+  /* Apply custom colors set via OpacityMenu color pickers */
+  _applyCustomColors() {
+    if (!this.state.customColors) return;
+    const layer = this.state.hydroLayers[0];
+    if (!layer) return;
+
+    if (this.state.showWatershedColors) {
+      const colors = this.state.customColors.watersheds;
+      layer.eachLayer(function(lf) {
+        const idx = this._hydroBasinIndex(lf.feature);
+        const c = colors[idx] || '#6b7280';
+        lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+      }.bind(this));
+
+      /* Also update sub-watershed layer (hydroLayers[1]) when toggled on */
+      if (this.state.hydroLayers[1]) {
+        const swColor = this.state.customColors.subWatershed || '#d1d5db';
+        this.state.hydroLayers[1].eachLayer(function(lf) {
+          const isSelected = (this.state.hydroSelectedZoneLayer === lf);
+          if (isSelected) {
+            const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
+            const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
+            lf.setStyle({ fillColor: swColor, fillOpacity: this.state.showSlope ? 0.15 : fillOpa, color: '#000000', weight: 3, opacity: outOpa });
+          } else if (!lf._hiddenByIsolation) {
+            lf.setStyle({ fillColor: swColor, fillOpacity: this.state.showSlope ? 0 : 0.3, color: '#000000', weight: 1.2, opacity: 0.8 });
+          }
+        }.bind(this));
+      }
+    } else {
+      layer.eachLayer(function(lf) {
+        lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
+      });
+
+      /* Reset sub-watershed layer to default color when toggled off */
+      if (this.state.hydroLayers[1]) {
+        this.state.hydroLayers[1].eachLayer(function(lf) {
+          if (!lf._hiddenByIsolation) {
+            lf.setStyle({ fillColor: '#d1d5db', fillOpacity: this.state.showSlope ? 0 : 0.3, color: '#000000', weight: 1.2, opacity: 0.8 });
+          }
+        }.bind(this));
+      }
+    }
+  },
+
   /* Drill into a basin: load sub-watersheds + stream order */
   async _hydroDrillDown(feature, leafletLayer) {
     if (this.state._drilling) return;
@@ -500,6 +545,7 @@ Object.assign(APP, {
         },
       }).addTo(map);
       this.state.hydroLayers[1].bringToFront();
+      this._applyCustomColors();
     } else {
       this._showToast('Sub-watershed data not available for this basin');
     }

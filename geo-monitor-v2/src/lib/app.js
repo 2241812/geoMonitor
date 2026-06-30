@@ -41,6 +41,8 @@ export const APP = {
     showStreamOrder: false,
     adminLayers: {},
     boundaryMenuOpen: false,
+    customColors: null,
+    showWatershedColors: false,
   },
 
   config: {},
