@@ -17,6 +17,7 @@ Object.assign(APP, {
     if (!panel || !content) return;
     
     this._updatePanelHeader();
+    document.body.classList.add('panel-open');
     this.state.lastViewed = { feature, level };
 
     const name = this._toTitleCase(this._featureName(feature, level));

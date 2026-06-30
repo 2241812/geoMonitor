@@ -244,6 +244,9 @@ Object.assign(APP, {
     }
 
     const styleConfig = this.config.colors[level];
+    /* Check for custom admin level color */
+    const customFill = this.state.customColors ? this.state.customColors['adminLevel' + level] : null;
+    const fillColor = customFill || styleConfig.fill;
     const self = this;
     const featureCount = data.features ? data.features.length : 0;
     const useHover = featureCount <= 300;
@@ -251,7 +254,7 @@ Object.assign(APP, {
     const layer = L.geoJSON(data, {
       interactive: true,
       style: () => ({
-        fillColor: styleConfig.fill,
+        fillColor: fillColor,
         fillOpacity: level === 0 ? 0.15 : 0,
         color: styleConfig.stroke,
         weight: styleConfig.weight,
@@ -283,7 +286,7 @@ Object.assign(APP, {
             /* Do not alter style if this feature is currently selected */
             if (self.state._selectedFeature === feature) return;
 
-            e.target.setStyle({ fillColor: styleConfig.fill, fillOpacity: level === 0 ? 0.15 : 0.35, weight: styleConfig.weight + 1, dashArray: null });
+            e.target.setStyle({ fillColor: fillColor, fillOpacity: level === 0 ? 0.15 : 0.35, weight: styleConfig.weight + 1, dashArray: null });
             e.target.bringToFront();
           });
           leafletLayer.on('mouseout', function (e) {
@@ -305,7 +308,7 @@ Object.assign(APP, {
             if (self.state._selectedFeature === feature) return;
 
             e.target.setStyle({
-              fillColor: styleConfig.fill,
+              fillColor: fillColor,
               fillOpacity: level === 0 ? 0.15 : 0,
               color: styleConfig.stroke,
               weight: styleConfig.weight,
@@ -360,6 +363,7 @@ Object.assign(APP, {
 
     layer.addTo(this.state.map);
     this.state.layers[level] = layer;
+    this._applyCustomColors();
   },
 
   /* ── Filter GeoJSON to parent boundary ─────── */
