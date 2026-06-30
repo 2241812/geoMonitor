@@ -417,7 +417,7 @@ export const APP = {
 
       if (this.state.hydroDrillLevel >= 1 && this.state.hydroSelectedBasin) {
         html += `<span class="breadcrumb-sep">›</span>`;
-        const shortName = this.state.hydroSelectedBasin.name.replace(/ River Watershed$/, '');
+        const shortName = this.state.hydroSelectedBasin.name.replace(/ River Watershed$/, '').replace(/ River$/, '');
         const hasZone = !!this.state.hydroSelectedZone;
         html += `<button class="breadcrumb-item ${hasZone ? 'clickable' : 'active'}" ${hasZone ? `onclick="APP._deselectSubWatershed()"` : ''}>${this._escHtml(shortName)}</button>`;
         if (this.state.hydroSelectedZone) {
