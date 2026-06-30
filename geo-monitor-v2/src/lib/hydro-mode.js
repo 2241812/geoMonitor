@@ -76,6 +76,7 @@ Object.assign(APP, {
       this.state.hydroSelectedZone = null;
       this.state.hydroSelectedZoneLayer = null;
       this.state.hydroActiveFilterIds = [];
+      this.state.showSubWatersheds = true;
       this.state.showStreamOrder = false;
       this.state.showSlope = false;
       this._clearHydroLayers();
@@ -872,6 +873,7 @@ Object.assign(APP, {
     this.state.adminLayers = {};
     this._closeBoundaryMenu();
     this.state.hydroActiveFilterIds = [];
+    this.state.showSubWatersheds = true;
     this.state.showStreamOrder = false;
     this.state.showSlope = false;
     this.state.hydroShowBoundary = false;
