@@ -1299,7 +1299,7 @@ body.panel-open .bottom-left-controls {
 .opacity-menu-popup {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 0;
+  right: 0;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
