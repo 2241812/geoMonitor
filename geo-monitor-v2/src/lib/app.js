@@ -38,7 +38,7 @@ export const APP = {
     hydroSelectedZone: null, /* currently isolated sub-watershed zone feature */
     hydroSelectedZoneLayer: null, /* leaflet layer of the isolated zone */
     zoneIntersections: null, /* loaded from zone-intersections.json */
-    showSubWatersheds: true,
+    showSubWatersheds: false,
     showStreamOrder: false,
     adminLayers: {},
     boundaryMenuOpen: false,
