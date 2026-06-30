@@ -313,7 +313,7 @@ Object.assign(APP, {
       onEachFeature(feature, leafletLayer) {
         if (silhouetteMode) return;
         const name = feature.properties.Name || feature.properties.Old_Name || 'Unknown';
-        const labelName = name.replace(/ Watershed$/, '');
+        const labelName = name.replace(/ River Watershed$/, '').replace(/ Watershed$/, '');
         const idx = self._hydroBasinIndex(feature);
         const basinColor = colors[idx] || '#6b7280';
         leafletLayer._labelText = labelName;
@@ -894,7 +894,7 @@ Object.assign(APP, {
         itemsHtml += `
           <button class="basin-picker-item" onclick="APP._hydroDrillDownByName('${this._escHtml(name)}')">
             <div class="basin-picker-info">
-              <span class="basin-picker-name">${this._escHtml(name).replace(/ River Watershed$/, '')}</span>
+              <span class="basin-picker-name">${this._escHtml(name).replace(/ River Watershed$/, '').replace(/ River$/, '')}</span>
               <span class="basin-picker-meta">
                 ${size ? `<span class="basin-size">${this._escHtml(size)}</span>` : ''}
                 ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
@@ -990,11 +990,11 @@ Object.assign(APP, {
       hero.className = 'panel-hero';
       hero.innerHTML = `<button onclick="APP._backToBasinPanel()" class="panel-back-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back to ${this._escHtml(basinName).replace(/ River Watershed$/, '')}
+          Back to ${this._escHtml(basinName).replace(/ River Watershed$/, '').replace(/ River$/, '')}
         </button>
         <div class="panel-level-badge">Sub-watershed</div>
         <h2 class="panel-title">Zone ${this._escHtml(String(gridcode))}</h2>
-        <p class="panel-subtitle">Sub-catchment within ${this._escHtml(basinName).replace(/ River Watershed$/, ' Basin')}</p>`;
+        <p class="panel-subtitle">Sub-catchment within ${this._escHtml(basinName).replace(/ River Watershed$/, ' Basin').replace(/ River Basin$/, ' Basin')}</p>`;
     }
 
     const html = `
@@ -1236,7 +1236,7 @@ Object.assign(APP, {
         html += `
         <label class="watershed-option">
           <input type="checkbox" class="panel-ws-checkbox" value="${this._escHtml(ws)}" onchange="APP.updateWatersheds(this)" ${isChecked ? 'checked' : ''}> 
-          ${this._escHtml(ws).replace(/ River Watershed$/, ' River').replace(/ Watershed$/, '')}
+          ${this._escHtml(ws).replace(/ River Watershed$/, '').replace(/ Watershed$/, '')}
         </label>`;
       });
       list.innerHTML = html;
