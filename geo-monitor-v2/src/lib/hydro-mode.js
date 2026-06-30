@@ -599,8 +599,8 @@ Object.assign(APP, {
           if (cat === 2) color = '#8BD100'; // 8-18
           else if (cat === 3) color = '#FFFF00'; // 18-30
           else if (cat === 4) color = '#FF9A36'; // 30-50
-          else if (cat >= 5) color = '#FF4A4A'; // >50
-          return { color: color, fillColor: color, weight: 1, opacity: 1, fillOpacity: 1 };
+          else if (cat >= 5) color = '#FFAA4A'; // >50
+          return { color: 'transparent', fillColor: color, weight: 0, opacity: 0, fillOpacity: 0.65 };
         },
       });
       if (this.state.showSlope) {
@@ -644,6 +644,7 @@ Object.assign(APP, {
 
     this._openSubWatershedPanel(feature);
     this._updateBreadcrumb();
+    this._updateStreamOrderStyles();
   },
 
   /* Deselect the current sub-watershed zone and return to the basin detail panel */
@@ -667,6 +668,7 @@ Object.assign(APP, {
       } catch (_) {}
     }
     this._updateBreadcrumb();
+    this._updateStreamOrderStyles();
   },
 
   /* Dim all sub-watershed zones except the selected one */
@@ -726,12 +728,51 @@ Object.assign(APP, {
     const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
     layer.eachLayer(leafletLayer => {
       if (leafletLayer._hiddenByIsolation) {
-        leafletLayer.setStyle({ fillOpacity: 0 });
+        // Use an opaque dark gray mask to hide the slope layer underneath when slope is toggled on,
+        // otherwise make it invisible (opacity 0) to let the basemap show through.
+        leafletLayer.setStyle({
+          fillColor: showSlope ? '#1e293b' : '#d1d5db',
+          fillOpacity: showSlope ? 1 : 0,
+          opacity: showSlope ? 0.3 : 0,
+          weight: showSlope ? 1 : 0
+        });
       } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
-        leafletLayer.setStyle({ fillOpacity: showSlope ? 0.15 : fillOpa, opacity: outOpa });
+        // Selected zone
+        leafletLayer.setStyle({ 
+          fillColor: '#d1d5db',
+          fillOpacity: showSlope ? 0.15 : fillOpa, 
+          opacity: outOpa 
+        });
       } else {
-        leafletLayer.setStyle({ fillOpacity: showSlope ? 0 : 0.3, opacity: 0.8 });
+        // No zone selected (default state)
+        leafletLayer.setStyle({ 
+          fillColor: '#d1d5db',
+          fillOpacity: showSlope ? 0 : 0.3, 
+          opacity: 0.8 
+        });
       }
+    });
+  },
+
+  /* Update stream order lines based on current selected zone */
+  _updateStreamOrderStyles() {
+    const layer = this.state.hydroLayers[2];
+    if (!layer) return;
+    const selectedZone = this.state.hydroSelectedZone;
+    
+    layer.eachLayer(leafletLayer => {
+      const order = leafletLayer.feature.properties.grid_code || 1;
+      const weight = Math.max(2, Math.min(order * 1.2, 4.5));
+      let opacity = 1;
+      
+      // If a zone is selected, and this stream line has a ZoneID, and it doesn't match, hide it.
+      if (selectedZone && leafletLayer.feature.properties.ZoneID) {
+        if (leafletLayer.feature.properties.ZoneID !== selectedZone.properties.ID) {
+          opacity = 0;
+        }
+      }
+      
+      leafletLayer.setStyle({ color: '#0022ff', weight: weight, opacity: opacity });
     });
   },
 
@@ -777,6 +818,7 @@ Object.assign(APP, {
     if (this.state.showStreamOrder) {
       this.state.map.addLayer(sl);
       sl.bringToFront();
+      this._updateStreamOrderStyles();
     } else {
       this.state.map.removeLayer(sl);
     }
