@@ -387,12 +387,24 @@ Object.assign(APP, {
     const layer = this.state.hydroLayers[0];
     if (!layer) return;
 
+    const isDrilledIn = this.state.hydroDrillLevel === 1;
+    const selectedFeature = isDrilledIn && this.state.hydroSelectedBasin ? this.state.hydroSelectedBasin.feature : null;
+
     if (this.state.showWatershedColors) {
       const colors = this.state.customColors.watersheds;
       layer.eachLayer(function(lf) {
         const idx = this._hydroBasinIndex(lf.feature);
         const c = colors[idx] || '#6b7280';
-        lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+        if (isDrilledIn) {
+          /* When drilled in, only update the selected basin outline color;
+             leave dimmed basins untouched so they stay hidden */
+          if (lf.feature === selectedFeature) {
+            lf.setStyle({ fillColor: c, fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
+          }
+          /* else: skip — preserve the dim state set by _hydroDrillDown */
+        } else {
+          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+        }
       }.bind(this));
 
       /* Also update sub-watershed layer (hydroLayers[1]) when toggled on */
@@ -411,7 +423,14 @@ Object.assign(APP, {
       }
     } else {
       layer.eachLayer(function(lf) {
-        lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
+        if (isDrilledIn) {
+          if (lf.feature === selectedFeature) {
+            lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
+          }
+          /* else: skip — preserve the dim state */
+        } else {
+          lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
+        }
       });
 
       /* Reset sub-watershed layer to default color when toggled off */
