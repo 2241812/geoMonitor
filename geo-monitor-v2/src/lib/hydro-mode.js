@@ -1043,6 +1043,18 @@ Object.assign(APP, {
     const content = document.getElementById('info-panel-content');
     if (!panel || !content) return;
 
+    let wasSpansOpen = false;
+    const openProvinces = [];
+    let scrollTop = 0;
+    if (content) {
+      const spansGroup = content.querySelector('.span-group');
+      if (spansGroup) wasSpansOpen = !spansGroup.classList.contains('collapsed');
+      content.querySelectorAll('.province-accordion:not(.collapsed)').forEach(el => {
+        if (el.dataset.provinceSlug) openProvinces.push(el.dataset.provinceSlug);
+      });
+      scrollTop = content.scrollTop || 0;
+    }
+
     this._updatePanelHeader();
 
     const p = feature.properties || {};
@@ -1121,6 +1133,19 @@ Object.assign(APP, {
       ${spansHTML}`;
 
     content.innerHTML = html;
+
+    if (wasSpansOpen) {
+      const newSpans = content.querySelector('.span-group');
+      if (newSpans) newSpans.classList.remove('collapsed');
+    }
+    openProvinces.forEach(slug => {
+      const acc = content.querySelector(`.province-accordion[data-province-slug="${slug}"]`);
+      if (acc) acc.classList.remove('collapsed');
+    });
+    if (scrollTop > 0) {
+      setTimeout(() => { content.scrollTop = scrollTop; }, 0);
+    }
+
     document.body.classList.add('panel-open');
     document.body.classList.remove('panel-expanded');
     panel.classList.remove('expanded', 'open', 'closed', 'peek');
