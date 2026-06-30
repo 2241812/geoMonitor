@@ -595,12 +595,12 @@ Object.assign(APP, {
       this.state.hydroLayers[3] = L.geoJSON(results[2].value, {
         style: (feature) => {
           const cat = feature.properties.gridcode || 1;
-          let color = '#4ade80'; // 1: 0-8
-          if (cat === 2) color = '#facc15'; // 8-18
-          else if (cat === 3) color = '#fb923c'; // 18-30
-          else if (cat === 4) color = '#f87171'; // 30-50
-          else if (cat >= 5) color = '#991b1b'; // >50
-          return { color: color, fillColor: color, weight: 0.5, opacity: 0.8, fillOpacity: 0.5 };
+          let color = '#50A823'; // 1: 0-8
+          if (cat === 2) color = '#8BD100'; // 8-18
+          else if (cat === 3) color = '#FFFF00'; // 18-30
+          else if (cat === 4) color = '#FF9A36'; // 30-50
+          else if (cat >= 5) color = '#FF4A4A'; // >50
+          return { color: color, fillColor: color, weight: 1, opacity: 1, fillOpacity: 1 };
         },
       });
       if (this.state.showSlope) {
