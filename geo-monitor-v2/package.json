@@ -11,11 +11,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@turf/turf": "^7.3.5",
     "leaflet": "^1.9.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.0",
+    "tesseract.js": "^7.0.0",
     "topojson-client": "^3.1.0",
     "topojson-server": "^3.0.1",
     "zustand": "^5.0.14"

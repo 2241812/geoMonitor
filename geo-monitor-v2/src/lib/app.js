@@ -67,6 +67,7 @@ export const APP = {
       maxBounds: this.config.maxBounds,
       zoomAnimation: true,
       zoomSnap: 0.5,
+      preferCanvas: true,
     });
 
     /* Basemaps */
@@ -582,7 +583,7 @@ export const APP = {
         <div class="panel-section">
           <div class="panel-section-title">Spans — Administrative Boundaries</div>
           ${this._renderSourceToggleHTML()}
-          <div class="span-group">
+          <div class="span-group collapsed">
             <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">
               Provinces & Municipalities
               <span class="span-count-badge">${spans.provinces.length}</span>
