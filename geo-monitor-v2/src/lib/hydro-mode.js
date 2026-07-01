@@ -537,9 +537,9 @@ Object.assign(APP, {
       this.state.hydroVtLayer[1] = new VectorTileLayer(swData, {
         style: () => ({ fillColor: '#d1d5db', fillOpacity: 0.3, color: '#000000', weight: 1.2, opacity: 0.8 }),
       });
-      if (this.state.showSubWatersheds) {
-        this.state.hydroVtLayer[1].addTo(map);
-      }
+      /* Always add VT layer to the map — tiles must exist for redraw to work.
+         Visibility is controlled by the style getter, not by add/remove. */
+      this.state.hydroVtLayer[1].addTo(map);
 
       /* Layer 1b: Transparent overlay L.geoJSON — event handling only (invisible) */
       this.state.hydroLayers[1] = L.geoJSON(swData, {
@@ -846,11 +846,9 @@ Object.assign(APP, {
   _toggleSubWatersheds() {
     this.state.showSubWatersheds = !this.state.showSubWatersheds;
     const sl = this.state.hydroLayers[1];
-    const vt = this.state.hydroVtLayer?.[1];
     if (!sl) return;
 
     if (this.state.showSubWatersheds) {
-      if (vt && !vt._map) vt.addTo(this.state.map);
       this.state.map.addLayer(sl);
       sl.bringToFront();
     } else {
