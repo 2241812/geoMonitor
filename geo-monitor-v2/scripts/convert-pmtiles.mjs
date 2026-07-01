@@ -92,7 +92,7 @@ async function convertDataset(name, layerName, dirPath) {
   if (!gj) return false;
 
   console.log('Tiling via geojson-vt...');
-  const idx = geojsonvt(gj, { maxZoom: MAX_ZOOM, tolerance: 0, extent: TILE_SIZE, buffer: 64 });
+  const idx = geojsonvt(gj, { maxZoom: MAX_ZOOM, tolerance: 3, extent: TILE_SIZE, buffer: 64 });
 
   const allTiles = [];
   for (let z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
@@ -101,7 +101,7 @@ async function convertDataset(name, layerName, dirPath) {
       for (let y = 0; y < max; y++) {
         const t = idx.getTile(z, x, y);
         if (t && t.features && t.features.length) {
-          try { allTiles.push({ z, x, y, data: Buffer.from(vt({ [layerName]: t })) }); }
+          try { allTiles.push({ z, x, y, data: Buffer.from(vt.fromGeojsonVt({ [layerName]: t }, { version: 2, extent: TILE_SIZE })) }); }
           catch (_) { /* skip encode failures */ }
         }
       }
