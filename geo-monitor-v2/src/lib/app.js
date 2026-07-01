@@ -727,6 +727,13 @@ export const APP = {
             <span class="toggle-knob"></span>
           </label>
         </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Land Cover</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
       </div>` : ''}
 
       <div class="panel-section">

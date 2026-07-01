@@ -11,14 +11,12 @@ export default defineConfig({
       ext: '.br',
       threshold: 1024,
       deleteOriginFile: false,
-      filter: /\.(js|mjs|cjs|json|css|html|svg|xml|topojson)$/i,
     }),
     viteCompression({
       algorithm: 'gzip',
       ext: '.gz',
       threshold: 1024,
       deleteOriginFile: false,
-      filter: /\.(js|mjs|cjs|json|css|html|svg|xml|topojson)$/i,
     }),
   ],
 })
