@@ -234,7 +234,7 @@ Object.assign(APP, {
       if (!src.geoJSON[level]) return;
       const resp = await fetch(src.geoJSON[level]);
       if (!resp.ok) throw new Error('Failed to load level ' + level);
-      this.state.rawData[geoKey] = window.decodeGeo(window.decodeGeo(await resp.json()));
+      this.state.rawData[geoKey] = window.decodeGeo(await resp.json());
     }
 
     let data = this.state.rawData[geoKey];
@@ -496,7 +496,7 @@ Object.assign(APP, {
       const src = this._src();
       if (!src.geoJSON[level]) return;
       const resp = await fetch(src.geoJSON[level]);
-      if (resp.ok) this.state.rawData[level] = window.decodeGeo(window.decodeGeo(await resp.json()));
+      if (resp.ok) this.state.rawData[level] = window.decodeGeo(await resp.json());
     } catch (_) { }
   },
 
@@ -740,7 +740,7 @@ Object.assign(APP, {
       try {
         const resp = await fetch(src.geoJSON[lvl]);
         if (!resp.ok) throw new Error('Failed to load');
-        data = window.decodeGeo(window.decodeGeo(await resp.json()));
+        data = window.decodeGeo(await resp.json());
         this.state.rawData[cacheKey] = data;
       } catch (_) {
         return;

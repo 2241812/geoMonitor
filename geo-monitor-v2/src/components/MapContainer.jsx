@@ -35,7 +35,7 @@ export default function MapContainer() {
       <div className="map-loading" id="loading-overlay">
         <div className="map-loading-inner">
           <div className="map-spinner"></div>
-          <div className="map-loading-text">Loading boundaries…</div>
+          <div className="map-loading-text" id="loading-text">Loading map data…</div>
         </div>
       </div>
 

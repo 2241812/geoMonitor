@@ -89,18 +89,18 @@ export const APP = {
     this._loadHierarchy();
     
     fetch('geoJSON/watershed-intersections.json')
-      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
+      .then(r => r.json()).then(window.decodeGeo)
       .then(w => { this.state.watershedIntersections = w; })
       .catch(() => {});
 
     fetch('geoJSON/zone-intersections.json')
-      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
+      .then(r => r.json()).then(window.decodeGeo)
       .then(z => { this.state.zoneIntersections = z; })
       .catch(() => {});
       
     // Prefetch watershed data for area lookups and hydro mode
     fetch('geoJSON/CAR Watersheds.topojson')
-      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
+      .then(r => r.json()).then(window.decodeGeo)
       .then(d => {
         if (!this.state.rawData['watershed']) this.state.rawData['watershed'] = d;
         /* If we start in watersheds view mode, enter hydro mode now that data is ready */
@@ -189,7 +189,7 @@ export const APP = {
 
   _loadHierarchy() {
     fetch(this._src().hierarchy)
-      .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
+      .then(r => r.json()).then(window.decodeGeo)
       .then(h => { this.state.hierarchy = h; })
       .catch(() => {});
   },
@@ -306,7 +306,7 @@ export const APP = {
     let loaded = 0;
     pending.forEach(lvl => {
       fetch(src.geoJSON[lvl])
-        .then(r => r.json()).then(window.decodeGeo).then(window.decodeGeo)
+        .then(r => r.json()).then(window.decodeGeo)
         .then(d => {
           this.state.rawData[lvl] = d;
           loaded++;

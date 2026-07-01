@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@turf/turf": "^7.3.5",
+    "geojson-vt": "^4.0.3",
     "leaflet": "^1.9.4",
+    "pmtiles": "^4.4.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-leaflet": "^5.0.0",
@@ -34,6 +36,7 @@
     "oxlint": "^1.69.0",
     "prettier": "^3.8.4",
     "puppeteer": "^25.2.1",
-    "vite": "^8.1.0"
+    "vite": "^8.1.0",
+    "vite-plugin-compression": "^0.5.1"
   }
 }
