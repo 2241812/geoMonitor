@@ -1519,6 +1519,14 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   gap: 4px;
 }
 
+.opacity-menu-color-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
 .opacity-menu-color-item span {
   font-size: 10px;
   color: #6b7280;

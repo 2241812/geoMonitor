@@ -250,19 +250,19 @@ export default function OpacityMenu() {
 
               <div className="opacity-menu-section-heading">Sub-watershed &amp; Boundaries</div>
 
-              <div className="opacity-menu-color-item" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div className="opacity-menu-color-row">
                 <span className="opacity-menu-toggle-label">Sub-watershed Fill</span>
                 <input type="color" className="opacity-menu-color-input" value={subWatershedColor} onChange={handleSubWatershedColorChange} title="Sub-watershed Fill Color" />
               </div>
-              <div className="opacity-menu-color-item" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div className="opacity-menu-color-row">
                 <span className="opacity-menu-toggle-label">Region Fill</span>
                 <input type="color" className="opacity-menu-color-input" value={adminLevel0Color} onChange={(ev) => handleAdminColorChange(0, ev)} title="Region Fill Color" />
               </div>
-              <div className="opacity-menu-color-item" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div className="opacity-menu-color-row">
                 <span className="opacity-menu-toggle-label">Province Fill</span>
                 <input type="color" className="opacity-menu-color-input" value={adminLevel1Color} onChange={(ev) => handleAdminColorChange(1, ev)} title="Province Fill Color" />
               </div>
-              <div className="opacity-menu-color-item" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div className="opacity-menu-color-row">
                 <span className="opacity-menu-toggle-label">Municipality Fill</span>
                 <input type="color" className="opacity-menu-color-input" value={adminLevel2Color} onChange={(ev) => handleAdminColorChange(2, ev)} title="Municipality Fill Color" />
               </div>
