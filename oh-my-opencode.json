@@ -2,5 +2,7 @@
   "models": {
     "default": "antigravity-gemini-3-pro"
   },
-  "google_auth": false
+  "google_auth": false,
+  "commit_footer": false,
+  "include_co_authored_by": false
 }
