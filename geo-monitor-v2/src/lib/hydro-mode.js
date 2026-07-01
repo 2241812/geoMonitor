@@ -589,6 +589,13 @@ Object.assign(APP, {
         this.state.hydroLayers[1].bringToFront();
       }
       this._syncSubWatershedVtStyles();
+      if (!this.state.showSubWatersheds) {
+        const vt = this.state.hydroVtLayer?.[1];
+        if (vt) {
+          const c = vt.getContainer();
+          if (c) c.style.display = 'none';
+        }
+      }
       this._applyCustomColors();
     } else {
       this._showToast('Sub-watershed data not available for this basin');
@@ -686,7 +693,6 @@ Object.assign(APP, {
     const self = this;
     const swColor = this.state.customColors?.subWatershed || '#d1d5db';
     const showSlope = this.state.showSlope;
-    const showSW = this.state.showSubWatersheds;
     const selectedLayer = this.state.hydroSelectedZoneLayer;
     const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
     const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
@@ -706,7 +712,7 @@ Object.assign(APP, {
     vtLayer.setStyleGetter(function(tileFeature) {
       const idx = tileFeature.id;
       const st = featureState[idx];
-      if (!showSW || !st || st.hidden) {
+      if (!st || st.hidden) {
         return { fillColor: '#d1d5db', fillOpacity: 0, weight: 0 };
       }
       if (st.selected) {
@@ -854,7 +860,16 @@ Object.assign(APP, {
     } else {
       this.state.map.removeLayer(sl);
     }
-    this._syncSubWatershedVtStyles();
+    /* Toggle VT canvas container visibility — NO add/remove, NO redraw.
+       The VT layer stays on the map permanently; tiles are rendered once
+       during drill-down and hidden/shown via CSS display. This avoids the
+       worker-termination bug (onRemove kills the Web Worker) and the
+       race-condition flicker from rapid redraw() calls on hover. */
+    const vt = this.state.hydroVtLayer?.[1];
+    if (vt) {
+      const c = vt.getContainer();
+      if (c) c.style.display = this.state.showSubWatersheds ? '' : 'none';
+    }
   },
 
   /* Toggle stream order overlay on/off */
