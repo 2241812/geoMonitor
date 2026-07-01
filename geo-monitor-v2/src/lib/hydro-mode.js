@@ -686,7 +686,6 @@ Object.assign(APP, {
     const self = this;
     const swColor = this.state.customColors?.subWatershed || '#d1d5db';
     const showSlope = this.state.showSlope;
-    const showSW = this.state.showSubWatersheds;
     const selectedLayer = this.state.hydroSelectedZoneLayer;
     const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
     const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
@@ -706,7 +705,7 @@ Object.assign(APP, {
     vtLayer.setStyleGetter(function(tileFeature) {
       const idx = tileFeature.id;
       const st = featureState[idx];
-      if (!showSW || !st || st.hidden) {
+      if (!st || st.hidden) {
         return { fillColor: '#d1d5db', fillOpacity: 0, weight: 0 };
       }
       if (st.selected) {
@@ -846,14 +845,15 @@ Object.assign(APP, {
   _toggleSubWatersheds() {
     this.state.showSubWatersheds = !this.state.showSubWatersheds;
     const sl = this.state.hydroLayers[1];
-    if (!sl) return;
+    const vt = this.state.hydroVtLayer?.[1];
+    if (!sl && !vt) return;
     if (this.state.showSubWatersheds) {
-      this.state.map.addLayer(sl);
-      sl.bringToFront();
+      if (vt) vt.addTo(this.state.map);
+      if (sl) { this.state.map.addLayer(sl); sl.bringToFront(); }
     } else {
-      this.state.map.removeLayer(sl);
+      if (vt) this.state.map.removeLayer(vt);
+      if (sl) this.state.map.removeLayer(sl);
     }
-    this._syncSubWatershedVtStyles();
   },
 
   /* Toggle stream order overlay on/off */
