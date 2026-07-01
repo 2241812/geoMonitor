@@ -483,6 +483,48 @@ export const APP = {
     d.appendChild(document.createTextNode(String(str)));
     return d.innerHTML;
   },
+
+  _updateHydroLegend() {
+    if (!this.state.map) return;
+    const old = this.state._legendCtrl;
+    if (old) { this.state.map.removeControl(old); this.state._legendCtrl = null; }
+
+    const showSlope = !!this.state.showSlope;
+    const showLCM  = !!this.state.showLCM;
+    if (!showSlope && !showLCM) return;
+
+    const slopeColors = [
+      ['1 — 0–8%', '#50A823'], ['2 — 8–18%', '#8BD100'],
+      ['3 — 18–30%', '#FFFF00'], ['4 — 30–50%', '#FF9A36'], ['5 — 50%+', '#FF4A4A'],
+    ];
+    const lcmColors = [
+      ['Closed Forest', '#016300'], ['Open Forest', '#02DB00'], ['Brush/Shrubs', '#FED4C2'],
+      ['Grassland', '#974749'], ['Annual Crop', '#FEFAC2'], ['Perennial Crop', '#FFFF00'],
+      ['Built-up', '#FF0000'], ['Open/Barren', '#D2D2D2'], ['Inland Water', '#281F94'],
+      ['Fishpond', '#0081FE'], ['Mangrove Forest', '#BA00FE'], ['Marshland/Swamp', '#C2FBFE'],
+    ];
+
+    const getItems = (colors) => colors.map(([label, color]) =>
+      `<tr><td><span style="display:inline-block;width:16px;height:12px;background:${color};border:1px solid #555;margin-right:4px"></span></td><td>${label}</td></tr>`
+    ).join('');
+
+    let html = '';
+    if (showSlope) {
+      html += `<div style="margin-bottom:4px"><b>Slope</b><table>${getItems(slopeColors)}</table></div>`;
+    }
+    if (showLCM) {
+      html += `<div><b>Land Cover</b><table>${getItems(lcmColors)}</table></div>`;
+    }
+
+    const ctrl = L.control({ position: 'bottomright' });
+    ctrl.onAdd = () => {
+      const el = L.DomUtil.create('div', 'legend hydro-legend');
+      el.innerHTML = html;
+      return el;
+    };
+    ctrl.addTo(this.state.map);
+    this.state._legendCtrl = ctrl;
+  },
   toggleFullscreen() {
     const btn = document.getElementById('map-fullscreen-btn');
     if (!document.fullscreenElement) {

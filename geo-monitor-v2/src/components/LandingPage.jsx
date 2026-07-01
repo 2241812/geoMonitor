@@ -2,12 +2,37 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import '../assets/css/style.css';
 
+const PREFETCH_FILES = [
+  'geoJSON/CAR Watersheds.topojson',
+  'geoJSON/CAR NAMRIA Boundary.topojson',
+  'geoJSON/CAR NAMRIA Provincial Boundary.topojson',
+  'geoJSON/CAR NAMRIA Municipal Boundary.topojson',
+  'geoJSON/CAR CAD Boundary.topojson',
+  'geoJSON/CAR CAD Municipal Boundary.topojson',
+  'geoJSON/hierarchy.json',
+  'geoJSON/watershed-intersections.json',
+  'geoJSON/zone-intersections.json',
+];
+
 export default function LandingPage() {
   useEffect(() => {
     if(window.initLenis) window.initLenis();
     if(window.initLandingPageScripts) {
       // Small timeout ensures the DOM has fully painted before we query selectors
       setTimeout(window.initLandingPageScripts, 100);
+    }
+    // Prefetch lightweight GeoJSON files while user reads the landing page
+    // so they load from cache when the map page is navigated to.
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        PREFETCH_FILES.forEach(file => {
+          const link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.href = file;
+          link.as = 'fetch';
+          document.head.appendChild(link);
+        });
+      }, { timeout: 3000 });
     }
   }, []);
 

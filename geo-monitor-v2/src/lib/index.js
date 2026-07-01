@@ -7,6 +7,9 @@ import './boundary-mode.js';
 import './hydro-mode.js';
 import './map-layers.js';
 
+/* leaflet.vectorgrid registers itself on L.vectorGrid — no named export needed */
+import 'leaflet.vectorgrid';
+
 // Expose APP globally so vanilla Leaflet map can still operate 
 // alongside the new React components.
 window.APP = APP;

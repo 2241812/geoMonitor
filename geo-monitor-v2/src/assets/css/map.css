@@ -2565,3 +2565,30 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
     width: 100%;
   }
 }
+
+/* =============================================
+   HYDRO LEGEND (slope / land cover overlay)
+   ============================================= */
+.hydro-legend {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.hydro-legend b {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+.hydro-legend table {
+  border-collapse: collapse;
+}
+.hydro-legend td {
+  padding: 1px 4px;
+  vertical-align: middle;
+}

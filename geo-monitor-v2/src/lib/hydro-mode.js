@@ -825,39 +825,34 @@ Object.assign(APP, {
     let sl = this.state.hydroLayers[3];
 
     if (this.state.showSlope && !sl) {
-      const code = this.state._basinCode;
-      if (!code) return;
-      const loadEl = document.getElementById('loading-text');
-      if (loadEl) loadEl.textContent = 'Loading slope data…';
-      try {
-        const res = await fetch('temp_assets/' + code + '_Slope.geojson');
-        if (!res.ok) throw new Error('No Slope');
-        const data = await res.json();
-        sl = L.geoJSON(data, {
-          style: (feature) => {
-            const cat = feature.properties.gridcode || 1;
-            const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
-            return { color: 'transparent', fillColor: colors[cat] || '#cccccc', weight: 0, opacity: 0, fillOpacity: 0.65 };
-          },
-        });
-        this.state.hydroLayers[3] = sl;
-      } catch (_) {
-        this.state.showSlope = false;
-        this._showToast('Slope data not available for this basin');
-        return;
-      } finally {
-        if (loadEl) loadEl.textContent = '';
-      }
+      const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
+      sl = L.vectorGrid.protobuf('tiles/slope/{z}/{x}/{y}.mvt', {
+        rendererFactory: L.canvas.tile,
+        vectorTileLayerStyles: {
+          slope: (props) => ({
+            fill: true,
+            fillColor: colors[props.gridcode] || '#cccccc',
+            fillOpacity: 0.65,
+            stroke: false,
+            weight: 0,
+          }),
+        },
+        interactive: false,
+        maxZoom: 12,
+        minZoom: 6,
+      });
+      this.state.hydroLayers[3] = sl;
     }
 
     this._updateSubWatershedStyles();
-    if (!sl) { this.state.showSlope = false; return; }
-    if (this.state.showSlope) {
+    if (!sl) { this.state.showSlope = false; }
+    if (this.state.showSlope && sl) {
       map.addLayer(sl);
       sl.bringToBack();
-    } else {
+    } else if (sl) {
       map.removeLayer(sl);
     }
+    this._updateHydroLegend();
   },
 
   async _toggleLCM() {
@@ -866,46 +861,39 @@ Object.assign(APP, {
     let sl = this.state.hydroLayers[4];
 
     if (this.state.showLCM && !sl) {
-      const code = this.state._lcmCode || this.state._basinCode;
-      if (!code) return;
-      const loadEl = document.getElementById('loading-text');
-      if (loadEl) loadEl.textContent = 'Loading land cover data…';
-      try {
-        /* Load pre-filtered GeoJSON (the source TopoJSON has malformed arcs —
-           delta-encoded without a transform, producing globe-wrapping bands) */
-        const res = await fetch('temp_assets/' + code + '_LCM2025.geojson');
-        if (!res.ok) throw new Error('No LCM');
-        const data = await res.json();
-        const colors = {
-          'Closed Forest': '#016300', 'Open Forest': '#02DB00', 'Brush/Shrubs': '#FED4C2',
-          'Grassland': '#974749', 'Annual Crop': '#FEFAC2', 'Perennial Crop': '#FFFF00',
-          'Built-up': '#FF0000', 'Open/Barren': '#D2D2D2', 'Inland Water': '#281F94',
-          'Fishpond': '#0081FE', 'Mangrove Forest': '#BA00FE', 'Marshland/Swamp': '#C2FBFE',
-        };
-        sl = L.geoJSON(data, {
-          style: (feature) => ({
-            color: 'transparent', fillColor: colors[feature.properties.LCM_CLASS] || '#cccccc',
-            weight: 0, opacity: 0, fillOpacity: 0.6,
+      const colors = {
+        'Closed Forest': '#016300', 'Open Forest': '#02DB00', 'Brush/Shrubs': '#FED4C2',
+        'Grassland': '#974749', 'Annual Crop': '#FEFAC2', 'Perennial Crop': '#FFFF00',
+        'Built-up': '#FF0000', 'Open/Barren': '#D2D2D2', 'Inland Water': '#281F94',
+        'Fishpond': '#0081FE', 'Mangrove Forest': '#BA00FE', 'Marshland/Swamp': '#C2FBFE',
+      };
+      sl = L.vectorGrid.protobuf('tiles/lcm/{z}/{x}/{y}.mvt', {
+        rendererFactory: L.canvas.tile,
+        vectorTileLayerStyles: {
+          lcm: (props) => ({
+            fill: true,
+            fillColor: colors[props.LCM_CLASS] || '#cccccc',
+            fillOpacity: 0.6,
+            stroke: false,
+            weight: 0,
           }),
-        });
-        this.state.hydroLayers[4] = sl;
-      } catch (_) {
-        this.state.showLCM = false;
-        this._showToast('Land cover data not available for this basin');
-        return;
-      } finally {
-        if (loadEl) loadEl.textContent = '';
-      }
+        },
+        interactive: false,
+        maxZoom: 12,
+        minZoom: 6,
+      });
+      this.state.hydroLayers[4] = sl;
     }
 
     this._updateSubWatershedStyles();
-    if (!sl) { this.state.showLCM = false; return; }
-    if (this.state.showLCM) {
+    if (!sl) { this.state.showLCM = false; }
+    if (this.state.showLCM && sl) {
       map.addLayer(sl);
       sl.bringToBack();
-    } else {
+    } else if (sl) {
       map.removeLayer(sl);
     }
+    this._updateHydroLegend();
   },
 
   /* Drill back up to the basins overview */
