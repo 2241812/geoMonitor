@@ -757,6 +757,20 @@ Object.assign(APP, {
         layer.bindTooltip(this._featureName(feature, lvl), { sticky: true, direction: 'top' });
       },
     }).addTo(this.state.map);
+
+    /* After adding admin boundary overlays, reorder layers so hydro features
+       remain visually on top:
+       - Bring basin outlines (hydroLayers[0]) to front within the Canvas renderer
+         so the selected basin's thick black outline isn't buried under admin polygons
+       - Bring stream order lines (hydroLayers[2]) to front
+       - Bring slope (hydroLayers[3]) and LCM (hydroLayers[4]) to front so they
+         render above admin lines */
+    if (this.state.viewMode === 'watersheds') {
+      [0, 2, 3, 4].forEach(i => {
+        const l = this.state.hydroLayers[i];
+        if (l) { try { l.bringToFront(); } catch (_) {} }
+      });
+    }
   },
 
   /* Remove all admin boundary layers */

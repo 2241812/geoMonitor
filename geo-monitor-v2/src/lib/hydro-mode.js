@@ -1,5 +1,4 @@
 import { APP } from './app.js';
-import { VectorTileLayer } from './vector-tile-layer.js';
 /**
  * hydro-mode.js
  * Contains all watershed drill-down, zone isolation, and hydro UI logic.
@@ -445,7 +444,6 @@ Object.assign(APP, {
         }.bind(this));
       }
     }
-    this._syncSubWatershedVtStyles();
   },
 
   /* Drill into a basin: load sub-watersheds + stream order */
@@ -526,36 +524,24 @@ Object.assign(APP, {
       fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }).then(window.decodeGeo),
     ]);
 
-    /* Sub-watershed polygons */
+    /* Sub-watershed polygons — single L.geoJSON for both visual rendering and events.
+       Previously used a dual-layer approach (VectorTileLayer canvas + transparent overlay)
+       which caused z-order issues and blinking on hover. Reverted to plain L.geoJSON. */
     if (results[0].status === 'fulfilled') {
-      const swData = results[0].value;
-      /* Tag each feature with its array index so VectorTileLayer and overlay can cross-reference */
-      swData.features.forEach((f, i) => { f._vtIndex = i; });
-
-      /* Layer 1a: VectorTileLayer — canvas visual rendering (performant for many polygons) */
-      this._initHydroVtStorage();
-      this.state.hydroVtLayer[1] = new VectorTileLayer(swData, {
+      this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
         style: () => ({ fillColor: '#d1d5db', fillOpacity: 0.3, color: '#000000', weight: 1.2, opacity: 0.8 }),
-      });
-      /* Always add VT layer to the map — tiles must exist for redraw to work.
-         Visibility is controlled by the style getter, not by add/remove. */
-      this.state.hydroVtLayer[1].addTo(map);
-
-      /* Layer 1b: Transparent overlay L.geoJSON — event handling only (invisible) */
-      this.state.hydroLayers[1] = L.geoJSON(swData, {
-        style: () => ({ fillColor: '#d1d5db', fillOpacity: 0, weight: 0, stroke: false }),
         onEachFeature(feature, layer) {
           layer.on('mouseover', function(e) {
             if (layer._hiddenByIsolation) return;
             const isSelected = (self.state.hydroSelectedZoneLayer === layer);
             const fillOpa = isSelected && self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
-            /* Update overlay style (affects hover outline on overlay's invisible path) */
-            e.target.setStyle({ fillOpacity: 0, weight: 0 });
-            /* Trigger canvas highlight via sync */
-            if (self.state.hydroVtLayer?.[1]) {
-              self.state.hydroVtLayer[1]._hoverIdx = feature._vtIndex;
-              self._syncSubWatershedVtStyles();
-            }
+            e.target.setStyle({
+              fillColor: '#d1d5db',
+              fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
+              color: '#000000',
+              weight: 2.5,
+              opacity: 1,
+            });
             const lbl = document.getElementById('map-hover-label');
             if (lbl) {
               const p = feature.properties;
@@ -566,16 +552,29 @@ Object.assign(APP, {
           });
           layer.on('mouseout', function(e) {
             if (layer._hiddenByIsolation) return;
-            if (self.state.hydroVtLayer?.[1]) {
-              self.state.hydroVtLayer[1]._hoverIdx = -1;
-              self._syncSubWatershedVtStyles();
+            const isSelected = (self.state.hydroSelectedZoneLayer === layer);
+            if (isSelected) {
+              const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
+              const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
+              e.target.setStyle({
+                fillColor: '#d1d5db',
+                fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
+                color: '#000000',
+                weight: 3,
+                opacity: outOpa,
+              });
+            } else {
+              e.target.setStyle({
+                fillColor: '#d1d5db',
+                fillOpacity: self.state.showSlope ? 0 : 0.3,
+                color: '#000000',
+                weight: 1.2,
+                opacity: 0.8,
+              });
             }
             self._hideHoverLabel();
           });
           layer.on('click', function(e) {
-            /* Only stop propagation if this zone is visible;
-               dimmed/hidden zones should let the click pass through
-               to the map background handler for drill-up. */
             if (!layer._hiddenByIsolation) {
               L.DomEvent.stopPropagation(e);
             }
@@ -587,14 +586,6 @@ Object.assign(APP, {
       if (this.state.showSubWatersheds) {
         this.state.hydroLayers[1].addTo(map);
         this.state.hydroLayers[1].bringToFront();
-      }
-      this._syncSubWatershedVtStyles();
-      if (!this.state.showSubWatersheds) {
-        const vt = this.state.hydroVtLayer?.[1];
-        if (vt) {
-          const c = vt.getContainer();
-          if (c) c.style.display = 'none';
-        }
       }
       this._applyCustomColors();
     } else {
@@ -677,54 +668,9 @@ Object.assign(APP, {
     this._updateStreamOrderStyles();
   },
 
-  /* Initialize hydroVtLayer storage array if not already present */
-  _initHydroVtStorage() {
-    if (!this.state.hydroVtLayer) this.state.hydroVtLayer = {};
-  },
 
-  /* After any state change that affects sub-watershed appearance (dim, isolate,
-     restore, custom colors, slope toggle, hover), rebuild the canvas VectorTileLayer
-     style getter and redraw so the canvas matches the transparent overlay's state. */
-  _syncSubWatershedVtStyles() {
-    const overlay = this.state.hydroLayers[1];
-    const vtLayer = this.state.hydroVtLayer?.[1];
-    if (!overlay || !vtLayer) return;
 
-    const self = this;
-    const swColor = this.state.customColors?.subWatershed || '#d1d5db';
-    const showSlope = this.state.showSlope;
-    const selectedLayer = this.state.hydroSelectedZoneLayer;
-    const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
-    const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
-    const hoverIdx = vtLayer._hoverIdx != null ? vtLayer._hoverIdx : -1;
 
-    const featureState = {};
-    overlay.eachLayer(function(lf) {
-      if (!lf.feature) return;
-      const idx = lf.feature._vtIndex;
-      if (idx == null) return;
-      featureState[idx] = {
-        hidden: !!lf._hiddenByIsolation,
-        selected: selectedLayer === lf,
-      };
-    });
-
-    vtLayer.setStyleGetter(function(tileFeature) {
-      const idx = tileFeature.id;
-      const st = featureState[idx];
-      if (!st || st.hidden) {
-        return { fillColor: '#d1d5db', fillOpacity: 0, weight: 0 };
-      }
-      if (st.selected) {
-        return { fillColor: swColor, fillOpacity: showSlope ? 0.15 : fillOpa, color: '#000000', weight: 3, opacity: outOpa };
-      }
-      if (hoverIdx === idx) {
-        return { fillColor: swColor, fillOpacity: showSlope ? 0.15 : 0.55, color: '#000000', weight: 2.5, opacity: 1 };
-      }
-      return { fillColor: swColor, fillOpacity: showSlope ? 0 : 0.3, color: '#000000', weight: 1.2, opacity: 0.8 };
-    });
-    vtLayer.redraw();
-  },
 
   /* Dim all sub-watershed zones except the selected one */
   _dimSubWatersheds(selectedFeature) {
@@ -755,7 +701,6 @@ Object.assign(APP, {
     });
     /* Keep stream order on top */
     if (this.state.hydroLayers[2]) this.state.hydroLayers[2].bringToFront();
-    this._syncSubWatershedVtStyles();
   },
 
   /* Restore all sub-watershed zones to their normal style */
@@ -773,7 +718,6 @@ Object.assign(APP, {
         opacity: 0.8,
       });
     });
-    this._syncSubWatershedVtStyles();
   },
 
   /* Update sub-watershed styles based on current slope visibility */
@@ -802,7 +746,6 @@ Object.assign(APP, {
         });
       }
     });
-    this._syncSubWatershedVtStyles();
   },
 
   /* Update stream order lines based on current selected zone */
@@ -859,16 +802,6 @@ Object.assign(APP, {
       sl.bringToFront();
     } else {
       this.state.map.removeLayer(sl);
-    }
-    /* Toggle VT canvas container visibility — NO add/remove, NO redraw.
-       The VT layer stays on the map permanently; tiles are rendered once
-       during drill-down and hidden/shown via CSS display. This avoids the
-       worker-termination bug (onRemove kills the Web Worker) and the
-       race-condition flicker from rapid redraw() calls on hover. */
-    const vt = this.state.hydroVtLayer?.[1];
-    if (vt) {
-      const c = vt.getContainer();
-      if (c) c.style.display = this.state.showSubWatersheds ? '' : 'none';
     }
   },
 
@@ -1026,11 +959,6 @@ Object.assign(APP, {
     [0, 1, 2, 3, 4].forEach(l => {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
-    /* Clean up VectorTileLayer instances */
-    if (this.state.hydroVtLayer) {
-      Object.values(this.state.hydroVtLayer).forEach(vt => { if (vt) map.removeLayer(vt); });
-      this.state.hydroVtLayer = {};
-    }
     this._removeHydroSilhouette();
   },
 
