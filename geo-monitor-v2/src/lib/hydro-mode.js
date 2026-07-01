@@ -779,22 +779,19 @@ Object.assign(APP, {
     layer.eachLayer(leafletLayer => {
       if (leafletLayer._hiddenByIsolation) {
         leafletLayer.setStyle({
-          fillColor: showOverlay ? '#1e293b' : '#d1d5db',
-          fillOpacity: showOverlay ? 1 : 0,
-          opacity: showOverlay ? 0.3 : 0,
-          weight: showOverlay ? 1 : 0
+          fillColor: '#d1d5db', fillOpacity: 0, opacity: 0, weight: 0
         });
       } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
         leafletLayer.setStyle({ 
           fillColor: '#d1d5db',
-          fillOpacity: showOverlay ? 0.15 : fillOpa, 
-          opacity: outOpa 
+          fillOpacity: showOverlay ? 0.15 : fillOpa,
+          color: '#000000', weight: 3, opacity: outOpa
         });
       } else {
         leafletLayer.setStyle({ 
           fillColor: '#d1d5db',
-          fillOpacity: showOverlay ? 0 : 0.3, 
-          opacity: 0.8 
+          fillOpacity: showOverlay ? 0 : 0.3,
+          color: '#000000', weight: 1.2, opacity: 0.8
         });
       }
     });
@@ -879,6 +876,8 @@ Object.assign(APP, {
     if (this.state.showSlope && !sl) {
       const code = this.state._basinCode;
       if (!code) return;
+      const loadEl = document.getElementById('loading-text');
+      if (loadEl) loadEl.textContent = 'Loading slope data…';
       try {
         const res = await fetch('temp_assets/' + code + '_Slope.topojson');
         if (!res.ok) throw new Error('No Slope');
@@ -895,6 +894,8 @@ Object.assign(APP, {
         this.state.showSlope = false;
         this._showToast('Slope data not available for this basin');
         return;
+      } finally {
+        if (loadEl) loadEl.textContent = '';
       }
     }
 
@@ -916,10 +917,14 @@ Object.assign(APP, {
     if (this.state.showLCM && !sl) {
       const code = this.state._lcmCode || this.state._basinCode;
       if (!code) return;
+      const loadEl = document.getElementById('loading-text');
+      if (loadEl) loadEl.textContent = 'Loading land cover data…';
       try {
-        const res = await fetch('temp_assets/' + code + '_LCM2025.topojson');
+        /* Load pre-filtered GeoJSON (the source TopoJSON has malformed arcs —
+           delta-encoded without a transform, producing globe-wrapping bands) */
+        const res = await fetch('temp_assets/' + code + '_LCM2025.geojson');
         if (!res.ok) throw new Error('No LCM');
-        const data = await res.json().then(window.decodeGeo);
+        const data = await res.json();
         const colors = {
           'Closed Forest': '#005e2e', 'Open Forest': '#38a800', 'Brush/Shrubs': '#d2cd00',
           'Grassland': '#ffeab3', 'Annual Crop': '#ffa069', 'Perennial Crop': '#ff6b4a',
@@ -937,6 +942,8 @@ Object.assign(APP, {
         this.state.showLCM = false;
         this._showToast('Land cover data not available for this basin');
         return;
+      } finally {
+        if (loadEl) loadEl.textContent = '';
       }
     }
 
