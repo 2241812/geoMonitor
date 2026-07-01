@@ -845,12 +845,14 @@ Object.assign(APP, {
   _toggleSubWatersheds() {
     this.state.showSubWatersheds = !this.state.showSubWatersheds;
     const sl = this.state.hydroLayers[1];
-    if (!sl) return;
+    const vt = this.state.hydroVtLayer?.[1];
+    if (!sl && !vt) return;
     if (this.state.showSubWatersheds) {
-      this.state.map.addLayer(sl);
-      sl.bringToFront();
+      if (sl) { this.state.map.addLayer(sl); sl.bringToFront(); }
+      if (vt) vt.addTo(this.state.map);
     } else {
-      this.state.map.removeLayer(sl);
+      if (sl) this.state.map.removeLayer(sl);
+      if (vt) this.state.map.removeLayer(vt);
     }
   },
 
@@ -879,14 +881,14 @@ Object.assign(APP, {
       const loadEl = document.getElementById('loading-text');
       if (loadEl) loadEl.textContent = 'Loading slope data…';
       try {
-        const res = await fetch('temp_assets/' + code + '_Slope.topojson');
+        const res = await fetch('temp_assets/' + code + '_Slope.geojson');
         if (!res.ok) throw new Error('No Slope');
-        const data = await res.json().then(window.decodeGeo);
+        const data = await res.json();
         sl = L.geoJSON(data, {
           style: (feature) => {
             const cat = feature.properties.gridcode || 1;
-            const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36' };
-            return { color: 'transparent', fillColor: colors[cat] || '#FFAA4A', weight: 0, opacity: 0, fillOpacity: 0.65 };
+            const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
+            return { color: 'transparent', fillColor: colors[cat] || '#cccccc', weight: 0, opacity: 0, fillOpacity: 0.65 };
           },
         });
         this.state.hydroLayers[3] = sl;
@@ -926,10 +928,10 @@ Object.assign(APP, {
         if (!res.ok) throw new Error('No LCM');
         const data = await res.json();
         const colors = {
-          'Closed Forest': '#005e2e', 'Open Forest': '#38a800', 'Brush/Shrubs': '#d2cd00',
-          'Grassland': '#ffeab3', 'Annual Crop': '#ffa069', 'Perennial Crop': '#ff6b4a',
-          'Built-up': '#d60000', 'Open/Barren': '#e3c8b5', 'Inland Water': '#56b4e9',
-          'Fishpond': '#0096b2', 'Mangrove Forest': '#00693e', 'Marshland/Swamp': '#7a7a7a',
+          'Closed Forest': '#016300', 'Open Forest': '#02DB00', 'Brush/Shrubs': '#FED4C2',
+          'Grassland': '#974749', 'Annual Crop': '#FEFAC2', 'Perennial Crop': '#FFFF00',
+          'Built-up': '#FF0000', 'Open/Barren': '#D2D2D2', 'Inland Water': '#281F94',
+          'Fishpond': '#0081FE', 'Mangrove Forest': '#BA00FE', 'Marshland/Swamp': '#C2FBFE',
         };
         sl = L.geoJSON(data, {
           style: (feature) => ({
