@@ -134,15 +134,15 @@ export default function LandingPage() {
               <span className="stat-label">Municipalities</span>
               <span className="stat-desc">Partnering with local government units for on-ground conservation.</span>
             </div>
-            <div className="stat-item fade-in-up delay-3">
-              <span className="stat-number" data-target="13">0</span>
+            <div className="stat-item fade-in-up delay-1">
+              <span className="stat-number" data-target="14">0</span>
               <span className="stat-label">River Basins</span>
               <span className="stat-desc">Monitoring the crucial hydrological lifelines of Northern Luzon.</span>
             </div>
-            <div className="stat-item fade-in-up delay-4">
-              <span className="stat-number" data-target="2">0</span>
+            <div className="stat-item fade-in-up delay-1">
+              <span className="stat-number" data-target="6+">0</span>
               <span className="stat-label">Data Sources</span>
-              <span className="stat-desc">Integrating real-time satellite imagery and on-ground sensor data.</span>
+              <span className="stat-desc">Integrating NAMRIA, CAD, Watersheds, Subwatersheds, Stream Order, and Elevation data.</span>
             </div>
         </div>
         
@@ -195,7 +195,7 @@ export default function LandingPage() {
     </section>
 
     
-    <section className="basins-section" id="basins">
+    <section className="basins-section" id="basins-section">
       <div className="section-inner">
         <div className="basins-section-header fade-in-up">
           <div className="section-label" style={{'justifyContent': 'center'}}>
@@ -213,7 +213,7 @@ export default function LandingPage() {
 
         
         <div className="basins-grid fade-in-up">
-          {BASINS_DATA.slice(0, showMoreBasins ? BASINS_DATA.length : 4).map((basin, idx) => (
+          {BASINS_DATA.slice(0, 4).map((basin, idx) => (
             <div key={basin.id} className="basin-card" onClick={() => openModal(basin)}>
               <img src={basin.image} alt={basin.name} className="basin-card-image" loading="lazy" />
               <div className="basin-card-overlay"></div>
@@ -225,9 +225,63 @@ export default function LandingPage() {
           ))}
         </div>
 
+        <div className={`basins-collapse ${showMoreBasins ? '' : 'hidden'}`} style={{ width: '100%' }}>
+          <div className="basins-grid" style={{ marginTop: 'var(--space-lg)' }}>
+            {BASINS_DATA.slice(4).map((basin, idx) => (
+              <div key={basin.id} className="basin-card" onClick={() => openModal(basin)}>
+                <img src={basin.image} alt={basin.name} className="basin-card-image" loading="lazy" />
+                <div className="basin-card-overlay"></div>
+                <div className="basin-card-content">
+                  <h3 className="basin-card-name">{basin.name}</h3>
+                  <p className="basin-card-desc">{basin.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="view-all-container fade-in-up">
-          <button className="view-all-btn" onClick={() => setShowMoreBasins(!showMoreBasins)}>
-            <span>{showMoreBasins ? "Show Less" : "View All 14 River Basins"}</span>
+          <button className="view-all-btn" onClick={() => {
+            if (showMoreBasins) {
+              setShowMoreBasins(false);
+              
+              const section = document.getElementById('basins-section');
+              if (section) {
+                const offset = 40; // Reduced from 80 to perfectly frame the cards
+                const targetY = section.getBoundingClientRect().top + window.scrollY - offset;
+                const startY = window.scrollY;
+                const distance = targetY - startY;
+                const duration = 600; // Must exactly match the CSS transition duration (0.6s)
+                let startTime = null;
+
+                // Easing function for smooth acceleration and deceleration
+                const easeInOutQuad = (t, b, c, d) => {
+                  t /= d / 2;
+                  if (t < 1) return (c / 2) * t * t + b;
+                  t--;
+                  return (-c / 2) * (t * (t - 2) - 1) + b;
+                };
+
+                const animateScroll = (currentTime) => {
+                  if (!startTime) startTime = currentTime;
+                  const elapsedTime = currentTime - startTime;
+                  
+                  window.scrollTo(0, easeInOutQuad(elapsedTime, startY, distance, duration));
+                  
+                  if (elapsedTime < duration) {
+                    requestAnimationFrame(animateScroll);
+                  } else {
+                    window.scrollTo(0, targetY); // Ensure it locks into the exact final position
+                  }
+                };
+                
+                requestAnimationFrame(animateScroll);
+              }
+            } else {
+              setShowMoreBasins(true);
+            }
+          }}>
+            <span>{showMoreBasins ? "View Less" : "View All 14 Basins"}</span>
             <svg className="view-all-icon" style={{ transform: showMoreBasins ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>

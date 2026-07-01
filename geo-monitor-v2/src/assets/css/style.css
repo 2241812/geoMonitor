@@ -479,13 +479,13 @@ img {
 
 .stats-section {
   position: relative;
-  min-height: 80vh;
+  min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 4rem clamp(16px, 3vw, 32px) 4rem;
+  padding: 4rem 0;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(5, 150, 105, 0.06) 0%, rgba(6, 95, 70, 0.1) 100%);
   border-top: 1px solid rgba(5, 150, 105, 0.08);
@@ -649,7 +649,7 @@ img {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 8rem clamp(20px, 4vw, 48px) 2rem;
+  padding: 8rem 0 2rem 0;
   overflow: hidden;
   background: #ffffff;
   color: #111827;
@@ -797,7 +797,7 @@ img {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 6rem clamp(20px, 4vw, 48px) 2rem;
+  padding: 4rem 0;
   overflow: hidden;
   background: #f9fafb;
 }
@@ -812,7 +812,7 @@ img {
 
 .basins-section-header {
   text-align: center;
-  margin-bottom: clamp(16px, 2vw, 32px);
+  margin-bottom: 2rem;
 }
 
 .basins-section-header .section-title {
@@ -837,13 +837,8 @@ img {
 }
 
 /* Center the last two cards (13th and 14th) in the 4-column grid */
-.basins-grid .basin-card:nth-child(13) {
-  grid-column: 2;
-}
-
-.basins-grid .basin-card:nth-child(14) {
-  grid-column: 3;
-}
+.basins-collapse .basins-grid .basin-card:nth-child(9) { grid-column: 2 / span 1; }
+.basins-collapse .basins-grid .basin-card:nth-child(10) { grid-column: 3 / span 1; }
 
 .basin-card {
   position: relative;
@@ -866,8 +861,7 @@ img {
   max-height: 0;
   opacity: 0;
   transition: max-height 0.35s ease, opacity 0.25s ease;
-  width: calc(75% - 6px);
-  margin: 0 auto;
+  width: 100%;
 }
 
 .basins-collapse:not(.hidden) {
@@ -1065,7 +1059,7 @@ img {
 .modal-split-bottom {
   width: 55%;
   height: 100%;
-  padding: 2rem;
+  padding: 2.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -1176,7 +1170,7 @@ img {
 .view-all-container {
   display: flex;
   justify-content: center;
-  margin-top: var(--space-lg);
+  margin-top: 1.5rem;
 }
 
 .view-all-btn {

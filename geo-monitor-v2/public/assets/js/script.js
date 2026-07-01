@@ -51,10 +51,12 @@ window.initLandingPageScripts = function() {
 
   /* ── Animated counters ── */
   function animateCounter(el) {
-    var target = parseInt(el.getAttribute('data-target'), 10);
+    var targetStr = el.getAttribute('data-target');
+    var target = parseInt(targetStr, 10);
     if (isNaN(target) || target === 0) return;
+    var suffix = targetStr.replace(/[0-9]/g, '');
     var current = 0;
-    var duration = 1500;
+    var duration = 3000;
     var startTime = performance.now();
 
     function tick(now) {
@@ -62,7 +64,7 @@ window.initLandingPageScripts = function() {
       var progress = Math.min(elapsed / duration, 1);
       var eased = 1 - Math.pow(1 - progress, 4);
       current = Math.round(eased * target);
-      el.textContent = current;
+      el.textContent = current + suffix;
       if (progress < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
