@@ -80,6 +80,7 @@ Object.assign(APP, {
       this.state.showSubWatersheds = false;
       this.state.showStreamOrder = false;
       this.state.showSlope = false;
+      this.state.showLCM = false;
       this._clearHydroLayers();
       this._renderHydroBasins();
       this._showBasinPickerPanel();
@@ -512,16 +513,20 @@ Object.assign(APP, {
     const swPath = basePath + code + '_SW.topojson';
     const soPath = basePath + code + '_StreamOrder.topojson';
     const slopePath = 'temp_assets/' + code + '_Slope.topojson';
+    /* LCM filename may differ from basin code (e.g. ACH → UCH) */
+    const lcmCode = ({ ACH: 'UCH' })[code] || code;
+    const lcmPath = 'temp_assets/' + lcmCode + '_LCM2025.topojson';
 
     /* Remove any previous level-1 layers */
-    [1, 2, 3].forEach(l => {
+    [1, 2, 3, 4].forEach(l => {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
 
     const results = await Promise.allSettled([
       fetch(swPath).then(r => { if (!r.ok) throw new Error('No SW'); return r.json(); }).then(window.decodeGeo),
       fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }).then(window.decodeGeo),
-      fetch(slopePath).then(r => { if (!r.ok) throw new Error('No Slope'); return r.json(); }).then(window.decodeGeo)
+      fetch(slopePath).then(r => { if (!r.ok) throw new Error('No Slope'); return r.json(); }).then(window.decodeGeo),
+      fetch(lcmPath).then(r => { if (!r.ok) throw new Error('No LCM'); return r.json(); }).then(window.decodeGeo)
     ]);
 
     /* Sub-watershed polygons */
@@ -629,6 +634,36 @@ Object.assign(APP, {
       }
     } else {
       console.warn('Slope data not available for this basin');
+    }
+
+    /* LCM land cover layer — loaded but only added to map if toggled on */
+    if (results[3] && results[3].status === 'fulfilled') {
+      this.state.hydroLayers[4] = L.geoJSON(results[3].value, {
+        style: (feature) => {
+          const cls = feature.properties.LCM_CLASS || 'unknown';
+          const colors = {
+            'Closed Forest': '#005e2e',
+            'Open Forest': '#38a800',
+            'Brush/Shrubs': '#d2cd00',
+            'Grassland': '#ffeab3',
+            'Annual Crop': '#ffa069',
+            'Perennial Crop': '#ff6b4a',
+            'Built-up': '#d60000',
+            'Open/Barren': '#e3c8b5',
+            'Inland Water': '#56b4e9',
+            'Fishpond': '#0096b2',
+            'Mangrove Forest': '#00693e',
+            'Marshland/Swamp': '#7a7a7a',
+          };
+          return { color: 'transparent', fillColor: colors[cls] || '#cccccc', weight: 0, opacity: 0, fillOpacity: 0.6 };
+        },
+      });
+      if (this.state.showLCM) {
+        this.state.hydroLayers[4].addTo(map);
+        this.state.hydroLayers[4].bringToBack();
+      }
+    } else {
+      console.warn('LCM data not available for this basin');
     }
 
     /* Open the basin detail panel */
@@ -793,31 +828,27 @@ Object.assign(APP, {
   _updateSubWatershedStyles() {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
-    const showSlope = this.state.showSlope;
+    const showOverlay = this.state.showSlope || this.state.showLCM;
     const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
     const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
     layer.eachLayer(leafletLayer => {
       if (leafletLayer._hiddenByIsolation) {
-        // Use an opaque dark gray mask to hide the slope layer underneath when slope is toggled on,
-        // otherwise make it invisible (opacity 0) to let the basemap show through.
         leafletLayer.setStyle({
-          fillColor: showSlope ? '#1e293b' : '#d1d5db',
-          fillOpacity: showSlope ? 1 : 0,
-          opacity: showSlope ? 0.3 : 0,
-          weight: showSlope ? 1 : 0
+          fillColor: showOverlay ? '#1e293b' : '#d1d5db',
+          fillOpacity: showOverlay ? 1 : 0,
+          opacity: showOverlay ? 0.3 : 0,
+          weight: showOverlay ? 1 : 0
         });
       } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
-        // Selected zone
         leafletLayer.setStyle({ 
           fillColor: '#d1d5db',
-          fillOpacity: showSlope ? 0.15 : fillOpa, 
+          fillOpacity: showOverlay ? 0.15 : fillOpa, 
           opacity: outOpa 
         });
       } else {
-        // No zone selected (default state)
         leafletLayer.setStyle({ 
           fillColor: '#d1d5db',
-          fillOpacity: showSlope ? 0 : 0.3, 
+          fillOpacity: showOverlay ? 0 : 0.3, 
           opacity: 0.8 
         });
       }
@@ -909,6 +940,20 @@ Object.assign(APP, {
     }
   },
 
+  /* Toggle LCM land cover overlay on/off */
+  _toggleLCM() {
+    this.state.showLCM = !this.state.showLCM;
+    const sl = this.state.hydroLayers[4];
+    this._updateSubWatershedStyles();
+    if (!sl) return;
+    if (this.state.showLCM) {
+      this.state.map.addLayer(sl);
+      sl.bringToBack();
+    } else {
+      this.state.map.removeLayer(sl);
+    }
+  },
+
   /* Drill back up to the basins overview */
   _hydroDrillUp(targetLevel) {
     if (this.state._drilling) return;
@@ -957,7 +1002,7 @@ Object.assign(APP, {
   _clearHydroLayers() {
     const map = this.state.map;
     if (!map) return;
-    [0, 1, 2].forEach(l => {
+    [0, 1, 2, 3, 4].forEach(l => {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
     /* Clean up VectorTileLayer instances */
@@ -994,6 +1039,7 @@ Object.assign(APP, {
     this.state.showSubWatersheds = false;
     this.state.showStreamOrder = false;
     this.state.showSlope = false;
+    this.state.showLCM = false;
     this.state.hydroShowBoundary = false;
     this.state.activeOutline = null;
     this.state.outlineLayers = {};
@@ -1244,6 +1290,13 @@ Object.assign(APP, {
           <span>Slope</span>
           <label class="toggle-switch">
             <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Land Cover</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
             <span class="toggle-knob"></span>
           </label>
         </div>
