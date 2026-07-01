@@ -846,8 +846,11 @@ Object.assign(APP, {
   _toggleSubWatersheds() {
     this.state.showSubWatersheds = !this.state.showSubWatersheds;
     const sl = this.state.hydroLayers[1];
+    const vt = this.state.hydroVtLayer?.[1];
     if (!sl) return;
+
     if (this.state.showSubWatersheds) {
+      if (vt && !vt._map) vt.addTo(this.state.map);
       this.state.map.addLayer(sl);
       sl.bringToFront();
     } else {
