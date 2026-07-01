@@ -1084,9 +1084,7 @@ img {
 
 .modal-desc-container {
   flex: 1;
-  overflow-y: auto;
   margin-bottom: 0;
-  padding-right: 8px;
 }
 
 .modal-desc-container::-webkit-scrollbar {
@@ -1106,7 +1104,7 @@ img {
 .modal-basin-desc {
   font-size: 0.95rem;
   color: #334155;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .modal-cta-btn {
