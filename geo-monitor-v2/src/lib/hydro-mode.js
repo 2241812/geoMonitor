@@ -512,12 +512,11 @@ Object.assign(APP, {
     const self = this;
     const swPath = basePath + code + '_SW.topojson';
     const soPath = basePath + code + '_StreamOrder.topojson';
-    const slopePath = 'temp_assets/' + code + '_Slope.topojson';
-    /* LCM filename may differ from basin code (e.g. ACH → UCH) */
-    const lcmCode = ({ ACH: 'UCH' })[code] || code;
-    const lcmPath = 'temp_assets/' + lcmCode + '_LCM2025.topojson';
 
-    /* Remove any previous level-1 layers */
+    this.state._basinCode = code;
+    this.state._basinFolder = folder;
+    this.state._lcmCode = ({ ACH: 'UCH' })[code] || code;
+
     [1, 2, 3, 4].forEach(l => {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
@@ -525,8 +524,6 @@ Object.assign(APP, {
     const results = await Promise.allSettled([
       fetch(swPath).then(r => { if (!r.ok) throw new Error('No SW'); return r.json(); }).then(window.decodeGeo),
       fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }).then(window.decodeGeo),
-      fetch(slopePath).then(r => { if (!r.ok) throw new Error('No Slope'); return r.json(); }).then(window.decodeGeo),
-      fetch(lcmPath).then(r => { if (!r.ok) throw new Error('No LCM'); return r.json(); }).then(window.decodeGeo)
     ]);
 
     /* Sub-watershed polygons */
@@ -612,58 +609,6 @@ Object.assign(APP, {
       }
     } else {
       this._showToast('Stream order data not available for this basin');
-    }
-
-    /* Slope layer — loaded but only added to map if toggled on */
-    if (results[2] && results[2].status === 'fulfilled') {
-      this.state.hydroLayers[3] = L.geoJSON(results[2].value, {
-        style: (feature) => {
-          const cat = feature.properties.gridcode || 1;
-          let color = '#50A823'; // 1: 0-8
-          if (cat === 2) color = '#8BD100'; // 8-18
-          else if (cat === 3) color = '#FFFF00'; // 18-30
-          else if (cat === 4) color = '#FF9A36'; // 30-50
-          else if (cat >= 5) color = '#FFAA4A'; // >50
-          return { color: 'transparent', fillColor: color, weight: 0, opacity: 0, fillOpacity: 0.65 };
-        },
-      });
-      if (this.state.showSlope) {
-        this.state.hydroLayers[3].addTo(map);
-        // keep slope below stream order
-        this.state.hydroLayers[3].bringToBack();
-      }
-    } else {
-      console.warn('Slope data not available for this basin');
-    }
-
-    /* LCM land cover layer — loaded but only added to map if toggled on */
-    if (results[3] && results[3].status === 'fulfilled') {
-      this.state.hydroLayers[4] = L.geoJSON(results[3].value, {
-        style: (feature) => {
-          const cls = feature.properties.LCM_CLASS || 'unknown';
-          const colors = {
-            'Closed Forest': '#005e2e',
-            'Open Forest': '#38a800',
-            'Brush/Shrubs': '#d2cd00',
-            'Grassland': '#ffeab3',
-            'Annual Crop': '#ffa069',
-            'Perennial Crop': '#ff6b4a',
-            'Built-up': '#d60000',
-            'Open/Barren': '#e3c8b5',
-            'Inland Water': '#56b4e9',
-            'Fishpond': '#0096b2',
-            'Mangrove Forest': '#00693e',
-            'Marshland/Swamp': '#7a7a7a',
-          };
-          return { color: 'transparent', fillColor: colors[cls] || '#cccccc', weight: 0, opacity: 0, fillOpacity: 0.6 };
-        },
-      });
-      if (this.state.showLCM) {
-        this.state.hydroLayers[4].addTo(map);
-        this.state.hydroLayers[4].bringToBack();
-      }
-    } else {
-      console.warn('LCM data not available for this basin');
     }
 
     /* Open the basin detail panel */
@@ -926,31 +871,82 @@ Object.assign(APP, {
     }
   },
 
-  /* Toggle slope overlay on/off */
-  _toggleSlope() {
+  async _toggleSlope() {
     this.state.showSlope = !this.state.showSlope;
-    const sl = this.state.hydroLayers[3];
+    const map = this.state.map;
+    let sl = this.state.hydroLayers[3];
+
+    if (this.state.showSlope && !sl) {
+      const code = this.state._basinCode;
+      if (!code) return;
+      try {
+        const res = await fetch('temp_assets/' + code + '_Slope.topojson');
+        if (!res.ok) throw new Error('No Slope');
+        const data = await res.json().then(window.decodeGeo);
+        sl = L.geoJSON(data, {
+          style: (feature) => {
+            const cat = feature.properties.gridcode || 1;
+            const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36' };
+            return { color: 'transparent', fillColor: colors[cat] || '#FFAA4A', weight: 0, opacity: 0, fillOpacity: 0.65 };
+          },
+        });
+        this.state.hydroLayers[3] = sl;
+      } catch (_) {
+        this.state.showSlope = false;
+        this._showToast('Slope data not available for this basin');
+        return;
+      }
+    }
+
     this._updateSubWatershedStyles();
-    if (!sl) return;
+    if (!sl) { this.state.showSlope = false; return; }
     if (this.state.showSlope) {
-      this.state.map.addLayer(sl);
+      map.addLayer(sl);
       sl.bringToBack();
     } else {
-      this.state.map.removeLayer(sl);
+      map.removeLayer(sl);
     }
   },
 
-  /* Toggle LCM land cover overlay on/off */
-  _toggleLCM() {
+  async _toggleLCM() {
     this.state.showLCM = !this.state.showLCM;
-    const sl = this.state.hydroLayers[4];
+    const map = this.state.map;
+    let sl = this.state.hydroLayers[4];
+
+    if (this.state.showLCM && !sl) {
+      const code = this.state._lcmCode || this.state._basinCode;
+      if (!code) return;
+      try {
+        const res = await fetch('temp_assets/' + code + '_LCM2025.topojson');
+        if (!res.ok) throw new Error('No LCM');
+        const data = await res.json().then(window.decodeGeo);
+        const colors = {
+          'Closed Forest': '#005e2e', 'Open Forest': '#38a800', 'Brush/Shrubs': '#d2cd00',
+          'Grassland': '#ffeab3', 'Annual Crop': '#ffa069', 'Perennial Crop': '#ff6b4a',
+          'Built-up': '#d60000', 'Open/Barren': '#e3c8b5', 'Inland Water': '#56b4e9',
+          'Fishpond': '#0096b2', 'Mangrove Forest': '#00693e', 'Marshland/Swamp': '#7a7a7a',
+        };
+        sl = L.geoJSON(data, {
+          style: (feature) => ({
+            color: 'transparent', fillColor: colors[feature.properties.LCM_CLASS] || '#cccccc',
+            weight: 0, opacity: 0, fillOpacity: 0.6,
+          }),
+        });
+        this.state.hydroLayers[4] = sl;
+      } catch (_) {
+        this.state.showLCM = false;
+        this._showToast('Land cover data not available for this basin');
+        return;
+      }
+    }
+
     this._updateSubWatershedStyles();
-    if (!sl) return;
+    if (!sl) { this.state.showLCM = false; return; }
     if (this.state.showLCM) {
-      this.state.map.addLayer(sl);
+      map.addLayer(sl);
       sl.bringToBack();
     } else {
-      this.state.map.removeLayer(sl);
+      map.removeLayer(sl);
     }
   },
 
