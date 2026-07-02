@@ -490,18 +490,11 @@ export const APP = {
     if (old) { this.state.map.removeControl(old); this.state._legendCtrl = null; }
 
     const showSlope = !!this.state.showSlope;
-    const showLCM  = !!this.state.showLCM;
-    if (!showSlope && !showLCM) return;
+    if (!showSlope) return;
 
     const slopeColors = [
       ['1 — 0–8%', '#50A823'], ['2 — 8–18%', '#8BD100'],
       ['3 — 18–30%', '#FFFF00'], ['4 — 30–50%', '#FF9A36'], ['5 — 50%+', '#FF4A4A'],
-    ];
-    const lcmColors = [
-      ['Closed Forest', '#016300'], ['Open Forest', '#02DB00'], ['Brush/Shrubs', '#FED4C2'],
-      ['Grassland', '#974749'], ['Annual Crop', '#FEFAC2'], ['Perennial Crop', '#FFFF00'],
-      ['Built-up', '#FF0000'], ['Open/Barren', '#D2D2D2'], ['Inland Water', '#281F94'],
-      ['Fishpond', '#0081FE'], ['Mangrove Forest', '#BA00FE'], ['Marshland/Swamp', '#C2FBFE'],
     ];
 
     const getItems = (colors) => colors.map(([label, color]) =>
@@ -509,12 +502,7 @@ export const APP = {
     ).join('');
 
     let html = '';
-    if (showSlope) {
-      html += `<div style="margin-bottom:4px"><b>Slope</b><table>${getItems(slopeColors)}</table></div>`;
-    }
-    if (showLCM) {
-      html += `<div><b>Land Cover</b><table>${getItems(lcmColors)}</table></div>`;
-    }
+    html += `<div style="margin-bottom:4px"><b>Slope</b><table>${getItems(slopeColors)}</table></div>`;
 
     const ctrl = L.control({ position: 'bottomright' });
     ctrl.onAdd = () => {
@@ -766,13 +754,6 @@ export const APP = {
           <span>Slope</span>
           <label class="toggle-switch">
             <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Land Cover</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
             <span class="toggle-knob"></span>
           </label>
         </div>
