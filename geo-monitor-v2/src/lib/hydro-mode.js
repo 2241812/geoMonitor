@@ -80,7 +80,6 @@ Object.assign(APP, {
       this.state.showSubWatersheds = false;
       this.state.showStreamOrder = false;
       this.state.showSlope = false;
-      this.state.showLCM = false;
       this._clearHydroLayers();
       this._renderHydroBasins();
       this._showBasinPickerPanel();
@@ -728,7 +727,7 @@ Object.assign(APP, {
   _updateSubWatershedStyles() {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
-    const showOverlay = this.state.showSlope || this.state.showLCM;
+    const showOverlay = this.state.showSlope;
     const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
     const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
     layer.eachLayer(leafletLayer => {
@@ -832,14 +831,10 @@ Object.assign(APP, {
       const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
 
       try {
-        const supa = this.config.supabase;
-        // Fetch slope via RPC function that returns a FeatureCollection
-        // using ST_AsGeoJSON() server-side for PostgREST compatibility.
-        const url = supa.url + '/rest/v1/rpc/get_slope_geojson';
-        const resp = await fetch(url, {
-          headers: { apikey: supa.anonKey, Authorization: 'Bearer ' + supa.anonKey },
-        });
-        if (!resp.ok) throw new Error('Supabase returned ' + resp.status);
+        // Load slope from local GeoJSON (full-resolution raw data).
+        const url = 'geoJSON/Slope.geojson';
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const geojson = await resp.json();
 
         this._ensureSlopePane();
@@ -922,45 +917,7 @@ Object.assign(APP, {
     }
   },
 
-  async _toggleLCM() {
-    this.state.showLCM = !this.state.showLCM;
-    const map = this.state.map;
-    let sl = this.state.hydroLayers[4];
-
-    if (this.state.showLCM && !sl) {
-      const colors = {
-        'Closed Forest': '#016300', 'Open Forest': '#02DB00', 'Brush/Shrubs': '#FED4C2',
-        'Grassland': '#974749', 'Annual Crop': '#FEFAC2', 'Perennial Crop': '#FFFF00',
-        'Built-up': '#FF0000', 'Open/Barren': '#D2D2D2', 'Inland Water': '#281F94',
-        'Fishpond': '#0081FE', 'Mangrove Forest': '#BA00FE', 'Marshland/Swamp': '#C2FBFE',
-      };
-      sl = L.vectorGrid.protobuf('/tiles/lcm/{z}/{x}/{y}.mvt', {
-        rendererFactory: L.canvas.tile,
-        vectorTileLayerStyles: {
-          lcm: (props) => ({
-            fill: true,
-            fillColor: colors[props.LCM_CLASS] || '#cccccc',
-            fillOpacity: 0.6,
-            stroke: false,
-            weight: 0,
-          }),
-        },
-        interactive: false,
-        maxZoom: 12,
-        minZoom: 6,
-      });
-      this.state.hydroLayers[4] = sl;
-    }
-
-    this._updateSubWatershedStyles();
-    if (!sl) { this.state.showLCM = false; }
-    if (this.state.showLCM && sl) {
-      map.addLayer(sl);
-    } else if (sl) {
-      map.removeLayer(sl);
-    }
-    this._updateHydroLegend();
-  },
+  /* (LCM tile layer removed — was dead code) */
 
   /* Drill back up to the basins overview */
   _hydroDrillUp(targetLevel) {
@@ -1046,7 +1003,6 @@ Object.assign(APP, {
     this.state.showSubWatersheds = false;
     this.state.showStreamOrder = false;
     this.state.showSlope = false;
-    this.state.showLCM = false;
     this.state.hydroShowBoundary = false;
     this.state.activeOutline = null;
     this.state.outlineLayers = {};
@@ -1297,13 +1253,6 @@ Object.assign(APP, {
           <span>Slope</span>
           <label class="toggle-switch">
             <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Land Cover</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
             <span class="toggle-knob"></span>
           </label>
         </div>

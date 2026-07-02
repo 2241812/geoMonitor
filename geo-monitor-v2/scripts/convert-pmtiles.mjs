@@ -30,7 +30,7 @@ const USE_RAW = process.argv.includes('--raw');
 
 const SRC_DIRS = USE_RAW
   ? { slope: resolve(ROOT, 'raw slop geoJSON'), lcm: resolve(ROOT, 'raw LCM geoJSON') }
-  : { slope: resolve(ROOT, 'public/temp_assets'),  lcm: resolve(ROOT, 'public/temp_assets') };
+  : { slope: resolve(ROOT, 'temp_assets'),  lcm: resolve(ROOT, 'temp_assets') };
 
 const OUT = resolve(ROOT, 'public');
 
