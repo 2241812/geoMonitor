@@ -160,7 +160,7 @@ export default function LandingPage() {
               <span className="stat-desc">Monitoring the crucial hydrological lifelines of Northern Luzon.</span>
             </div>
             <div className="stat-item fade-in-up delay-1">
-              <span className="stat-number" data-target="6+">0</span>
+              <span className="stat-number" data-target="6">0</span>
               <span className="stat-label">Data Sources</span>
               <span className="stat-desc">Integrating NAMRIA, CAD, Watersheds, Subwatersheds, Stream Order, and Elevation data.</span>
             </div>
