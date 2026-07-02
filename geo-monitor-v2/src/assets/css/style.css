@@ -42,9 +42,10 @@
 }
 
 html {
-  scroll-behavior: smooth !important;
+  scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -1518,6 +1519,16 @@ img {
 
   .info-content .section-text {
     font-size: 0.9rem;
+  }
+
+  .hero-bottom-controls {
+    bottom: 24px;
+    right: 24px;
+    gap: 16px;
+  }
+  .nav-arrow, .nav-arrow-up, .nav-arrow-down {
+    position: relative !important;
+    inset: auto !important;
   }
 
   .basins-grid {
