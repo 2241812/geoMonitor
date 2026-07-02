@@ -494,8 +494,8 @@ export const APP = {
     if (!showSlope) return;
 
     const slopeColors = [
-      ['1 — 0–8%', '#50A823'], ['2 — 8–18%', '#8BD100'],
-      ['3 — 18–30%', '#FFFF00'], ['4 — 30–50%', '#FF9A36'], ['5 — 50%+', '#FF4A4A'],
+      ['0–8%', '#50A823'], ['8–18%', '#8BD100'],
+      ['18–30%', '#FFFF00'], ['30–50%', '#FF9A36'], ['Above 50%', '#FF4A4A'],
     ];
 
     const getItems = (colors) => colors.map(([label, color]) =>
