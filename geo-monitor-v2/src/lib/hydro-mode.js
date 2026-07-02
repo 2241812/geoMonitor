@@ -906,6 +906,7 @@ Object.assign(APP, {
 
   _removeSlopeClip() {
     const map = this.state.map;
+    if (!map) return;
     const pane = map.getPane('slopePane');
     if (pane) pane.style.clipPath = '';
   },
@@ -1023,7 +1024,6 @@ Object.assign(APP, {
       this.state.map.off('moveend', this._reapplySlopeClip, this);
       this.state.map.off('zoomend', this._reapplySlopeClip, this);
     }
-    this.state._slopeClipBound = false;
     this._clearHydroLayers();
     this._removeHydroSilhouette();
     this._removeSlopeClip();
