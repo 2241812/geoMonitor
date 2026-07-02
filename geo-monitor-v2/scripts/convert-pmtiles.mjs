@@ -23,7 +23,7 @@ import vt from 'vt-pbf';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const MAX_ZOOM = 12;
+const MAX_ZOOM = 14;
 const MIN_ZOOM = 6;
 const TILE_SIZE = 4096;
 const USE_RAW = process.argv.includes('--raw');
@@ -92,7 +92,7 @@ async function convertDataset(name, layerName, dirPath) {
   if (!gj) return false;
 
   console.log('Tiling via geojson-vt...');
-  const idx = geojsonvt(gj, { maxZoom: MAX_ZOOM, tolerance: 3, extent: TILE_SIZE, buffer: 64 });
+  const idx = geojsonvt(gj, { maxZoom: MAX_ZOOM, tolerance: 0, extent: TILE_SIZE, buffer: 64 });
 
   const allTiles = [];
   for (let z = MIN_ZOOM; z <= MAX_ZOOM; z++) {

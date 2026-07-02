@@ -71,10 +71,11 @@ Object.assign(APP, {
         if (this.state.hydroAdminOutlineLayer) { map.removeLayer(this.state.hydroAdminOutlineLayer); this.state.hydroAdminOutlineLayer = null; }
         document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
       }
-      this.state.hydroDrillLevel = 0;
-      this.state.hydroSelectedBasin = null;
-      this.state.hydroSelectedZone = null;
-      this.state.hydroSelectedZoneLayer = null;
+    this.state.hydroDrillLevel = 0;
+    this.state.hydroSelectedBasin = null;
+    this.state.hydroSelectedZone = null;
+    this.state.hydroSelectedZoneLayer = null;
+    this._removeSlopeClip();
       this.state.hydroActiveFilterIds = [];
       this.state.showSubWatersheds = false;
       this.state.showStreamOrder = false;
@@ -462,6 +463,15 @@ Object.assign(APP, {
       this.state.hydroDrillLevel = 1;
       this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
 
+      /* Clip slope tiles to watershed boundary */
+      this._ensureSlopePane();
+      this._updateSlopeClip(feature);
+      if (!this.state._slopeClipBound) {
+        this.state.map.on('moveend', this._reapplySlopeClip, this);
+        this.state.map.on('zoomend', this._reapplySlopeClip, this);
+        this.state._slopeClipBound = true;
+      }
+
       /* Hide basin labels when drilling into sub-watersheds */
       if (this.state.hydroLayers[0]) {
         this.state.hydroLayers[0].eachLayer(function(lf) {
@@ -838,8 +848,9 @@ Object.assign(APP, {
           }),
         },
         interactive: false,
-        maxZoom: 12,
+        maxZoom: 14,
         minZoom: 6,
+        pane: 'slopePane',
       });
       this.state.hydroLayers[3] = sl;
     }
@@ -848,10 +859,52 @@ Object.assign(APP, {
     if (!sl) { this.state.showSlope = false; }
     if (this.state.showSlope && sl) {
       map.addLayer(sl);
+      /* Apply watershed clip if one is already selected */
+      if (this.state.hydroSelectedBasin) {
+        this._ensureSlopePane();
+        this._updateSlopeClip(this.state.hydroSelectedBasin.feature);
+      }
     } else if (sl) {
       map.removeLayer(sl);
     }
     this._updateHydroLegend();
+  },
+
+  /* ── Slope tile clipping (watershed boundary) ── */
+
+  _ensureSlopePane() {
+    const map = this.state.map;
+    if (!map) return;
+    if (!map.getPane('slopePane')) {
+      map.createPane('slopePane');
+      map.getPane('slopePane').style.zIndex = 250;
+    }
+  },
+
+  _updateSlopeClip(feature) {
+    const map = this.state.map;
+    const pane = map.getPane('slopePane');
+    if (!pane || !feature || !feature.geometry) return;
+    const coords = feature.geometry.coordinates;
+    const outer = coords[0];
+    if (!outer || !outer.length) return;
+    try {
+      const pixels = outer.map(c => map.latLngToContainerPoint([c[1], c[0]]));
+      const points = pixels.map(p => `${Math.round(p.x)}px ${Math.round(p.y)}px`).join(',');
+      pane.style.clipPath = `polygon(${points})`;
+    } catch (_) {}
+  },
+
+  _removeSlopeClip() {
+    const map = this.state.map;
+    const pane = map.getPane('slopePane');
+    if (pane) pane.style.clipPath = '';
+  },
+
+  _reapplySlopeClip() {
+    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+      this._updateSlopeClip(this.state.hydroSelectedBasin.feature);
+    }
   },
 
   async _toggleLCM() {
@@ -952,9 +1005,13 @@ Object.assign(APP, {
   _clearHydroState(keepViewMode) {
     if (this.state.map) {
       this.state.map.off('zoomend', this._onZoomChange, this);
+      this.state.map.off('moveend', this._reapplySlopeClip, this);
+      this.state.map.off('zoomend', this._reapplySlopeClip, this);
     }
+    this.state._slopeClipBound = false;
     this._clearHydroLayers();
     this._removeHydroSilhouette();
+    this._removeSlopeClip();
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
     if (this.state.hydroBoundaryLayer && this.state.map) {
