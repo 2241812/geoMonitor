@@ -499,6 +499,7 @@ Object.assign(APP, {
 
       await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
       this._updateBreadcrumb();
+      this._reapplySlopeClip();
     } finally {
       this.state._drilling = false;
     }
@@ -643,6 +644,7 @@ Object.assign(APP, {
     this._openSubWatershedPanel(feature);
     this._updateBreadcrumb();
     this._updateStreamOrderStyles();
+    this._reapplySlopeClip();
   },
 
   /* Deselect the current sub-watershed zone and return to the basin detail panel */
@@ -665,6 +667,7 @@ Object.assign(APP, {
         }
       } catch (_) {}
     }
+    this._reapplySlopeClip();
     this._updateBreadcrumb();
     this._updateStreamOrderStyles();
   },
@@ -839,7 +842,9 @@ Object.assign(APP, {
         if (!resp.ok) throw new Error('Supabase returned ' + resp.status);
         const geojson = await resp.json();
 
+        this._ensureSlopePane();
         sl = L.geoJSON(geojson, {
+          pane: 'slopePane',
           style: (f) => ({
             fillColor: colors[f.properties.gridcode] || '#cccccc',
             fillOpacity: 0.65,
@@ -862,8 +867,14 @@ Object.assign(APP, {
     if (!sl) { this.state.showSlope = false; }
     if (this.state.showSlope && sl) {
       map.addLayer(sl);
+      this._reapplySlopeClip();
+      map.on('moveend', this._reapplySlopeClip, this);
+      map.on('zoomend', this._reapplySlopeClip, this);
     } else if (sl) {
+      map.off('moveend', this._reapplySlopeClip, this);
+      map.off('zoomend', this._reapplySlopeClip, this);
       map.removeLayer(sl);
+      this._removeSlopeClip();
     }
     this._updateHydroLegend();
   },
@@ -900,8 +911,13 @@ Object.assign(APP, {
   },
 
   _reapplySlopeClip() {
-    if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
+    if (!this.state.showSlope) return;
+    if (this.state.hydroSelectedZone) {
+      this._updateSlopeClip(this.state.hydroSelectedZone);
+    } else if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
       this._updateSlopeClip(this.state.hydroSelectedBasin.feature);
+    } else {
+      this._removeSlopeClip();
     }
   },
 
@@ -987,6 +1003,7 @@ Object.assign(APP, {
     this._updateBreadcrumb();
     this._showBasinPickerPanel();
     this._updateHydroLabels();
+    this._reapplySlopeClip();
   },
 
   /* Remove all hydro layers from the map */
