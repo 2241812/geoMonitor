@@ -826,7 +826,7 @@ Object.assign(APP, {
 
     if (this.state.showSlope && !sl) {
       const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
-      sl = L.vectorGrid.protobuf('tiles/slope/{z}/{x}/{y}.mvt', {
+      sl = L.vectorGrid.protobuf('/tiles/slope/{z}/{x}/{y}.mvt', {
         rendererFactory: L.canvas.tile,
         vectorTileLayerStyles: {
           slope: (props) => ({
@@ -848,7 +848,6 @@ Object.assign(APP, {
     if (!sl) { this.state.showSlope = false; }
     if (this.state.showSlope && sl) {
       map.addLayer(sl);
-      sl.bringToBack();
     } else if (sl) {
       map.removeLayer(sl);
     }
@@ -867,7 +866,7 @@ Object.assign(APP, {
         'Built-up': '#FF0000', 'Open/Barren': '#D2D2D2', 'Inland Water': '#281F94',
         'Fishpond': '#0081FE', 'Mangrove Forest': '#BA00FE', 'Marshland/Swamp': '#C2FBFE',
       };
-      sl = L.vectorGrid.protobuf('tiles/lcm/{z}/{x}/{y}.mvt', {
+      sl = L.vectorGrid.protobuf('/tiles/lcm/{z}/{x}/{y}.mvt', {
         rendererFactory: L.canvas.tile,
         vectorTileLayerStyles: {
           lcm: (props) => ({
@@ -889,7 +888,6 @@ Object.assign(APP, {
     if (!sl) { this.state.showLCM = false; }
     if (this.state.showLCM && sl) {
       map.addLayer(sl);
-      sl.bringToBack();
     } else if (sl) {
       map.removeLayer(sl);
     }
