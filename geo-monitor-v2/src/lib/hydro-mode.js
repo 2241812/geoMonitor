@@ -463,15 +463,6 @@ Object.assign(APP, {
       this.state.hydroDrillLevel = 1;
       this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
 
-      /* Clip slope tiles to watershed boundary */
-      this._ensureSlopePane();
-      this._updateSlopeClip(feature);
-      if (!this.state._slopeClipBound) {
-        this.state.map.on('moveend', this._reapplySlopeClip, this);
-        this.state.map.on('zoomend', this._reapplySlopeClip, this);
-        this.state._slopeClipBound = true;
-      }
-
       /* Hide basin labels when drilling into sub-watersheds */
       if (this.state.hydroLayers[0]) {
         this.state.hydroLayers[0].eachLayer(function(lf) {
@@ -836,34 +827,39 @@ Object.assign(APP, {
 
     if (this.state.showSlope && !sl) {
       const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
-      sl = L.vectorGrid.protobuf('/tiles/slope/{z}/{x}/{y}.mvt', {
-        rendererFactory: L.canvas.tile,
-        vectorTileLayerStyles: {
-          slope: (props) => ({
-            fill: true,
-            fillColor: colors[props.gridcode] || '#cccccc',
+
+      try {
+        const supa = this.config.supabase;
+        const url = supa.url + '/rest/v1/slope?select=gridcode,geom&format=geojson';
+        const resp = await fetch(url, {
+          headers: { apikey: supa.anonKey, Authorization: 'Bearer ' + supa.anonKey },
+        });
+        if (!resp.ok) throw new Error('Supabase returned ' + resp.status);
+        const geojson = await resp.json();
+
+        sl = L.geoJSON(geojson, {
+          style: (f) => ({
+            fillColor: colors[f.properties.gridcode] || '#cccccc',
             fillOpacity: 0.65,
             stroke: false,
             weight: 0,
           }),
-        },
-        interactive: false,
-        maxZoom: 14,
-        minZoom: 6,
-        pane: 'slopePane',
-      });
-      this.state.hydroLayers[3] = sl;
+          interactive: false,
+        });
+        this.state.hydroLayers[3] = sl;
+      } catch (e) {
+        this._showToast('Failed to load slope data');
+        console.error('Slope fetch error:', e);
+        this.state.showSlope = false;
+        this._updateHydroLegend();
+        return;
+      }
     }
 
     this._updateSubWatershedStyles();
     if (!sl) { this.state.showSlope = false; }
     if (this.state.showSlope && sl) {
       map.addLayer(sl);
-      /* Apply watershed clip if one is already selected */
-      if (this.state.hydroSelectedBasin) {
-        this._ensureSlopePane();
-        this._updateSlopeClip(this.state.hydroSelectedBasin.feature);
-      }
     } else if (sl) {
       map.removeLayer(sl);
     }

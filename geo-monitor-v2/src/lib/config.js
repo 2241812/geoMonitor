@@ -142,5 +142,10 @@ Object.assign(APP, {
     },
 
     dataRequestEmail: 'car@denr.gov.ph',
+
+    supabase: {
+      url: 'https://micsfokodqqqgwtlctca.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pY3Nmb2tvZHFxcWd3dGxjdGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NjExNjgsImV4cCI6MjA5ODUzNzE2OH0.zTrxYk4-QJ-nsM_SlcqiA1IR7XpZXpFmjCN2xBQgTY4',
+    },
   }
 });
