@@ -140,3 +140,14 @@ APP.slope = {
     APP.state.showSlope = false;
   },
 };
+
+/* Safety polyfill: _toggleSlope() was historically called from the
+   watershed panel inline HTML but never defined. This delegates to the
+   correct method and warns, so stale HTML or accidental future usage
+   doesn't silently break the slope toggle again. */
+APP._toggleSlope = function _toggleSlope() {
+  if (typeof APP.slope !== 'undefined' && typeof APP.slope.toggle === 'function') {
+    console.warn('APP._toggleSlope() is deprecated — use APP.slope.toggle()');
+    APP.slope.toggle();
+  }
+};

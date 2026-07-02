@@ -40,6 +40,7 @@ export const APP = {
     zoneIntersections: null, /* loaded from zone-intersections.json */
     showSubWatersheds: false,
     showStreamOrder: false,
+    showSlope: false,
     adminLayers: {},
     boundaryMenuOpen: false,
     customColors: null,
@@ -753,7 +754,7 @@ export const APP = {
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Slope</span>
           <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
+            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
             <span class="toggle-knob"></span>
           </label>
         </div>
