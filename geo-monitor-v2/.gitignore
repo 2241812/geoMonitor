@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# MVT tile caches (old approach - replaced by Supabase REST API)
+public/tiles/
+*.pmtiles
+
+# Supabase CLI (local config, not part of app)
+supabase/
