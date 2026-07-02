@@ -844,7 +844,6 @@ Object.assign(APP, {
 
         this._ensureSlopePane();
         sl = L.geoJSON(geojson, {
-          pane: 'slopePane',
           style: (f) => ({
             fillColor: colors[f.properties.gridcode] || '#cccccc',
             fillOpacity: 0.65,
@@ -852,6 +851,7 @@ Object.assign(APP, {
             weight: 0,
           }),
           interactive: false,
+          onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
         });
         this.state.hydroLayers[3] = sl;
       } catch (e) {
