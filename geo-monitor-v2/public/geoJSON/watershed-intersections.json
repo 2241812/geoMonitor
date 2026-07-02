@@ -1,0 +1,307 @@
+{
+  "namria": {
+    "Abra River Watershed": {
+      "provinces": [
+        "abra",
+        "apayao",
+        "benguet",
+        "ifugao",
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "abra:baay-licuan",
+        "abra:bangued",
+        "abra:boliney",
+        "abra:bucay",
+        "abra:bucloc",
+        "abra:daguioman",
+        "abra:danglas",
+        "abra:dolores",
+        "abra:la-paz",
+        "abra:lacub",
+        "abra:lagangilang",
+        "abra:lagayan",
+        "abra:lagiden",
+        "abra:luba",
+        "abra:malibcong",
+        "abra:manabo",
+        "abra:penarrubia",
+        "abra:pidigan",
+        "abra:pilar",
+        "abra:sallapadan",
+        "abra:san-isidro",
+        "abra:san-juan",
+        "abra:san-quintin",
+        "abra:tayum",
+        "abra:tineg",
+        "abra:tubo",
+        "abra:villaviciosa",
+        "apayao:conner",
+        "apayao:kabugao",
+        "benguet:bakun",
+        "benguet:buguias",
+        "benguet:mankayan",
+        "ifugao:tinoc",
+        "kalinga:balbalan",
+        "kalinga:lubuagan",
+        "kalinga:pasil",
+        "mountain-province:bauko",
+        "mountain-province:besao",
+        "mountain-province:sadanga",
+        "mountain-province:sagada",
+        "mountain-province:tadian"
+      ]
+    },
+    "Abulug River Watershed": {
+      "provinces": [
+        "abra",
+        "apayao"
+      ],
+      "municipalities": [
+        "abra:tineg",
+        "apayao:calanasan",
+        "apayao:conner",
+        "apayao:flora",
+        "apayao:kabugao",
+        "apayao:luna",
+        "apayao:pudtol",
+        "apayao:santa-marcela"
+      ]
+    },
+    "Agno River Watershed": {
+      "provinces": [
+        "benguet",
+        "ifugao",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "benguet:atok",
+        "benguet:baguio",
+        "benguet:bokod",
+        "benguet:buguias",
+        "benguet:itogon",
+        "benguet:kabayan",
+        "benguet:la-trinidad",
+        "benguet:mankayan",
+        "benguet:tuba",
+        "benguet:tublay",
+        "ifugao:tinoc",
+        "mountain-province:bauko"
+      ]
+    },
+    "Aringay River Watershed": {
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:baguio",
+        "benguet:la-trinidad",
+        "benguet:sablan",
+        "benguet:tuba"
+      ]
+    },
+    "Amburayan River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Asin-Galiano River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Bayogao River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Bued River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Cabicungan River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Upper Chico River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Magat River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Santa Maria River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Siffu-Mallig River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Zumigui-Ziwanan River Watershed": {
+      "provinces": [
+        "apayao"
+      ],
+      "municipalities": [
+        "apayao:calanasan",
+        "apayao:kabugao",
+        "apayao:luna",
+        "apayao:pudtol"
+      ]
+    }
+  },
+  "cad": {
+    "Abra River Watershed": {
+      "provinces": [
+        "abra",
+        "apayao",
+        "benguet",
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "abra:baay-licuan",
+        "abra:baay-licuan-vs-lacub-vs-lagangilang",
+        "abra:baay-licuan-vs-lacub-vs-malibcong",
+        "abra:bangued",
+        "abra:boliney",
+        "abra:bucay",
+        "abra:bucay-vs-lagangilang",
+        "abra:bucloc",
+        "abra:daguioman",
+        "abra:danglas",
+        "abra:dolores",
+        "abra:la-paz",
+        "abra:lacub",
+        "abra:lagangilang",
+        "abra:lagayan",
+        "abra:langiden",
+        "abra:luba",
+        "abra:malibcong",
+        "abra:malibcong-vs-daguioman",
+        "abra:manabo",
+        "abra:manabo-vs-sallapadan",
+        "abra:pearrubia",
+        "abra:pidigan",
+        "abra:pilar",
+        "abra:sallapadan",
+        "abra:san-isidro",
+        "abra:san-juan",
+        "abra:san-quintin",
+        "abra:tayum",
+        "abra:tineg",
+        "abra:tubo",
+        "abra:villaviciosa",
+        "apayao:conner",
+        "apayao:kabugao",
+        "benguet:bakun",
+        "benguet:buguias",
+        "benguet:mankayan",
+        "kalinga:balbalan",
+        "mountain-province:bauko",
+        "mountain-province:besao",
+        "mountain-province:bontoc",
+        "mountain-province:sadanga",
+        "mountain-province:sagada",
+        "mountain-province:tadian"
+      ]
+    },
+    "Abulug River Watershed": {
+      "provinces": [
+        "abra",
+        "apayao"
+      ],
+      "municipalities": [
+        "abra:lacub",
+        "abra:tineg",
+        "apayao:calanasan",
+        "apayao:conner",
+        "apayao:flora",
+        "apayao:kabugao",
+        "apayao:luna",
+        "apayao:pudtol",
+        "apayao:sta-marcela"
+      ]
+    },
+    "Agno River Watershed": {
+      "provinces": [
+        "benguet",
+        "ifugao",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "benguet:atok",
+        "benguet:baguio-city",
+        "benguet:bakun",
+        "benguet:bokod",
+        "benguet:buguias",
+        "benguet:itogon",
+        "benguet:kabayan",
+        "benguet:kibungan",
+        "benguet:la-trinidad",
+        "benguet:mankayan",
+        "benguet:tuba",
+        "benguet:tublay",
+        "ifugao:tinoc",
+        "mountain-province:bauko"
+      ]
+    },
+    "Aringay River Watershed": {
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:baguio-city",
+        "benguet:la-trinidad",
+        "benguet:sablan",
+        "benguet:tuba"
+      ]
+    },
+    "Amburayan River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Asin-Galiano River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Bayogao River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Bued River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Cabicungan River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Upper Chico River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Magat River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Santa Maria River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Siffu-Mallig River Watershed": {
+      "provinces": [],
+      "municipalities": []
+    },
+    "Zumigui-Ziwanan River Watershed": {
+      "provinces": [
+        "apayao"
+      ],
+      "municipalities": [
+        "apayao:calanasan",
+        "apayao:kabugao",
+        "apayao:luna",
+        "apayao:pudtol"
+      ]
+    }
+  }
+}
