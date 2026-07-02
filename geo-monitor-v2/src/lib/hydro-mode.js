@@ -832,14 +832,10 @@ Object.assign(APP, {
       const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
 
       try {
-        const supa = this.config.supabase;
-        // Fetch slope via RPC function that returns a FeatureCollection
-        // using ST_AsGeoJSON() server-side for PostgREST compatibility.
-        const url = supa.url + '/rest/v1/rpc/get_slope_geojson';
-        const resp = await fetch(url, {
-          headers: { apikey: supa.anonKey, Authorization: 'Bearer ' + supa.anonKey },
-        });
-        if (!resp.ok) throw new Error('Supabase returned ' + resp.status);
+        // Load slope from local GeoJSON (full-resolution raw data).
+        const url = 'geoJSON/Slope.geojson';
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const geojson = await resp.json();
 
         this._ensureSlopePane();
