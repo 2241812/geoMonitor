@@ -830,22 +830,14 @@ Object.assign(APP, {
 
       try {
         const supa = this.config.supabase;
-        // Fetch rows with gridcode and geometry as GeoJSON string.
-        // format=geojson is not available on this PostgREST version,
-        // so we use st_asgeojson() and build the FeatureCollection client-side.
-        const url = supa.url + '/rest/v1/slope?select=gridcode,st_asgeojson(geom)';
+        // Fetch slope via RPC function that returns a FeatureCollection
+        // using ST_AsGeoJSON() server-side for PostgREST compatibility.
+        const url = supa.url + '/rest/v1/rpc/get_slope_geojson';
         const resp = await fetch(url, {
           headers: { apikey: supa.anonKey, Authorization: 'Bearer ' + supa.anonKey },
         });
         if (!resp.ok) throw new Error('Supabase returned ' + resp.status);
-        const rows = await resp.json();
-
-        const features = rows.map(r => ({
-          type: 'Feature',
-          geometry: JSON.parse(r.st_asgeojson),
-          properties: { gridcode: r.gridcode },
-        }));
-        const geojson = { type: 'FeatureCollection', features: features };
+        const geojson = await resp.json();
 
         sl = L.geoJSON(geojson, {
           style: (f) => ({
