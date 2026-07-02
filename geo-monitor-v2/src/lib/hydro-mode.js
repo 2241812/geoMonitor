@@ -75,7 +75,7 @@ Object.assign(APP, {
     this.state.hydroSelectedBasin = null;
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
-    this._removeSlopeClip();
+    APP.slope.destroy();
       this.state.hydroActiveFilterIds = [];
       this.state.showSubWatersheds = false;
       this.state.showStreamOrder = false;
@@ -498,7 +498,7 @@ Object.assign(APP, {
 
       await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
       this._updateBreadcrumb();
-      this._reapplySlopeClip();
+      APP.slope.reapplyClip();
     } finally {
       this.state._drilling = false;
     }
@@ -643,7 +643,7 @@ Object.assign(APP, {
     this._openSubWatershedPanel(feature);
     this._updateBreadcrumb();
     this._updateStreamOrderStyles();
-    this._reapplySlopeClip();
+    APP.slope.reapplyClip();
   },
 
   /* Deselect the current sub-watershed zone and return to the basin detail panel */
@@ -666,7 +666,7 @@ Object.assign(APP, {
         }
       } catch (_) {}
     }
-    this._reapplySlopeClip();
+    APP.slope.reapplyClip();
     this._updateBreadcrumb();
     this._updateStreamOrderStyles();
   },
@@ -822,101 +822,6 @@ Object.assign(APP, {
     }
   },
 
-  async _toggleSlope() {
-    this.state.showSlope = !this.state.showSlope;
-    const map = this.state.map;
-    let sl = this.state.hydroLayers[3];
-
-    if (this.state.showSlope && !sl) {
-      const colors = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
-
-      try {
-        // Load slope from local GeoJSON (full-resolution raw data).
-        const url = 'geoJSON/Slope.geojson';
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const geojson = await resp.json();
-
-        this._ensureSlopePane();
-        sl = L.geoJSON(geojson, {
-          style: (f) => ({
-            fillColor: colors[f.properties.gridcode] || '#cccccc',
-            fillOpacity: 0.65,
-            stroke: false,
-            weight: 0,
-          }),
-          interactive: false,
-          onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
-        });
-        this.state.hydroLayers[3] = sl;
-      } catch (e) {
-        this._showToast('Failed to load slope data');
-        console.error('Slope fetch error:', e);
-        this.state.showSlope = false;
-        this._updateHydroLegend();
-        return;
-      }
-    }
-
-    this._updateSubWatershedStyles();
-    if (!sl) { this.state.showSlope = false; }
-    if (this.state.showSlope && sl) {
-      map.addLayer(sl);
-      this._reapplySlopeClip();
-      map.on('moveend', this._reapplySlopeClip, this);
-      map.on('zoomend', this._reapplySlopeClip, this);
-    } else if (sl) {
-      map.off('moveend', this._reapplySlopeClip, this);
-      map.off('zoomend', this._reapplySlopeClip, this);
-      map.removeLayer(sl);
-      this._removeSlopeClip();
-    }
-    this._updateHydroLegend();
-  },
-
-  /* ── Slope tile clipping (watershed boundary) ── */
-
-  _ensureSlopePane() {
-    const map = this.state.map;
-    if (!map) return;
-    if (!map.getPane('slopePane')) {
-      map.createPane('slopePane');
-      map.getPane('slopePane').style.zIndex = 250;
-    }
-  },
-
-  _updateSlopeClip(feature) {
-    const map = this.state.map;
-    const pane = map.getPane('slopePane');
-    if (!pane || !feature || !feature.geometry) return;
-    const coords = feature.geometry.coordinates;
-    const outer = coords[0];
-    if (!outer || !outer.length) return;
-    try {
-      const pixels = outer.map(c => map.latLngToContainerPoint([c[1], c[0]]));
-      const points = pixels.map(p => `${Math.round(p.x)}px ${Math.round(p.y)}px`).join(',');
-      pane.style.clipPath = `polygon(${points})`;
-    } catch (_) {}
-  },
-
-  _removeSlopeClip() {
-    const map = this.state.map;
-    if (!map) return;
-    const pane = map.getPane('slopePane');
-    if (pane) pane.style.clipPath = '';
-  },
-
-  _reapplySlopeClip() {
-    if (!this.state.showSlope) return;
-    if (this.state.hydroSelectedZone) {
-      this._updateSlopeClip(this.state.hydroSelectedZone);
-    } else if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
-      this._updateSlopeClip(this.state.hydroSelectedBasin.feature);
-    } else {
-      this._removeSlopeClip();
-    }
-  },
-
   /* (LCM tile layer removed — was dead code) */
 
   /* Drill back up to the basins overview */
@@ -961,14 +866,14 @@ Object.assign(APP, {
     this._updateBreadcrumb();
     this._showBasinPickerPanel();
     this._updateHydroLabels();
-    this._reapplySlopeClip();
+    APP.slope.reapplyClip();
   },
 
   /* Remove all hydro layers from the map */
   _clearHydroLayers() {
     const map = this.state.map;
     if (!map) return;
-    [0, 1, 2, 3, 4].forEach(l => {
+    [0, 1, 2, 4].forEach(l => {  /* index 3 is slope — managed by APP.slope */
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
     this._removeHydroSilhouette();
@@ -976,14 +881,12 @@ Object.assign(APP, {
 
   /* Full reset of hydro state (used when switching to Boundaries mode) */
   _clearHydroState(keepViewMode) {
+    APP.slope.destroy();
     if (this.state.map) {
       this.state.map.off('zoomend', this._onZoomChange, this);
-      this.state.map.off('moveend', this._reapplySlopeClip, this);
-      this.state.map.off('zoomend', this._reapplySlopeClip, this);
     }
     this._clearHydroLayers();
     this._removeHydroSilhouette();
-    this._removeSlopeClip();
     this.state.hydroDrillLevel = 0;
     this.state.hydroSelectedBasin = null;
     if (this.state.hydroBoundaryLayer && this.state.map) {
@@ -1252,7 +1155,7 @@ Object.assign(APP, {
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Slope</span>
           <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
+            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
             <span class="toggle-knob"></span>
           </label>
         </div>
