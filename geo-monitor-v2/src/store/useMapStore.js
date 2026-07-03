@@ -7,11 +7,12 @@ export const useMapStore = create((set, get) => ({
   panelState: 'closed', // 'closed' | 'peek' | 'open'
   isLoading: false,
   _drilling: false,
+  activeSource: 'namria',
 
   // ═══════════ BOUNDARY MODE STATE ═══════════
   currentLevel: 0,
   selectedPath: [],
-  activeMode: 'admin', // NAMRIA vs CAD sources
+  activeMode: 'boundary', // 'explore' | 'boundary' — sub-mode for boundaries view
 
   // ═══════════ WATERSHED MODE STATE ═══════════
   hydroDrillLevel: 0, // 0 = Basins, 1 = Sub-watersheds
@@ -50,4 +51,9 @@ export const useMapStore = create((set, get) => ({
   // UI State
   setDrilling: (isDrilling) => set({ _drilling: isDrilling }),
   setLoading: (isLoading) => set({ isLoading }),
+
+  // BottomBar Actions
+  setActiveSource: (source) => set({ activeSource: source }),
+  setActiveMode: (mode) => set({ activeMode: mode }),
+  clearSelection: () => set({ selectedPath: [], currentLevel: 0, hydroDrillLevel: 0, hydroSelectedBasin: null, hydroSelectedZone: null }),
 }));

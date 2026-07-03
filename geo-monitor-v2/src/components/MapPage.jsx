@@ -1,4 +1,4 @@
-import { useMapStore } from '../store/useMapStore';
+import BottomBar from './BottomBar';
 import OpacityMenu from './OpacityMenu';
 import { Link } from 'react-router-dom';
 import MapContainer from './MapContainer';
@@ -7,8 +7,6 @@ import '../assets/css/map.css';
 import 'leaflet/dist/leaflet.css';
 
 export default function MapPage() {
-  const { viewMode, setViewMode } = useMapStore();
-
   return (
     <div className="map-app">
       <MapContainer />
@@ -39,42 +37,7 @@ export default function MapPage() {
         </button>
       </div>
 
-      <div className="bottom-center-controls">
-        <div className="top-controls-row">
-          <div className="view-toggle-control">
-            <button 
-              className={`view-toggle-btn ${viewMode === 'watersheds' ? 'active' : ''}`}
-              onClick={() => {
-                setViewMode('watersheds');
-                if (window.APP) window.APP._setViewMode('watersheds');
-              }}
-            >
-              Watersheds
-            </button>
-            <button 
-              className={`view-toggle-btn ${viewMode === 'boundaries' ? 'active' : ''}`}
-              onClick={() => {
-                setViewMode('boundaries');
-                if (window.APP) window.APP._setViewMode('boundaries');
-              }}
-            >
-              Boundaries
-            </button>
-          </div>
-          
-          <div className="source-toggle-control" id="source-toggle-control">
-            <button className="source-toggle-btn active" id="btn-namria" onClick={() => window.APP?.switchSource('namria')}>NAMRIA</button>
-            <button className="source-toggle-btn" id="btn-cad" onClick={() => window.APP?.switchSource('cad')}>CAD</button>
-          </div>
-        </div>
-        
-        <div className="map-breadcrumb" id="map-breadcrumb"></div>
-        <button className="map-reset-btn" id="map-reset-btn" onClick={() => window.APP?._resetAll()} title="Reset view">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-          </svg>
-        </button>
-      </div>
+      <BottomBar />
 
       <div className="bottom-left-controls" id="bottom-left-controls">
         <div className="basemap-switcher" id="basemap-switcher">
