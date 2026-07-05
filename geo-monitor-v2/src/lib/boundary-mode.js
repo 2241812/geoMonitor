@@ -253,15 +253,7 @@ Object.assign(APP, {
 
     const layer = L.geoJSON(data, {
       interactive: true,
-      style: () => ({
-        fillColor: fillColor,
-        fillOpacity: level === 0 ? 0.15 : 0,
-        color: styleConfig.stroke,
-        weight: styleConfig.weight,
-        opacity: 0.9,
-        className: 'fade-in-path',
-        dashArray: null,
-      }),
+      style: () => (APP.STYLE.boundary.resting(level)),
 
       onEachFeature(feature, leafletLayer) {
         if (level >= 1) {
@@ -307,14 +299,7 @@ Object.assign(APP, {
             /* Do not clear highlight if this feature is currently selected */
             if (self.state._selectedFeature === feature) return;
 
-            e.target.setStyle({
-              fillColor: fillColor,
-              fillOpacity: self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : (level === 0 ? 0.15 : 0),
-              color: styleConfig.stroke,
-              weight: styleConfig.weight,
-              opacity: self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 0.9,
-              dashArray: null,
-            });
+            e.target.setStyle(APP.STYLE.boundary.resting(level));
           });
         }
 
@@ -452,18 +437,12 @@ Object.assign(APP, {
   _resetLevelStyle(level) {
     const layer = this.state.layers[level];
     if (!layer) return;
-    const cfg = this.config.colors[level];
     layer.eachLayer(function(leafletLayer) {
       delete leafletLayer._hiddenByIsolation;
-      leafletLayer.setStyle({
-        fillColor: cfg.fill,
-        color: cfg.stroke,
-        weight: cfg.weight,
-        opacity: 0.9,
-        fillOpacity: 0.25,
-      });
+      leafletLayer.setStyle(APP.STYLE.boundary.resting(level));
     });
   },
+
   _dimDrillLayer(level) {
     const layer = this.state.layers[level];
     if (!layer) return;

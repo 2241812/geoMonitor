@@ -5,6 +5,16 @@ import { APP } from './app.js';
  */
 
 Object.assign(APP, {
+  /* ── Compute basin fill color from current toggle/color state ── */
+  _basinColor(feature) {
+    if (!feature) return '#d1d5db';
+    const idx = this._hydroBasinIndex(feature);
+    if (this.state.showWatershedColors && this.state.customColors?.watersheds) {
+      return this.state.customColors.watersheds[idx] || '#6b7280';
+    }
+    return this.config.hydroLevelColors[idx] || '#d1d5db';
+  },
+
   /* ── View Mode Toggle: Watersheds / Boundaries ── */
   _setViewMode(mode) {
     if (mode === this.state.viewMode) return;
@@ -291,27 +301,10 @@ Object.assign(APP, {
     this.state.hydroLayers[0] = L.geoJSON(data, {
       interactive: !silhouetteMode,
       style: (feature) => {
-        const idx = self._hydroBasinIndex(feature);
         if (silhouetteMode) {
-          /* Silhouette mode: solid fill, no strokes */
-          return {
-            fillColor: '#d1d5db',
-            fillOpacity: 0.35,
-            weight: 0,
-            opacity: 0,
-            className: 'fade-in-path',
-          };
-        } else {
-          /* Border mode: standard view with strokes */
-          return {
-            fillColor: '#d1d5db',
-            fillOpacity: 0.15,
-            color: '#000000',
-            weight: 2,
-            opacity: 0.9,
-            className: 'fade-in-path',
-          };
+          return APP.STYLE.basin.silhouette();
         }
+        return APP.STYLE.basin.resting(self._basinColor(feature));
       },
       onEachFeature(feature, leafletLayer) {
         if (silhouetteMode) return;
@@ -323,7 +316,7 @@ Object.assign(APP, {
 
         leafletLayer.on('mouseover', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.4, weight: 3, opacity: 1 });
+          e.target.setStyle(APP.STYLE.basin.hovered());
           e.target.bringToFront();
           const lbl = document.getElementById('map-hover-label');
           if (lbl) {
@@ -335,8 +328,7 @@ Object.assign(APP, {
 
         leafletLayer.on('mouseout', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
-          const _cur = e.target.options || {};
-          e.target.setStyle({ fillColor: _cur.fillColor || '#d1d5db', fillOpacity: self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.15, color: _cur.color || '#000000', weight: _cur.weight || 2, opacity: self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 0.9 });
+          e.target.setStyle(APP.STYLE.basin.resting(self._basinColor(e.target.feature)));
           self._hideHoverLabel();
         });
 
@@ -358,28 +350,23 @@ Object.assign(APP, {
     if (!layer) return;
     const self = this;
     const filter = this.state.hydroActiveFilterIds;
-    const colors = this.config.hydroLevelColors;
 
     if (filter.length === 0) {
-      /* Restore normal overview styles (only if not currently drilled in) */
       if (this.state.hydroDrillLevel === 0) {
         layer.eachLayer(function(lf) {
-          const idx = self._hydroBasinIndex(lf.feature);
-          const c = colors[idx] || '#6b7280';
-          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+          lf.setStyle(APP.STYLE.basin.resting(self._basinColor(lf.feature)));
         });
       }
       return;
     }
 
     layer.eachLayer(function(lf) {
-      const name = lf.feature.properties.Name || lf.feature.properties.Old_Name || '';
-      const idx = self._hydroBasinIndex(lf.feature);
-      const c = colors[idx] || '#6b7280';
+      const name = lf.feature.properties.Name || lf.feature.properties.Old_Name || String.raw``;
+      const fillColor = self._basinColor(lf.feature);
       if (filter.includes(name)) {
-        lf.setStyle({ fillColor: c, fillOpacity: 0.4, color: c, weight: 3, opacity: 1 });
+        lf.setStyle(APP.STYLE.basin.filterHighlight());
       } else {
-        lf.setStyle({ fillColor: c, fillOpacity: 0, color: c, weight: 0.5, opacity: 0.15 });
+        lf.setStyle(APP.STYLE.basin.filterDim(fillColor));
       }
     });
   },
@@ -392,116 +379,27 @@ Object.assign(APP, {
 
     const isDrilledIn = this.state.hydroDrillLevel === 1;
     const selectedFeature = isDrilledIn && this.state.hydroSelectedBasin ? this.state.hydroSelectedBasin.feature : null;
+    const self = this;
 
-    if (this.state.showWatershedColors) {
-      const colors = this.state.customColors.watersheds;
-      layer.eachLayer(function(lf) {
-        const idx = this._hydroBasinIndex(lf.feature);
-        const c = colors[idx] || '#6b7280';
-        if (isDrilledIn) {
-          /* When drilled in, only update the selected basin outline color;
-             leave dimmed basins untouched so they stay hidden */
-          if (lf.feature === selectedFeature) {
-            lf.setStyle({ fillColor: c, fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
-          }
-          /* else: skip — preserve the dim state set by _hydroDrillDown */
+    layer.eachLayer(function(lf) {
+      if (isDrilledIn && lf.feature !== selectedFeature) return;
+      const bc = self._basinColor(lf.feature);
+      if (isDrilledIn) {
+        lf.setStyle(APP.STYLE.basin.selected(bc));
+      } else {
+        lf.setStyle(APP.STYLE.basin.resting(bc));
+      }
+    });
+
+    if (this.state.hydroLayers[1]) {
+      this.state.hydroLayers[1].eachLayer(function(lf) {
+        if (lf._hiddenByIsolation) return;
+        if (this.state.hydroSelectedZoneLayer === lf) {
+          lf.setStyle(APP.STYLE.subWatershed.selected());
         } else {
-          lf.setStyle({ fillColor: c, fillOpacity: 0.15, color: c, weight: 2, opacity: 0.9 });
+          lf.setStyle(APP.STYLE.subWatershed.resting());
         }
       }.bind(this));
-
-      /* Also update sub-watershed layer (hydroLayers[1]) when toggled on */
-      if (this.state.hydroLayers[1]) {
-        const swColor = this.state.customColors.subWatershed || '#d1d5db';
-        this.state.hydroLayers[1].eachLayer(function(lf) {
-          const isSelected = (this.state.hydroSelectedZoneLayer === lf);
-          if (isSelected) {
-            const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
-            const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
-            lf.setStyle({ fillColor: swColor, fillOpacity: this.state.showSlope ? 0.15 : fillOpa, color: '#000000', weight: 3, opacity: outOpa });
-          } else if (!lf._hiddenByIsolation) {
-            lf.setStyle({ fillColor: swColor, fillOpacity: this.state.showSlope ? 0 : 0.3, color: '#000000', weight: 1.2, opacity: 0.8 });
-          }
-        }.bind(this));
-      }
-    } else {
-      layer.eachLayer(function(lf) {
-        if (isDrilledIn) {
-          if (lf.feature === selectedFeature) {
-            lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
-          }
-          /* else: skip — preserve the dim state */
-        } else {
-          lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
-        }
-      });
-
-      /* Reset sub-watershed layer to default color when toggled off */
-      if (this.state.hydroLayers[1]) {
-        this.state.hydroLayers[1].eachLayer(function(lf) {
-          if (!lf._hiddenByIsolation) {
-            lf.setStyle({ fillColor: '#d1d5db', fillOpacity: this.state.showSlope ? 0 : 0.3, color: '#000000', weight: 1.2, opacity: 0.8 });
-          }
-        }.bind(this));
-      }
-    }
-  },
-
-  /* Drill into a basin: load sub-watersheds + stream order */
-  async _hydroDrillDown(feature, leafletLayer) {
-    if (this.state._drilling) return;
-    this.state._drilling = true;
-    this._hideHoverLabel();
-    const self = this;
-    try {
-      const name = feature.properties.Name || feature.properties.Old_Name || '';
-      const mapEntry = this.config.hydroBasinFolderMap[name];
-      if (!mapEntry) {
-        this._showToast('Basin folder not configured');
-        return;
-      }
-      this.state.hydroDrillLevel = 1;
-      this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
-
-      /* Hide basin labels when drilling into sub-watersheds */
-      if (this.state.hydroLayers[0]) {
-        this.state.hydroLayers[0].eachLayer(function(lf) {
-          if (lf._labelBound) {
-            lf.unbindTooltip();
-            lf._labelBound = false;
-          }
-        });
-      }
-
-      /* Dim all basins except the selected one */
-      const idx = self._hydroBasinIndex(feature);
-      const basinColor = self.config.hydroLevelColors[idx] || '#6b7280';
-      if (this.state.hydroLayers[0]) {
-        this.state.hydroLayers[0].eachLayer(function(lf) {
-          if (lf.feature !== feature) {
-            lf.setStyle({ fillOpacity: 0, opacity: 0.15, weight: 0.5 });
-          } else {
-            lf.setStyle({ fillColor: basinColor, fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
-            lf.bringToFront();
-          }
-        });
-      }
-
-      /* Fly to selected basin */
-      if (leafletLayer && leafletLayer.getBounds) {
-        this.state.map.flyToBounds(leafletLayer.getBounds(), {
-          ...this._getPaddingOpts(),
-          duration: 0.45,
-          easeLinearity: 0.25,
-        });
-        await new Promise(r => setTimeout(r, 450));
-      }
-
-      await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
-      this._updateBreadcrumb();
-      APP.slope.reapplyClip();
-    } finally {
-      this.state._drilling = false;
     }
   },
 
@@ -531,19 +429,12 @@ Object.assign(APP, {
        which caused z-order issues and blinking on hover. Reverted to plain L.geoJSON. */
     if (results[0].status === 'fulfilled') {
       this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
-        style: () => ({ fillColor: '#d1d5db', fillOpacity: 0.3, color: '#000000', weight: 1.2, opacity: 0.8 }),
+        style: () => APP.STYLE.subWatershed.resting(),
         onEachFeature(feature, layer) {
           layer.on('mouseover', function(e) {
             if (layer._hiddenByIsolation) return;
             const isSelected = (self.state.hydroSelectedZoneLayer === layer);
-            const fillOpa = isSelected && self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
-            e.target.setStyle({
-              fillColor: '#d1d5db',
-              fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
-              color: '#000000',
-              weight: 2.5,
-              opacity: 1,
-            });
+            e.target.setStyle(APP.STYLE.subWatershed.hovered(isSelected));
             const lbl = document.getElementById('map-hover-label');
             if (lbl) {
               const p = feature.properties;
@@ -556,23 +447,9 @@ Object.assign(APP, {
             if (layer._hiddenByIsolation) return;
             const isSelected = (self.state.hydroSelectedZoneLayer === layer);
             if (isSelected) {
-              const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
-              const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
-              e.target.setStyle({
-                fillColor: '#d1d5db',
-                fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
-                color: '#000000',
-                weight: 3,
-                opacity: outOpa,
-              });
+              e.target.setStyle(APP.STYLE.subWatershed.hovered(true));
             } else {
-              e.target.setStyle({
-                fillColor: '#d1d5db',
-                fillOpacity: self.state.showSlope ? 0 : 0.3,
-                color: '#000000',
-                weight: 1.2,
-                opacity: 0.8,
-              });
+              e.target.setStyle(APP.STYLE.subWatershed.resting());
             }
             self._hideHoverLabel();
           });
@@ -684,22 +561,10 @@ Object.assign(APP, {
     layer.eachLayer(function(leafletLayer) {
       if (leafletLayer.feature !== selectedFeature) {
         leafletLayer._hiddenByIsolation = true;
-        leafletLayer.setStyle({
-          fillOpacity: 0,
-          opacity: 0,
-          weight: 0,
-        });
+        leafletLayer.setStyle(APP.STYLE.subWatershed.dimmed());
       } else {
         leafletLayer._hiddenByIsolation = false;
-        const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
-        const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
-        leafletLayer.setStyle({
-          fillColor: '#d1d5db',
-          fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
-          color: '#000000',
-          weight: 3,
-          opacity: outOpa,
-        });
+        leafletLayer.setStyle(APP.STYLE.subWatershed.selected());
         leafletLayer.bringToFront();
       }
     });
@@ -714,13 +579,7 @@ Object.assign(APP, {
     const self = this;
     layer.eachLayer(function(leafletLayer) {
       delete leafletLayer._hiddenByIsolation;
-      leafletLayer.setStyle({
-        fillColor: '#d1d5db',
-        fillOpacity: self.state.showSlope ? 0 : 0.3,
-        color: '#000000',
-        weight: 1.2,
-        opacity: 0.8,
-      });
+      leafletLayer.setStyle(APP.STYLE.subWatershed.resting());
     });
   },
 
@@ -728,26 +587,13 @@ Object.assign(APP, {
   _updateSubWatershedStyles() {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
-    const showOverlay = this.state.showSlope;
-    const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
-    const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
     layer.eachLayer(leafletLayer => {
       if (leafletLayer._hiddenByIsolation) {
-        leafletLayer.setStyle({
-          fillColor: '#d1d5db', fillOpacity: 0, opacity: 0, weight: 0
-        });
+        leafletLayer.setStyle(APP.STYLE.subWatershed.dimmed());
       } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
-        leafletLayer.setStyle({ 
-          fillColor: '#d1d5db',
-          fillOpacity: showOverlay ? 0.15 : fillOpa,
-          color: '#000000', weight: 3, opacity: outOpa
-        });
+        leafletLayer.setStyle(APP.STYLE.subWatershed.selected());
       } else {
-        leafletLayer.setStyle({ 
-          fillColor: '#d1d5db',
-          fillOpacity: showOverlay ? 0 : 0.3,
-          color: '#000000', weight: 1.2, opacity: 0.8
-        });
+        leafletLayer.setStyle(APP.STYLE.subWatershed.resting());
       }
     });
   },

@@ -49,6 +49,114 @@ export const APP = {
 
   config: {},
 
+  /* ── Central style registry ─ single source of truth for all boundary/zone styles ── */
+  STYLE: {
+    /* ── Basin overview (hydroLayers[0]) ── */
+    basin: {
+      resting(fillColor) {
+        return {
+          fillColor: fillColor || '#d1d5db',
+          fillOpacity: APP.state.selectedFillOpacity ?? 0.15,
+          color: '#000000',
+          weight: 2,
+          opacity: APP.state.selectedOutlineOpacity ?? 0.9,
+          className: 'fade-in-path',
+        };
+      },
+      hovered() {
+        return { fillOpacity: 0.4, weight: 3, opacity: 1 };
+      },
+      dimmed() {
+        return { fillOpacity: 0, opacity: 0.15, weight: 0.5 };
+      },
+      selected(fillColor) {
+        return { fillColor: fillColor || '#d1d5db', fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 };
+      },
+      silhouette() {
+        return { fillColor: '#d1d5db', fillOpacity: 0.35, weight: 0, opacity: 0, className: 'fade-in-path' };
+      },
+      filterHighlight() {
+        return { fillOpacity: 0.4, weight: 3, opacity: 1 };
+      },
+      filterDim(fillColor) {
+        return { fillColor: fillColor || '#d1d5db', fillOpacity: 0, weight: 0.5, opacity: 0.15 };
+      },
+    },
+
+    /* ── Sub-watershed zones (hydroLayers[1]) ── */
+    subWatershed: {
+      resting() {
+        return {
+          fillColor: APP.state.customColors?.subWatershed || '#d1d5db',
+          fillOpacity: APP.state.showSlope ? 0 : 0.3,
+          color: '#000000',
+          weight: 1.2,
+          opacity: 0.8,
+        };
+      },
+      hovered(isSelected) {
+        const fillOpa = isSelected && APP.state.selectedFillOpacity !== undefined ? APP.state.selectedFillOpacity : 0.55;
+        return {
+          fillColor: APP.state.customColors?.subWatershed || '#d1d5db',
+          fillOpacity: APP.state.showSlope ? 0.15 : fillOpa,
+          weight: 2.5,
+          opacity: 1,
+        };
+      },
+      selected() {
+        return {
+          fillColor: APP.state.customColors?.subWatershed || '#d1d5db',
+          fillOpacity: APP.state.showSlope ? 0.15 : (APP.state.selectedFillOpacity ?? 0.55),
+          color: '#000000',
+          weight: 3,
+          opacity: APP.state.selectedOutlineOpacity ?? 1.0,
+        };
+      },
+      dimmed() {
+        return { fillOpacity: 0, opacity: 0, weight: 0 };
+      },
+    },
+
+    /* ── Admin boundaries (layers[level]) ── */
+    boundary: {
+      resting(level) {
+        const styleConfig = APP.config.colors[level];
+        const customFill = APP.state.customColors ? APP.state.customColors['adminLevel' + level] : null;
+        return {
+          fillColor: customFill || styleConfig.fill,
+          fillOpacity: level === 0 ? (APP.state.selectedFillOpacity ?? 0.15) : (APP.state.selectedFillOpacity ?? 0),
+          color: styleConfig.stroke,
+          weight: styleConfig.weight,
+          opacity: APP.state.selectedOutlineOpacity ?? 0.9,
+          dashArray: null,
+          className: 'fade-in-path',
+        };
+      },
+      hovered(level) {
+        const styleConfig = APP.config.colors[level];
+        const customFill = APP.state.customColors ? APP.state.customColors['adminLevel' + level] : null;
+        return {
+          fillColor: customFill || styleConfig.fill,
+          fillOpacity: level === 0 ? 0.15 : 0.35,
+          weight: styleConfig.weight + 1,
+          dashArray: null,
+        };
+      },
+      selected(level) {
+        const cfg = APP.config.colors[level];
+        const customFill = APP.state.customColors ? APP.state.customColors['adminLevel' + level] : null;
+        return {
+          fillColor: customFill || (cfg ? cfg.fill : '#666'),
+          fillOpacity: APP.state.selectedFillOpacity ?? 0.55,
+          color: '#000000',
+          weight: cfg ? cfg.weight : 3,
+          opacity: APP.state.selectedOutlineOpacity ?? 1.0,
+          dashArray: null,
+        };
+      },
+    },
+  },
+
   _src() {
     return this.config.sources[this.state.activeSource];
   },
@@ -392,64 +500,6 @@ export const APP = {
       dashArray: null,
     });
     leafletLayer.bringToFront();
-  },
-
-  /* ── Update selected zone opacity (called by OpacityMenu sliders) ── */
-  _updateSubWatershedStyles() {
-    const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
-    const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
-
-    if (this.state.viewMode === 'watersheds') {
-      if (this.state.hydroSelectedZoneLayer) {
-        /* Selected zone mode — update only the isolated sub-watershed zone layer */
-        this.state.hydroSelectedZoneLayer.setStyle({
-          fillOpacity: this.state.showSlope ? 0.15 : fillOpa,
-          color: '#000000',
-          weight: 3,
-          opacity: outOpa,
-        });
-      } else if (this.state.hydroLayers[0]) {
-        /* Basin overview — apply opacity to all basin layers, preserving each layer's current fillColor */
-        this.state.hydroLayers[0].eachLayer(function(lf) {
-          const cur = lf.options || {};
-          lf.setStyle({
-            fillColor: cur.fillColor || '#d1d5db',
-            fillOpacity: fillOpa,
-            color: cur.color || '#000000',
-            weight: cur.weight !== undefined ? cur.weight : 2,
-            opacity: outOpa,
-          });
-        });
-      }
-    } else if (this.state.viewMode === 'boundaries') {
-      if (this.state._selectedLeafletLayer) {
-        /* Selected admin boundary feature */
-        const level = this.state._selectedLevel;
-        const cfg = this.config.colors[level];
-        this.state._selectedLeafletLayer.setStyle({
-          fillColor: cfg ? cfg.fill : '#666',
-          fillOpacity: fillOpa,
-          color: '#000000',
-          weight: cfg ? cfg.weight : 3,
-          opacity: outOpa,
-          dashArray: null,
-        });
-        this.state._selectedLeafletLayer.bringToFront();
-      } else if (this.state.layers[this.state.currentLevel]) {
-        /* Admin overview — apply opacity to current level layers */
-        this.state.layers[this.state.currentLevel].eachLayer(function(lf) {
-          const cur = lf.options || {};
-          lf.setStyle({
-            fillColor: cur.fillColor || '#666',
-            fillOpacity: fillOpa,
-            color: cur.color || '#000000',
-            weight: cur.weight !== undefined ? cur.weight : 2.5,
-            opacity: outOpa,
-            dashArray: null,
-          });
-        });
-      }
-    }
   },
 
   _showHoverLabel(feature, level) {
