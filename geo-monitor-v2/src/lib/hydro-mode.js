@@ -413,7 +413,7 @@ Object.assign(APP, {
 
     this.state._basinCode = code;
     this.state._basinFolder = folder;
-    this.state._lcmCode = ({ ACH: 'UCH' })[code] || code;
+    this.state._lcmCode = code;
 
     [1, 2, 3, 4].forEach(l => {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
@@ -486,6 +486,11 @@ Object.assign(APP, {
       }
     } else {
       this._showToast('Stream order data not available for this basin');
+    }
+
+    /* If LCM was active, reload for the new basin */
+    if (this.state.showLcm && APP.lcm) {
+      APP.lcm._loadBasin(this.state._lcmCode);
     }
 
     /* Open the basin detail panel */
@@ -701,6 +706,10 @@ Object.assign(APP, {
     });
     /* Remove admin outline overlay if active */
     if (self.state.hydroAdminOutlineLayer) { map.removeLayer(self.state.hydroAdminOutlineLayer); self.state.hydroAdminOutlineLayer = null; }
+    
+    /* Hide LCM layer during drill-up */
+    if (APP.lcm) { APP.lcm.hide(); }
+    
     document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
 
     this.state.hydroDrillLevel = 0;

@@ -100,6 +100,34 @@ Object.assign(APP, {
       "Zumigui-Ziwanan River Watershed": { folder: "Zumigui-Ziwanan River", code: "ZUM" },
     },
 
+    /* LCM (Land Cover Map) class definitions and colors */
+    lcmClasses: [
+      { code: '01001', name: 'Closed Forest',   color: '#1a7a2e' },
+      { code: '01004', name: 'Open Forest',      color: '#4caf50' },
+      { code: '01007', name: 'Mangrove Forest',  color: '#00897b' },
+      { code: '01010', name: 'Brush/Shrubs',     color: '#8bc34a' },
+      { code: '01013', name: 'Open/Barren',      color: '#d4a76a' },
+      { code: '01014', name: 'Grassland',        color: '#c6e567' },
+      { code: '01016', name: 'Annual Crop',      color: '#fdd835' },
+      { code: '01017', name: 'Perennial Crop',   color: '#ff9800' },
+      { code: '01019', name: 'Fishpond',         color: '#4fc3f7' },
+      { code: '01020', name: 'Built-up',         color: '#e53935' },
+      { code: '01021', name: 'Inland Water',     color: '#1565c0' },
+    ],
+    lcmColors: {
+      'Closed Forest':   '#1a7a2e',
+      'Open Forest':     '#4caf50',
+      'Mangrove Forest': '#00897b',
+      'Brush/Shrubs':    '#8bc34a',
+      'Open/Barren':     '#d4a76a',
+      'Grassland':       '#c6e567',
+      'Annual Crop':     '#fdd835',
+      'Perennial Crop':  '#ff9800',
+      'Fishpond':        '#4fc3f7',
+      'Built-up':        '#e53935',
+      'Inland Water':    '#1565c0',
+    },
+
     /* 14-color palette — one per basin, indexed by _hydroBasinIndex() */
     hydroLevelColors: [
       '#e11d48', '#0891b2', '#7c3aed', '#d97706',

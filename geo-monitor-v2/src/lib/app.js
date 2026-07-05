@@ -41,6 +41,8 @@ export const APP = {
     showSubWatersheds: false,
     showStreamOrder: false,
     showSlope: false,
+    showLcm: false,
+    lcmHiddenClasses: new Set(),
     adminLayers: {},
     boundaryMenuOpen: false,
     customColors: null,
@@ -599,7 +601,8 @@ export const APP = {
     if (old) { this.state.map.removeControl(old); this.state._legendCtrl = null; }
 
     const showSlope = !!this.state.showSlope;
-    if (!showSlope) return;
+    const showLcm = !!this.state.showLcm;
+    if (!showSlope && !showLcm) return;
 
     const slopeColors = [
       ['0–8%', '#50A823'], ['8–18%', '#8BD100'],
@@ -611,7 +614,15 @@ export const APP = {
     ).join('');
 
     let html = '';
-    html += `<div style="margin-bottom:4px"><b>Slope</b><table>${getItems(slopeColors)}</table></div>`;
+    if (showSlope) {
+      html += `<div style="margin-bottom:4px"><b>Slope</b><table>${getItems(slopeColors)}</table></div>`;
+    }
+    if (showLcm) {
+      const lcmItems = this.config.lcmClasses
+        .filter(c => !this.state.lcmHiddenClasses.has(c.name))
+        .map(c => [c.name, c.color]);
+      html += `<div style="margin-bottom:4px"><b>Land Cover</b><table>${getItems(lcmItems)}</table></div>`;
+    }
 
     const ctrl = L.control({ position: 'bottomright' });
     ctrl.onAdd = () => {
@@ -866,6 +877,24 @@ export const APP = {
             <span class="toggle-knob"></span>
           </label>
         </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Land Cover (LCM)</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showLcm ? 'checked' : ''} onchange="APP.lcm.toggle()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        ${this.state.showLcm ? `
+        <div class="lcm-class-list">
+          ${this.config.lcmClasses.map(c => {
+            const hidden = this.state.lcmHiddenClasses.has(c.name);
+            return `<div class="lcm-class-row ${hidden ? 'lcm-hidden' : ''}" onclick="APP.lcm.toggleClass('${c.name}')">
+              <span class="lcm-swatch" style="background:${c.color}"></span>
+              <span class="lcm-class-name">${c.name}</span>
+              <span class="lcm-eye">${hidden ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'}</span>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
       </div>` : ''}
 
       <div class="panel-section">
