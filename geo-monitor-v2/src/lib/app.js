@@ -399,25 +399,56 @@ export const APP = {
     const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
     const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
 
-    if (this.state.viewMode === 'watersheds' && this.state.hydroSelectedZoneLayer) {
-      this.state.hydroSelectedZoneLayer.setStyle({
-        fillOpacity: this.state.showSlope ? 0.15 : fillOpa,
-        color: '#000000',
-        weight: 3,
-        opacity: outOpa,
-      });
-    } else if (this.state.viewMode === 'boundaries' && this.state._selectedLeafletLayer) {
-      const level = this.state._selectedLevel;
-      const cfg = this.config.colors[level];
-      this.state._selectedLeafletLayer.setStyle({
-        fillColor: cfg ? cfg.fill : '#666',
-        fillOpacity: fillOpa,
-        color: '#000000',
-        weight: cfg ? cfg.weight : 3,
-        opacity: outOpa,
-        dashArray: null,
-      });
-      this.state._selectedLeafletLayer.bringToFront();
+    if (this.state.viewMode === 'watersheds') {
+      if (this.state.hydroSelectedZoneLayer) {
+        /* Selected zone mode — update only the isolated sub-watershed zone layer */
+        this.state.hydroSelectedZoneLayer.setStyle({
+          fillOpacity: this.state.showSlope ? 0.15 : fillOpa,
+          color: '#000000',
+          weight: 3,
+          opacity: outOpa,
+        });
+      } else if (this.state.hydroLayers[0]) {
+        /* Basin overview — apply opacity to all basin layers, preserving each layer's current fillColor */
+        this.state.hydroLayers[0].eachLayer(function(lf) {
+          const cur = lf.options || {};
+          lf.setStyle({
+            fillColor: cur.fillColor || '#d1d5db',
+            fillOpacity: fillOpa,
+            color: cur.color || '#000000',
+            weight: cur.weight !== undefined ? cur.weight : 2,
+            opacity: outOpa,
+          });
+        });
+      }
+    } else if (this.state.viewMode === 'boundaries') {
+      if (this.state._selectedLeafletLayer) {
+        /* Selected admin boundary feature */
+        const level = this.state._selectedLevel;
+        const cfg = this.config.colors[level];
+        this.state._selectedLeafletLayer.setStyle({
+          fillColor: cfg ? cfg.fill : '#666',
+          fillOpacity: fillOpa,
+          color: '#000000',
+          weight: cfg ? cfg.weight : 3,
+          opacity: outOpa,
+          dashArray: null,
+        });
+        this.state._selectedLeafletLayer.bringToFront();
+      } else if (this.state.layers[this.state.currentLevel]) {
+        /* Admin overview — apply opacity to current level layers */
+        this.state.layers[this.state.currentLevel].eachLayer(function(lf) {
+          const cur = lf.options || {};
+          lf.setStyle({
+            fillColor: cur.fillColor || '#666',
+            fillOpacity: fillOpa,
+            color: cur.color || '#000000',
+            weight: cur.weight !== undefined ? cur.weight : 2.5,
+            opacity: outOpa,
+            dashArray: null,
+          });
+        });
+      }
     }
   },
 
