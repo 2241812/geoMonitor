@@ -1,4 +1,5 @@
 import { APP } from './app.js';
+import { simplify } from '@turf/turf';
 
 /**
  * slope-manager.js
@@ -77,8 +78,11 @@ function _onMapMove() {
 
 APP.slope = {
   _layer: null,
+  _layerSimplified: null,
+  _layerFull: null,
   _rafId: null,
   _clipFeature: null, /* the feature currently used for clipping */
+  LOD_ZOOM: 10,
 
   /** Toggle slope overlay on/off. Creates the layer on first enable. */
   async toggle() {
@@ -93,16 +97,38 @@ APP.slope = {
         const geojson = await resp.json();
 
         this._ensurePane();
-        this._layer = L.geoJSON(geojson, {
-          style: (f) => ({
-            fillColor: COLORS[f.properties.gridcode] || '#cccccc',
-            fillOpacity: 0.65,
-            stroke: false,
-            weight: 0,
-          }),
-          interactive: false,
+
+        const styleFn = (f) => ({
+          fillColor: COLORS[f.properties.gridcode] || '#cccccc',
+          fillOpacity: 0.65,
+          stroke: false,
+          weight: 0,
+        });
+        const layerOpts = { style: styleFn, interactive: false };
+
+        /* Create simplified layer for low zoom (LOD) */
+        const simplified = { type: 'FeatureCollection', features: [] };
+        for (const f of geojson.features) {
+          try {
+            simplified.features.push(simplify(f, { tolerance: 0.002, highQuality: true }));
+          } catch (_) { simplified.features.push(f); }
+        }
+        this._layerSimplified = L.geoJSON(simplified, {
+          ...layerOpts,
+          renderer: L.canvas({ pane: 'slopePane' }),
           onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
         });
+
+        /* Create full-detail layer for high zoom */
+        this._layerFull = L.geoJSON(geojson, {
+          ...layerOpts,
+          renderer: L.canvas({ pane: 'slopePane' }),
+          onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
+        });
+
+        /* Start with simplified at low zoom, full at high zoom */
+        const z = map.getZoom();
+        this._layer = z < this.LOD_ZOOM ? this._layerSimplified : this._layerFull;
       } catch (e) {
         APP._showToast('Failed to load slope data');
         console.error('Slope fetch error:', e);
@@ -139,7 +165,6 @@ APP.slope = {
 
   /** Bind move/zoom events using the module-level handler. */
   _bindMapEvents(map) {
-    /* Remove first to prevent duplicates, then add */
     map.off('move', _onMapMove);
     map.off('moveend', _onMapMove);
     map.off('zoomanim', _onMapMove);
@@ -148,14 +173,32 @@ APP.slope = {
     map.on('moveend', _onMapMove);
     map.on('zoomanim', _onMapMove);
     map.on('zoomend', _onMapMove);
+
+    map.off('zoomend', this._onZoomSwap, this);
+    map.on('zoomend', this._onZoomSwap, this);
   },
 
-  /** Unbind move/zoom events. */
+  _onZoomSwap() {
+    const map = APP.state.map;
+    if (!map || !this._layerSimplified || !this._layerFull) return;
+    const z = map.getZoom();
+    const target = z < this.LOD_ZOOM ? this._layerSimplified : this._layerFull;
+    if (target === this._layer) return;
+    const wasActive = map.hasLayer(this._layer);
+    map.removeLayer(this._layer);
+    this._layer = target;
+    if (wasActive) {
+      map.addLayer(this._layer);
+      this.reapplyClip();
+    }
+  },
+
   _unbindMapEvents(map) {
     map.off('move', _onMapMove);
     map.off('moveend', _onMapMove);
     map.off('zoomanim', _onMapMove);
     map.off('zoomend', _onMapMove);
+    map.off('zoomend', this._onZoomSwap, this);
   },
 
   /** Clip slope layer to a feature's geometry via CSS clip-path on the pane. */
@@ -250,9 +293,12 @@ APP.slope = {
     const map = APP.state.map;
     if (map) {
       this._unbindMapEvents(map);
-      if (this._layer) map.removeLayer(this._layer);
+      if (this._layerSimplified) map.removeLayer(this._layerSimplified);
+      if (this._layerFull) map.removeLayer(this._layerFull);
     }
     this._layer = null;
+    this._layerSimplified = null;
+    this._layerFull = null;
     this._clipFeature = null;
     this.removeClip();
     APP.state.showSlope = false;
