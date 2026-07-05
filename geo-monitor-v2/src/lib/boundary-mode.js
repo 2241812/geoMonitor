@@ -309,10 +309,10 @@ Object.assign(APP, {
 
             e.target.setStyle({
               fillColor: fillColor,
-              fillOpacity: level === 0 ? 0.15 : 0,
+              fillOpacity: self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : (level === 0 ? 0.15 : 0),
               color: styleConfig.stroke,
               weight: styleConfig.weight,
-              opacity: 0.9,
+              opacity: self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 0.9,
               dashArray: null,
             });
           });

@@ -335,7 +335,8 @@ Object.assign(APP, {
 
         leafletLayer.on('mouseout', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
+          const _cur = e.target.options || {};
+          e.target.setStyle({ fillColor: _cur.fillColor || '#d1d5db', fillOpacity: self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.15, color: _cur.color || '#000000', weight: _cur.weight || 2, opacity: self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 0.9 });
           self._hideHoverLabel();
         });
 
