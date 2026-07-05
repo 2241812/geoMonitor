@@ -394,6 +394,33 @@ export const APP = {
     leafletLayer.bringToFront();
   },
 
+  /* ── Update selected zone opacity (called by OpacityMenu sliders) ── */
+  _updateSubWatershedStyles() {
+    const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
+    const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
+
+    if (this.state.viewMode === 'watersheds' && this.state.hydroSelectedZoneLayer) {
+      this.state.hydroSelectedZoneLayer.setStyle({
+        fillOpacity: this.state.showSlope ? 0.15 : fillOpa,
+        color: '#000000',
+        weight: 3,
+        opacity: outOpa,
+      });
+    } else if (this.state.viewMode === 'boundaries' && this.state._selectedLeafletLayer) {
+      const level = this.state._selectedLevel;
+      const cfg = this.config.colors[level];
+      this.state._selectedLeafletLayer.setStyle({
+        fillColor: cfg ? cfg.fill : '#666',
+        fillOpacity: fillOpa,
+        color: '#000000',
+        weight: cfg ? cfg.weight : 3,
+        opacity: outOpa,
+        dashArray: null,
+      });
+      this.state._selectedLeafletLayer.bringToFront();
+    }
+  },
+
   _showHoverLabel(feature, level) {
     const lbl = document.getElementById('map-hover-label');
     if (!lbl) return;
