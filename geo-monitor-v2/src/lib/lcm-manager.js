@@ -57,6 +57,7 @@ APP.lcm = {
 
       this._layer = new VectorTileLayer(geojsonData, {
         pane: 'lcmPane',
+        interactive: false,
         style: (feature) => {
           const cls = feature.tags?.LCM_CLASS || '';
           const hidden = APP.state.lcmHiddenClasses?.has(cls);
@@ -121,6 +122,7 @@ APP.lcm = {
     if (map && !map.getPane('lcmPane')) {
       const pane = map.createPane('lcmPane');
       pane.style.zIndex = 245; // Below slopePane (250) but above basemaps
+      pane.style.pointerEvents = 'none';
     }
   },
 
