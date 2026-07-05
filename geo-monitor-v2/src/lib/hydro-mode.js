@@ -583,22 +583,39 @@ Object.assign(APP, {
     });
   },
 
-  /* Update sub-watershed styles based on current slope visibility */
-  _updateSubWatershedStyles() {
-    const layer = this.state.hydroLayers[1];
-    if (!layer) return;
-    layer.eachLayer(leafletLayer => {
-      if (leafletLayer._hiddenByIsolation) {
-        leafletLayer.setStyle(APP.STYLE.subWatershed.dimmed());
-      } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
-        leafletLayer.setStyle(APP.STYLE.subWatershed.selected());
-      } else {
-        leafletLayer.setStyle(APP.STYLE.subWatershed.resting());
+  /* Update sub-watershed styles based on current slope visibility *  _updateSubWatershedStyles() {
+    var self = this;
+    if (this.state.hydroLayers[1]) {
+      this.state.hydroLayers[1].eachLayer(function(lf) {
+        if (lf._hiddenByIsolation) {
+          lf.setStyle(APP.STYLE.subWatershed.dimmed());
+        } else if (self.state.hydroSelectedZoneLayer === lf) {
+          lf.setStyle(APP.STYLE.subWatershed.selected());
+        } else {
+          lf.setStyle(APP.STYLE.subWatershed.resting());
+        }
+      });
+    }
+    if (this.state.viewMode === String.raw`watersheds` && this.state.hydroLayers[0]) {
+      if (!this.state.hydroSelectedZoneLayer) {
+        this.state.hydroLayers[0].eachLayer(function(lf) {
+          lf.setStyle(APP.STYLE.basin.resting(self._basinColor(lf.feature)));
+        });
       }
-    });
+    }
+    if (this.state.viewMode === String.raw`boundaries`) {
+      if (this.state._selectedLeafletLayer) {
+        this.state._selectedLeafletLayer.setStyle(APP.STYLE.boundary.selected(this.state._selectedLevel));
+        this.state._selectedLeafletLayer.bringToFront();
+      } else if (this.state.layers[this.state.currentLevel]) {
+        var lvl = this.state.currentLevel;
+        this.state.layers[lvl].eachLayer(function(lf) {
+          lf.setStyle(APP.STYLE.boundary.resting(lvl));
+        });
+      }
+    }
   },
 
-  /* Update stream order lines based on current selected zone */
   _updateStreamOrderStyles() {
     const layer = this.state.hydroLayers[2];
     if (!layer) return;
