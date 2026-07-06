@@ -76,6 +76,27 @@ function _onMapMove() {
   APP.slope.reapplyClip();
 }
 
+function _onZoomStart() {
+  const map = APP.state.map;
+  if (!map || !APP.state.showSlope) return;
+  const pane = map.getPane('slopePane');
+  if (pane) {
+    pane.style.willChange = 'transform';
+    pane.style.opacity = '0';
+  }
+}
+
+function _onZoomEnd() {
+  const map = APP.state.map;
+  if (!map || !APP.state.showSlope) return;
+  const pane = map.getPane('slopePane');
+  if (pane) {
+    pane.style.opacity = '';
+    pane.style.willChange = '';
+  }
+  APP.slope.reapplyClip();
+}
+
 APP.slope = {
   _layer: null,
   _layerSimplified: null,
@@ -159,7 +180,9 @@ APP.slope = {
     if (!map) return;
     if (!map.getPane('slopePane')) {
       map.createPane('slopePane');
-      map.getPane('slopePane').style.zIndex = 250;
+      const pane = map.getPane('slopePane');
+      pane.style.zIndex = 250;
+      pane.style.transition = 'opacity 0.15s ease-out';
     }
   },
 
@@ -169,10 +192,13 @@ APP.slope = {
     map.off('moveend', _onMapMove);
     map.off('zoomanim', _onMapMove);
     map.off('zoomend', _onMapMove);
+    map.off('zoomstart', _onZoomStart);
     map.on('move', _onMapMove);
     map.on('moveend', _onMapMove);
     map.on('zoomanim', _onMapMove);
     map.on('zoomend', _onMapMove);
+    map.on('zoomstart', _onZoomStart);
+    map.on('zoomend', _onZoomEnd);
 
     map.off('zoomend', this._onZoomSwap, this);
     map.on('zoomend', this._onZoomSwap, this);
@@ -198,6 +224,8 @@ APP.slope = {
     map.off('moveend', _onMapMove);
     map.off('zoomanim', _onMapMove);
     map.off('zoomend', _onMapMove);
+    map.off('zoomstart', _onZoomStart);
+    map.off('zoomend', _onZoomEnd);
     map.off('zoomend', this._onZoomSwap, this);
   },
 
