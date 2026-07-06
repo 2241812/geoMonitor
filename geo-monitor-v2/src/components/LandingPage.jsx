@@ -310,10 +310,16 @@ export default function LandingPage() {
     </section>
 
     
-    <section className="cta-section" id="dashboard-section">
-      <div className="cta-bg">
-        <img src="assets/images/Outcrop_along_the_riverside_of_the_Dalupirip_section_of_the_Agno_River,_Lower_Agno_Watershed_Forest_Reserve,_Itogon,_Benguet,_Philippines.jpg" alt="Agno River Outcrop" />
-      </div>
+    <section 
+      className="cta-section" 
+      id="dashboard-section"
+      style={{
+        backgroundImage: `url('assets/images/Outcrop_along_the_riverside_of_the_Dalupirip_section_of_the_Agno_River,_Lower_Agno_Watershed_Forest_Reserve,_Itogon,_Benguet,_Philippines.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       <div className="cta-overlay"></div>
 
       <div className="cta-content fade-in-up">
