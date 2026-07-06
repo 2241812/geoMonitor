@@ -741,8 +741,7 @@ Object.assign(APP, {
        - Bring basin outlines (hydroLayers[0]) to front within the Canvas renderer
          so the selected basin's thick black outline isn't buried under admin polygons
        - Bring stream order lines (hydroLayers[2]) to front
-       - Bring slope (hydroLayers[3]) and LCM (hydroLayers[4]) to front so they
-         render above admin lines */
+       - Slope (APP.slope) and LCM (APP.lcm) manage their own panes and z-order */
     if (this.state.viewMode === 'watersheds') {
       [0, 2, 3, 4].forEach(i => {
         const l = this.state.hydroLayers[i];

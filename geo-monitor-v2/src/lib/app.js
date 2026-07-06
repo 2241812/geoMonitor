@@ -41,12 +41,14 @@ export const APP = {
     showSubWatersheds: false,
     showStreamOrder: false,
     showSlope: false,
+    showLCM: false,
     selectedFillOpacity: 0.3,
     subWatershedOutlineOpacity: 0.8,
     subWatershedFillColor: '#3b82f6',
     subWatershedOutlineColor: '#000000',
     slopeOpacity: 0.65,
     slopeColorScheme: 'default',
+    lcmOpacity: 0.65,
     streamOrderColor: '#0022ff',
     streamOrderOpacity: 1,
     basinFillColor: '#d1d5db',
@@ -564,11 +566,21 @@ export const APP = {
     if (old) { this.state.map.removeControl(old); this.state._legendCtrl = null; }
 
     const showSlope = !!this.state.showSlope;
-    if (!showSlope) return;
+    const showLCM = !!this.state.showLCM;
+    if (!showSlope && !showLCM) return;
 
     const slopeColors = [
       ['0–8%', '#50A823'], ['8–18%', '#8BD100'],
       ['18–30%', '#FFFF00'], ['30–50%', '#FF9A36'], ['Above 50%', '#FF4A4A'],
+    ];
+
+    const lcmColors = [
+      ['Closed Forest', '#006400'], ['Open Forest', '#228B22'],
+      ['Mangrove Forest', '#004d40'], ['Brush/Shrubs', '#8FBC8F'],
+      ['Grassland', '#90EE90'], ['Annual Crop', '#FFD700'],
+      ['Perennial Crop', '#DAA520'], ['Marshland/Swamp', '#4682B4'],
+      ['Open/Barren', '#D2B48C'], ['Built-up', '#DC143C'],
+      ['Fishpond', '#00BFFF'], ['Inland Water', '#1E90FF'],
     ];
 
     const getItems = (colors) => colors.map(([label, color]) =>
@@ -576,7 +588,12 @@ export const APP = {
     ).join('');
 
     let html = '';
-    html += `<div style="margin-bottom:4px"><b>Slope</b><table>${getItems(slopeColors)}</table></div>`;
+    if (showSlope) {
+      html += `<div style="margin-bottom:4px"><b>Slope</b><table>${getItems(slopeColors)}</table></div>`;
+    }
+    if (showLCM) {
+      html += `<div style="margin-top:6px;margin-bottom:4px"><b>Land Cover</b><table>${getItems(lcmColors)}</table></div>`;
+    }
 
     const ctrl = L.control({ position: 'bottomright' });
     ctrl.onAdd = () => {

@@ -5,6 +5,7 @@ import './config.js';
 import './dashboard.js';
 import './boundary-mode.js';
 import './slope-manager.js';
+import './lcm-manager.js';
 import './hydro-mode.js';
 import './map-layers.js';
 

@@ -76,6 +76,7 @@ Object.assign(APP, {
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
     APP.slope.destroy();
+    APP.lcm.destroy();
       this.state.hydroActiveFilterIds = [];
       this.state.showSubWatersheds = false;
       this.state.showStreamOrder = false;
@@ -499,6 +500,8 @@ Object.assign(APP, {
       await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
       this._updateBreadcrumb();
       APP.slope.reapplyClip();
+      APP.lcm.reapplyClip();
+      this._loadBasinLCM(mapEntry.code);
     } finally {
       this.state._drilling = false;
     }
@@ -647,6 +650,7 @@ Object.assign(APP, {
     this._updateBreadcrumb();
     this._updateStreamOrderStyles();
     APP.slope.reapplyClip();
+    APP.lcm.reapplyClip();
   },
 
   /* Deselect the current sub-watershed zone and return to the basin detail panel */
@@ -671,6 +675,7 @@ Object.assign(APP, {
       } catch (_) {}
     }
     APP.slope.reapplyClip();
+    APP.lcm.reapplyClip();
     this._updateBreadcrumb();
     this._updateStreamOrderStyles();
   },
@@ -831,7 +836,20 @@ Object.assign(APP, {
     }
   },
 
-  /* (LCM tile layer removed — was dead code) */
+  _toggleLCM() {
+    this.state.showLCM = !this.state.showLCM;
+    const ctrl = document.getElementById('lcm-controls');
+    if (ctrl) ctrl.style.display = this.state.showLCM ? 'block' : 'none';
+
+    if (this.state.showLCM) {
+      if (this.state._basinCode) {
+        this._loadBasinLCM(this.state._basinCode);
+      }
+    } else {
+      APP.lcm.destroy();
+    }
+    APP._updateHydroLegend();
+  },
 
     /* Drill back up to a target level in watershed mode */
   _hydroDrillUp(targetLevel) {
@@ -861,6 +879,7 @@ Object.assign(APP, {
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
     this.state.selectedPath = [];
+    APP.lcm.destroy();
 
     /* Re-render basins interactively (no silhouette) */
     this._clearHydroLayers();
@@ -885,6 +904,7 @@ Object.assign(APP, {
     this._showBasinPickerPanel();
     this._updateHydroLabels();
     APP.slope.reapplyClip();
+    APP.lcm.reapplyClip();
   },
 
   /* Remove all hydro layers from the map */
@@ -897,9 +917,24 @@ Object.assign(APP, {
     this._removeHydroSilhouette();
   },
 
+  async _loadBasinLCM(code) {
+    if (!APP.state.showLCM) return;
+    const lcmCode = ({ ACH: 'UCH' })[code] || code;
+    const path = `geoJSON/LCM/${lcmCode}_LCM2025.geojson`;
+    try {
+      const resp = await fetch(path);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const geojson = await resp.json();
+      await APP.lcm.loadBasin(code, geojson);
+    } catch (e) {
+      console.warn('LCM load failed for', code, e);
+    }
+  },
+
   /* Full reset of hydro state (used when switching to Boundaries mode) */
   _clearHydroState(keepViewMode) {
     APP.slope.destroy();
+    APP.lcm.destroy();
     if (this.state.map) {
       this.state.map.off('zoomend', this._onZoomChange, this);
     }
@@ -1221,6 +1256,18 @@ Object.assign(APP, {
               <option value="terrain" ${this.state.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
               <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
             </select>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Land Cover (LCM)</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="overlay-controls" id="lcm-controls" style="display:${this.state.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.lcmOpacity}" oninput="APP.state.lcmOpacity=parseFloat(this.value);APP.lcm._setOpacity(parseFloat(this.value))">
           </div>
         </div>
       </div>
