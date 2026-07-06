@@ -163,6 +163,7 @@ export const APP = {
       const wsOpts = document.getElementById('watershed-options');
       if (wsOpts) wsOpts.classList.remove('show');
       this._closeBoundaryMenu();
+      this._closeBasinStyleMenu();
     });
 
     /* Click empty space → drill up one level (both modes) */
@@ -369,10 +370,42 @@ export const APP = {
     const wsOpts = document.getElementById('watershed-options');
     if (wsOpts) wsOpts.classList.remove('show');
     this._closeBoundaryMenu();
+    this._closeBasinStyleMenu();
 
     const opts = document.getElementById('basemap-options');
     if (!opts) return;
     opts.classList.toggle('show');
+  },
+
+  _toggleBasinStyleMenu() {
+    const baseOpts = document.getElementById('basemap-options');
+    if (baseOpts) baseOpts.classList.remove('show');
+    const wsOpts = document.getElementById('watershed-options');
+    if (wsOpts) wsOpts.classList.remove('show');
+    this._closeBoundaryMenu();
+
+    const opts = document.getElementById('basin-style-options');
+    if (!opts) return;
+
+    this._syncBasinStyleControls();
+
+    opts.classList.toggle('show');
+  },
+
+  _closeBasinStyleMenu() {
+    const opts = document.getElementById('basin-style-options');
+    if (opts) opts.classList.remove('show');
+  },
+
+  _syncBasinStyleControls() {
+    const opts = document.getElementById('basin-style-options');
+    if (!opts) return;
+    const ranges = opts.querySelectorAll('input[type="range"]');
+    const colors = opts.querySelectorAll('input[type="color"]');
+    if (ranges[0]) ranges[0].value = this.state.basinFillOpacity;
+    if (ranges[1]) ranges[1].value = this.state.basinOutlineOpacity;
+    if (colors[0]) colors[0].value = this.state.basinFillColor;
+    if (colors[1]) colors[1].value = this.state.basinOutlineColor;
   },
 
   _getPaddingOpts() {

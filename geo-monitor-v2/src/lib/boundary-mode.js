@@ -698,6 +698,8 @@ Object.assign(APP, {
     if (baseOpts) baseOpts.classList.remove('show');
     const wsOpts = document.getElementById('watershed-options');
     if (wsOpts) wsOpts.classList.remove('show');
+    const basinOpts = document.getElementById('basin-style-options');
+    if (basinOpts) basinOpts.classList.remove('show');
     this.state.boundaryMenuOpen = !this.state.boundaryMenuOpen;
     const menu = document.getElementById('boundary-options');
     if (menu) menu.classList.toggle('show', this.state.boundaryMenuOpen);
