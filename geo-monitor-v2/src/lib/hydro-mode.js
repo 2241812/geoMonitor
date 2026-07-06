@@ -1192,7 +1192,7 @@ Object.assign(APP, {
           </div>
           <div class="overlay-color-row">
             <label>Color Scheme</label>
-            <select onchange="APP.state.slopeColorScheme=this.value;APP.slope._setColorScheme(this.value)" style="font-size: 0.75rem; padding: 2px 4px; border: 1px solid #d1d5db; border-radius: 4px;">
+            <select onchange="APP.state.slopeColorScheme=this.value;APP.slope._setColorScheme(this.value)">
               <option value="default" ${this.state.slopeColorScheme === 'default' ? 'selected' : ''}>Default</option>
               <option value="terrain" ${this.state.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
               <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
