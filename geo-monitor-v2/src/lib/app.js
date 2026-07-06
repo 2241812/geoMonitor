@@ -901,6 +901,10 @@ export const APP = {
             <span class="toggle-knob"></span>
           </label>
         </div>
+        <div id="lcm-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
+          <div class="lcm-load-bar"><div class="lcm-load-fill"></div></div>
+          <span class="lcm-load-label"></span>
+        </div>
         <div class="overlay-controls" id="lcm-controls" style="display:${this.state.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
           <div class="overlay-slider-row">
             <label>Opacity</label>

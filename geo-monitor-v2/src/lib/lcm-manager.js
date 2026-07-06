@@ -137,6 +137,9 @@ APP.lcm = {
 
     if (!APP.state.showLCM) return;
 
+    this._showLoadProgress(0, 'Processing geometry…');
+    await new Promise(r => setTimeout(r, 0));
+
     this._ensurePane();
 
     const vis = this.getVisibleClasses();
@@ -153,8 +156,15 @@ APP.lcm = {
       try {
         simplified.features.push(simplify(geojson.features[i], { tolerance: 0.002, highQuality: true }));
       } catch (_) { simplified.features.push(geojson.features[i]); }
-      if (i % 20 === 0) await new Promise(r => setTimeout(r, 0));
+      if (i % 4 === 0) {
+        const pct = Math.round((i / total) * 60);
+        this._showLoadProgress(pct, `Simplifying… ${i}/${total}`);
+        await new Promise(r => setTimeout(r, 0));
+      }
     }
+
+    this._showLoadProgress(65, 'Building layers…');
+    await new Promise(r => setTimeout(r, 0));
 
     this._layerSimplified = L.geoJSON(simplified, {
       style: styleFn,
@@ -163,6 +173,9 @@ APP.lcm = {
       onEachFeature: (f, l) => { l.options.pane = PANE_NAME; },
     });
 
+    this._showLoadProgress(80, 'Building full-detail layer…');
+    await new Promise(r => setTimeout(r, 0));
+
     this._layerFull = L.geoJSON(geojson, {
       style: styleFn,
       interactive: false,
@@ -170,12 +183,32 @@ APP.lcm = {
       onEachFeature: (f, l) => { l.options.pane = PANE_NAME; },
     });
 
+    this._showLoadProgress(100, 'Done');
     const z = map.getZoom();
     this._layer = z < LOD_ZOOM ? this._layerSimplified : this._layerFull;
 
     map.addLayer(this._layer);
     this.reapplyClip();
     this._bindMapEvents(map);
+
+    setTimeout(() => this._hideLoadProgress(), 600);
+  },
+
+  _showLoadProgress(pct, label) {
+    const el = document.getElementById('lcm-load-progress');
+    if (!el) return;
+    el.style.display = 'block';
+    el.querySelector('.lcm-load-fill').style.width = pct + '%';
+    el.querySelector('.lcm-load-label').textContent = label || '';
+  },
+
+  _hideLoadProgress() {
+    const el = document.getElementById('lcm-load-progress');
+    if (el) {
+      el.style.display = 'none';
+      el.querySelector('.lcm-load-fill').style.width = '0%';
+      el.querySelector('.lcm-load-label').textContent = '';
+    }
   },
 
   _ensurePane() {

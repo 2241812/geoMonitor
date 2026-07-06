@@ -932,12 +932,15 @@ Object.assign(APP, {
     if (!APP.state.showLCM) return;
     const lcmCode = ({ ACH: 'UCH' })[code] || code;
     const path = `geoJSON/LCM/${lcmCode}_LCM2025.geojson`;
+    APP.lcm._showLoadProgress(0, 'Fetching LCM data…');
     try {
       const resp = await fetch(path);
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      APP.lcm._showLoadProgress(10, 'Parsing GeoJSON…');
       const geojson = await resp.json();
       await APP.lcm.loadBasin(code, geojson);
     } catch (e) {
+      APP.lcm._hideLoadProgress();
       console.warn('LCM load failed for', code, e);
     }
   },
@@ -1274,6 +1277,10 @@ Object.assign(APP, {
             <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
             <span class="toggle-knob"></span>
           </label>
+        </div>
+        <div id="lcm-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
+          <div class="lcm-load-bar"><div class="lcm-load-fill"></div></div>
+          <span class="lcm-load-label"></span>
         </div>
         <div class="overlay-controls" id="lcm-controls" style="display:${this.state.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
           <div class="overlay-slider-row">
