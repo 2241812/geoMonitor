@@ -6,21 +6,20 @@ const watershedFile = path.join(__dirname, '../public/geoJSON/watershed-intersec
 
 const zoneData = JSON.parse(fs.readFileSync(zoneFile, 'utf8'));
 
-// Basin code to Name mapping
+// Basin code to Name mapping — must match GeoJSON feature.Name and hydroBasinFolderMap keys
 const basinMapping = {
   "ABR": "Abra River Watershed",
   "ABU": "Abulug River Watershed",
   "AGN": "Agno River Watershed",
+  "AMB": "Bayogao River Watershed",
   "ARI": "Aringay River Watershed",
-  "AMA": "Amburayan River Watershed",
-  "ASU": "Asin-Galiano River Watershed",
-  "BAY": "Bayogao River Watershed",
-  "BUE": "Bued River Watershed",
-  "CAB": "Cabicungan River Watershed",
-  "CHI": "Upper Chico River Watershed",
-  "MAG": "Magat River Watershed",
-  "SAN": "Santa Maria River Watershed",
-  "SIB": "Siffu-Mallig River Watershed",
+  "BUD": "Bued River Watershed",
+  "MLG": "Mallig River Watershed",
+  "NAG": "Naguilian River Watershed",
+  "SIF": "Siffu River Watershed",
+  "SMR": "Santa Maria River Watershed",
+  "UCH": "Upper Chico River Watershed",
+  "UMT": "Upper Magat River Watershed",
   "ZUM": "Zumigui-Ziwanan River Watershed"
 };
 

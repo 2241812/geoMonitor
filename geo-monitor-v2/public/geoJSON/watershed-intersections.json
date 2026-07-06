@@ -90,6 +90,21 @@
         "mountain-province:bauko"
       ]
     },
+    "Bayogao River Watershed": {
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:atok",
+        "benguet:bakun",
+        "benguet:bokod",
+        "benguet:buguias",
+        "benguet:kabayan",
+        "benguet:kapangan",
+        "benguet:kibungan",
+        "benguet:tublay"
+      ]
+    },
     "Aringay River Watershed": {
       "provinces": [
         "benguet"
@@ -101,41 +116,131 @@
         "benguet:tuba"
       ]
     },
-    "Amburayan River Watershed": {
-      "provinces": [],
-      "municipalities": []
-    },
-    "Asin-Galiano River Watershed": {
-      "provinces": [],
-      "municipalities": []
-    },
-    "Bayogao River Watershed": {
-      "provinces": [],
-      "municipalities": []
-    },
     "Bued River Watershed": {
-      "provinces": [],
-      "municipalities": []
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:baguio",
+        "benguet:itogon",
+        "benguet:tuba"
+      ]
     },
-    "Cabicungan River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Mallig River Watershed": {
+      "provinces": [
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "kalinga:tabuk",
+        "kalinga:tanudan",
+        "mountain-province:natonin",
+        "mountain-province:paracelis"
+      ]
     },
-    "Upper Chico River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Naguilian River Watershed": {
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:baguio",
+        "benguet:kapangan",
+        "benguet:la-trinidad",
+        "benguet:sablan",
+        "benguet:tublay"
+      ]
     },
-    "Magat River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Siffu River Watershed": {
+      "provinces": [
+        "ifugao",
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "ifugao:aguinaldo",
+        "ifugao:alfonso-lista",
+        "ifugao:banaue",
+        "ifugao:mayoyao",
+        "kalinga:tanudan",
+        "mountain-province:barlig",
+        "mountain-province:natonin",
+        "mountain-province:paracelis"
+      ]
     },
     "Santa Maria River Watershed": {
-      "provinces": [],
-      "municipalities": []
+      "provinces": [
+        "abra"
+      ],
+      "municipalities": [
+        "abra:luba",
+        "abra:pilar",
+        "abra:villaviciosa"
+      ]
     },
-    "Siffu-Mallig River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Upper Chico River Watershed": {
+      "provinces": [
+        "abra",
+        "apayao",
+        "ifugao",
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "abra:boliney",
+        "abra:daguioman",
+        "abra:lacub",
+        "abra:malibcong",
+        "abra:tineg",
+        "abra:tubo",
+        "apayao:conner",
+        "apayao:kabugao",
+        "ifugao:banaue",
+        "ifugao:hungduan",
+        "ifugao:tinoc",
+        "kalinga:balbalan",
+        "kalinga:lubuagan",
+        "kalinga:pasil",
+        "kalinga:pinukpuk",
+        "kalinga:rizal-liwan",
+        "kalinga:tabuk",
+        "kalinga:tanudan",
+        "kalinga:tinglayan",
+        "mountain-province:barlig",
+        "mountain-province:bauko",
+        "mountain-province:besao",
+        "mountain-province:bontoc",
+        "mountain-province:natonin",
+        "mountain-province:sabangan",
+        "mountain-province:sadanga",
+        "mountain-province:sagada",
+        "mountain-province:tadian"
+      ]
+    },
+    "Upper Magat River Watershed": {
+      "provinces": [
+        "benguet",
+        "ifugao",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "benguet:bokod",
+        "benguet:buguias",
+        "ifugao:aguinaldo",
+        "ifugao:alfonso-lista",
+        "ifugao:asipulo",
+        "ifugao:banaue",
+        "ifugao:hingyon",
+        "ifugao:hungduan",
+        "ifugao:kiangan",
+        "ifugao:lagawe",
+        "ifugao:lamut",
+        "ifugao:mayoyao",
+        "ifugao:tinoc",
+        "mountain-province:barlig",
+        "mountain-province:bauko",
+        "mountain-province:bontoc",
+        "mountain-province:natonin"
+      ]
     },
     "Zumigui-Ziwanan River Watershed": {
       "provinces": [
@@ -245,6 +350,21 @@
         "mountain-province:bauko"
       ]
     },
+    "Bayogao River Watershed": {
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:atok",
+        "benguet:bakun",
+        "benguet:bokod",
+        "benguet:buguias",
+        "benguet:kabayan",
+        "benguet:kapangan",
+        "benguet:kibungan",
+        "benguet:tublay"
+      ]
+    },
     "Aringay River Watershed": {
       "provinces": [
         "benguet"
@@ -256,41 +376,138 @@
         "benguet:tuba"
       ]
     },
-    "Amburayan River Watershed": {
-      "provinces": [],
-      "municipalities": []
-    },
-    "Asin-Galiano River Watershed": {
-      "provinces": [],
-      "municipalities": []
-    },
-    "Bayogao River Watershed": {
-      "provinces": [],
-      "municipalities": []
-    },
     "Bued River Watershed": {
-      "provinces": [],
-      "municipalities": []
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:baguio-city",
+        "benguet:itogon",
+        "benguet:tuba"
+      ]
     },
-    "Cabicungan River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Mallig River Watershed": {
+      "provinces": [
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "kalinga:tabuk-city",
+        "kalinga:tanudan",
+        "mountain-province:natonin",
+        "mountain-province:paracelis"
+      ]
     },
-    "Upper Chico River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Naguilian River Watershed": {
+      "provinces": [
+        "benguet"
+      ],
+      "municipalities": [
+        "benguet:baguio-city",
+        "benguet:kapangan",
+        "benguet:la-trinidad",
+        "benguet:sablan",
+        "benguet:tuba",
+        "benguet:tublay"
+      ]
     },
-    "Magat River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Siffu River Watershed": {
+      "provinces": [
+        "ifugao",
+        "ifugao-vs-mt-province",
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
+        "ifugao:aguinaldo",
+        "ifugao:alfonso-lista",
+        "ifugao:mayoyao",
+        "kalinga:tanudan",
+        "mountain-province:barlig",
+        "mountain-province:natonin",
+        "mountain-province:paracelis"
+      ]
     },
     "Santa Maria River Watershed": {
-      "provinces": [],
-      "municipalities": []
+      "provinces": [
+        "abra"
+      ],
+      "municipalities": [
+        "abra:pilar",
+        "abra:villaviciosa"
+      ]
     },
-    "Siffu-Mallig River Watershed": {
-      "provinces": [],
-      "municipalities": []
+    "Upper Chico River Watershed": {
+      "provinces": [
+        "abra",
+        "apayao",
+        "benguet",
+        "ifugao",
+        "kalinga",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "abra:boliney",
+        "abra:daguioman",
+        "abra:malibcong",
+        "abra:tubo",
+        "apayao:conner",
+        "apayao:flora",
+        "apayao:kabugao",
+        "benguet:buguias",
+        "benguet:mankayan",
+        "ifugao:banaue",
+        "ifugao:hungduan",
+        "ifugao:tinoc",
+        "kalinga:balbalan",
+        "kalinga:lubuagan",
+        "kalinga:pasil",
+        "kalinga:pinukpuk",
+        "kalinga:rizal",
+        "kalinga:tabuk-city",
+        "kalinga:tanudan",
+        "kalinga:tinglayan",
+        "mountain-province:barlig",
+        "mountain-province:bauko",
+        "mountain-province:bauko-vs-sabangan-vs-sagada",
+        "mountain-province:besao",
+        "mountain-province:bontoc",
+        "mountain-province:natonin",
+        "mountain-province:sabangan",
+        "mountain-province:sadanga",
+        "mountain-province:sagada",
+        "mountain-province:tadian"
+      ]
+    },
+    "Upper Magat River Watershed": {
+      "provinces": [
+        "benguet",
+        "ifugao",
+        "ifugao-vs-mt-province",
+        "mountain-province"
+      ],
+      "municipalities": [
+        "benguet:bokod",
+        "benguet:buguias",
+        "benguet:kabayan",
+        "ifugao-vs-mt-province:aguinaldo-vs-natonin-vs-paracelis",
+        "ifugao:aguinaldo",
+        "ifugao:alfonso-lista",
+        "ifugao:asipulo",
+        "ifugao:banaue",
+        "ifugao:hingyon",
+        "ifugao:hungduan",
+        "ifugao:kiangan",
+        "ifugao:lagawe",
+        "ifugao:lamut",
+        "ifugao:mayoyao",
+        "ifugao:tinoc",
+        "mountain-province:barlig",
+        "mountain-province:bauko",
+        "mountain-province:bontoc",
+        "mountain-province:paracelis"
+      ]
     },
     "Zumigui-Ziwanan River Watershed": {
       "provinces": [
