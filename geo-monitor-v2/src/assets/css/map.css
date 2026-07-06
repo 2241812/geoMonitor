@@ -709,10 +709,12 @@ body.panel-open .bottom-left-controls {
 .basin-style-row label {
   flex-shrink: 0;
   margin-right: 12px;
+  min-width: 0;
 }
 
 .basin-style-row input[type="range"] {
-  width: 100px;
+  flex: 1;
+  min-width: 0;
   height: 4px;
   accent-color: #2563eb;
 }
