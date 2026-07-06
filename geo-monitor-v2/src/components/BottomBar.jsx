@@ -71,7 +71,7 @@ export default function BottomBar() {
 
         {/* Explore/Boundary sub-mode toggles — only in boundaries mode */}
         {viewMode === 'boundaries' && (
-          <div className="mode-toggle-group" style={{ display: 'flex', gap: '4px' }}>
+          <div className="mode-toggle-group">
             <button
               className={`mode-toggle ${activeMode === 'explore' ? 'active' : ''}`}
               onClick={() => handleSubMode('explore')}

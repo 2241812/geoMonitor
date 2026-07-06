@@ -121,31 +121,40 @@
   height: 14px;
 }
 
-/* ── Mode toggle buttons ─────────────────── */
+/* ── Mode toggle (Explore/Boundary) ─────────────────── */
+.mode-toggle-group {
+  display: flex;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
 .mode-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 16px;
+  padding: 6px 14px;
   font-size: 12.5px;
-  font-weight: 700;
-  color: #6b7280;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border: none;
   background: transparent;
-  border: 1.5px solid transparent;
-  border-radius: 20px;
+  color: #6b7280;
   cursor: pointer;
+  border-radius: 99px;
+  transition: all 0.2s;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  letter-spacing: 0.02em;
 }
 .mode-toggle:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: rgba(0, 0, 0, 0.03);
+  color: #374151;
 }
 .mode-toggle.active {
-  color: #065f46;
   background: #ecfdf5;
-  border-color: #065f46;
+  color: #065f46;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 /* =============================================
