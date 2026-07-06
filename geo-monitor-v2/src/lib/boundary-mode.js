@@ -239,6 +239,11 @@ Object.assign(APP, {
 
     let data = this.state.rawData[geoKey];
 
+    /* Ensure level-0 feature has _id so _filterToParent works when drilling into children */
+    if (level === 0 && data.features && data.features[0] && !data.features[0].properties._id) {
+      data.features[0].properties._id = 'CAR';
+    }
+
     if (parentFeature && level > 0) {
       data = this._filterToParent(data, level, parentFeature);
     }
@@ -375,40 +380,11 @@ Object.assign(APP, {
   },
 
   /* ── Dynamic map padding to avoid panel ── */
-  /* ── Isolate selected feature: highlight it, hide all others at this level ── */
   _dimLevel(level, selectedFeature) {
-    const layer = this.state.layers[level];
-    if (!layer) return;
     const cfg = this.config.colors[level];
-    layer.eachLayer(function(leafletLayer) {
-      if (leafletLayer.feature !== selectedFeature) {
-        leafletLayer._hiddenByIsolation = true;
-        leafletLayer.setStyle({
-          fillOpacity: 0,
-          opacity: 0,
-          weight: 0,
-        });
-      } else {
-        leafletLayer._hiddenByIsolation = false;
-        leafletLayer.setStyle({
-          fillColor: cfg.fill,
-          fillOpacity: 0.65,
-          color: '#000000',
-          weight: 3,
-          opacity: 1,
-          dashArray: null,
-        });
-        leafletLayer.bringToFront();
-      }
+    this._isolateFeature(this.state.layers[level], selectedFeature, {
+      fill: cfg.fill, fillOpacity: 0.65, stroke: '#000000', weight: 3, opacity: 1,
     });
-
-    if (selectedFeature) {
-      layer.eachLayer(function(leafletLayer) {
-        if (leafletLayer.feature === selectedFeature) {
-          leafletLayer.bringToFront();
-        }
-      });
-    }
   },
 
   /* ── Highlight selection via dim (max-level click) ── */

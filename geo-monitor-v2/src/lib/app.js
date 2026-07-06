@@ -170,10 +170,11 @@ export const APP = {
     map.on('click', () => {
       if (this.state._drilling) return;
 
-      /* Hydro mode: clicking empty space deselects isolated zone first, then drills back to basin overview */
-      if (this.state.viewMode === 'watersheds' && this.state.hydroDrillLevel >= 1) {
+      /* Hydro mode: click empty space deselects zone first, then drills back to basin overview */
+      if (this.state.viewMode === 'watersheds') {
+        if (this.state.selectedPath.length === 0) return;
         if (this.state.hydroSelectedZone) {
-          this._deselectSubWatershed();
+          this._hydroDrillUp(1);
           return;
         }
         this._hydroDrillUp(0);
@@ -189,9 +190,7 @@ export const APP = {
          return;
       }
       
-      if (this.state.currentLevel === 0 && this.state.selectedPath.length === 0) {
-        return;
-      }
+      if (this.state.selectedPath.length === 0) return;
       if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
@@ -416,6 +415,29 @@ export const APP = {
     };
   },
 
+  /* Shared feature isolation: dims all siblings in a Leaflet layer, highlights the selected feature.
+     Used by both boundary mode (_dimLevel) and watershed mode (_dimSubWatersheds). */
+  _isolateFeature(layer, selectedFeature, style) {
+    if (!layer) return;
+    layer.eachLayer(function(leafletLayer) {
+      if (leafletLayer.feature !== selectedFeature) {
+        leafletLayer._hiddenByIsolation = true;
+        leafletLayer.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
+      } else {
+        leafletLayer._hiddenByIsolation = false;
+        leafletLayer.setStyle({
+          fillColor: style.fill,
+          fillOpacity: style.fillOpacity,
+          color: style.stroke || '#000000',
+          weight: style.weight || 3,
+          opacity: style.opacity || 1,
+          dashArray: null,
+        });
+        leafletLayer.bringToFront();
+      }
+    });
+  },
+
   /* ── Feature name resolution ─────────────── */
   _featureName(feature, level) {
     const p = feature.properties;
@@ -471,22 +493,21 @@ export const APP = {
 
     /* ── Hydro mode breadcrumb ── */
     if (this.state.viewMode === 'watersheds') {
-      html += `<button class="breadcrumb-item ${this.state.hydroDrillLevel === 0 ? 'active' : 'clickable'}" onclick="APP._hydroDrillUp(0)">
+      const atRoot = this.state.selectedPath.length === 0;
+      html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP._hydroDrillUp(0)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
         Basins
       </button>`;
 
-      if (this.state.hydroDrillLevel >= 1 && this.state.hydroSelectedBasin) {
+      this.state.selectedPath.forEach((item, idx) => {
+        const isLast = idx === this.state.selectedPath.length - 1;
+        const shortName = idx === 0
+          ? item.name.replace(/ River Watershed$/, '').replace(/ River$/, '')
+          : item.name;
         html += `<span class="breadcrumb-sep">›</span>`;
-        const shortName = this.state.hydroSelectedBasin.name.replace(/ River Watershed$/, '').replace(/ River$/, '');
-        const hasZone = !!this.state.hydroSelectedZone;
-        html += `<button class="breadcrumb-item ${hasZone ? 'clickable' : 'active'}" ${hasZone ? `onclick="APP._deselectSubWatershed()"` : ''}>${this._escHtml(shortName)}</button>`;
-        if (this.state.hydroSelectedZone) {
-          const gc = this.state.hydroSelectedZone.properties.gridcode;
-          html += `<span class="breadcrumb-sep">›</span>`;
-          html += `<button class="breadcrumb-item active">Zone ${gc != null ? gc : '?'}</button>`;
-        }
-      }
+        const onclick = isLast ? '' : `onclick="APP._hydroDrillUp(${idx + 1})"`;
+        html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" ${onclick}>${this._escHtml(shortName)}</button>`;
+      });
 
       bc.innerHTML = html;
       return; /* No outline toggles in hydro mode */

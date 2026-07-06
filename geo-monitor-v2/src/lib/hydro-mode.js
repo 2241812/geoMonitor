@@ -460,6 +460,8 @@ Object.assign(APP, {
       this.state.hydroDrillLevel = 1;
       this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
 
+      this.state.selectedPath = [{ level: 0, feature, name }];
+
       /* Hide basin labels when drilling into sub-watersheds */
       if (this.state.hydroLayers[0]) {
         this.state.hydroLayers[0].eachLayer(function(lf) {
@@ -628,6 +630,9 @@ Object.assign(APP, {
     this.state.hydroSelectedZone = feature;
     this.state.hydroSelectedZoneLayer = leafletLayer;
 
+    const zoneName = `Zone ${feature.properties.gridcode != null ? feature.properties.gridcode : '?'}`;
+    this.state.selectedPath.push({ level: 1, feature, name: zoneName });
+
     /* Zoom to the selected zone */
     if (leafletLayer && leafletLayer.getBounds) {
       this.state.map.flyToBounds(leafletLayer.getBounds(), {
@@ -650,6 +655,7 @@ Object.assign(APP, {
     this._restoreSubWatersheds();
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
+    this.state.selectedPath.pop();
     if (this.state.hydroSelectedBasin && this.state.hydroSelectedBasin.feature) {
       this._openWatershedPanel(this.state.hydroSelectedBasin.feature);
       /* Fly back to the parent basin bounds */
@@ -673,34 +679,16 @@ Object.assign(APP, {
 
 
 
-  /* Dim all sub-watershed zones except the selected one */
   _dimSubWatersheds(selectedFeature) {
-    const layer = this.state.hydroLayers[1];
-    if (!layer) return;
-    const self = this;
-    layer.eachLayer(function(leafletLayer) {
-      if (leafletLayer.feature !== selectedFeature) {
-        leafletLayer._hiddenByIsolation = true;
-        leafletLayer.setStyle({
-          fillOpacity: 0,
-          opacity: 0,
-          weight: 0,
-        });
-      } else {
-        leafletLayer._hiddenByIsolation = false;
-        const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
-        const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
-        leafletLayer.setStyle({
-          fillColor: '#d1d5db',
-          fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
-          color: '#000000',
-          weight: 3,
-          opacity: outOpa,
-        });
-        leafletLayer.bringToFront();
-      }
+    const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
+    const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
+    this._isolateFeature(this.state.hydroLayers[1], selectedFeature, {
+      fill: '#d1d5db',
+      fillOpacity: this.state.showSlope ? 0.15 : fillOpa,
+      stroke: '#000000',
+      weight: 3,
+      opacity: outOpa,
     });
-    /* Keep stream order on top */
     if (this.state.hydroLayers[2]) this.state.hydroLayers[2].bringToFront();
   },
 
@@ -845,12 +833,20 @@ Object.assign(APP, {
 
   /* (LCM tile layer removed — was dead code) */
 
-  /* Drill back up to the basins overview */
+    /* Drill back up to a target level in watershed mode */
   _hydroDrillUp(targetLevel) {
     if (this.state._drilling) return;
-    if (targetLevel === this.state.hydroDrillLevel) return;
     const self = this;
     const map = this.state.map;
+
+    /* ── Target level 1: deselect zone, stay inside basin ── */
+    if (targetLevel === 1 && this.state.hydroSelectedZone) {
+      this._deselectSubWatershed();
+      return;
+    }
+
+    /* ── Target level 0: full drill up back to basins overview ── */
+    if (targetLevel === this.state.hydroDrillLevel) return;
 
     /* Remove sub-watershed + stream order layers */
     [1, 2].forEach(l => {
@@ -864,6 +860,7 @@ Object.assign(APP, {
     this.state.hydroSelectedBasin = null;
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
+    this.state.selectedPath = [];
 
     /* Re-render basins interactively (no silhouette) */
     this._clearHydroLayers();
