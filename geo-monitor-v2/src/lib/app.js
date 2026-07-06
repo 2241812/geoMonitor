@@ -71,6 +71,15 @@ export const APP = {
       preferCanvas: true,
     });
 
+    /* Tile loading indicator */
+    const loader = document.createElement('div');
+    loader.className = 'tile-loader';
+    loader.innerHTML = '<div class="tile-loader-bar"></div>';
+    map.getContainer().appendChild(loader);
+    let pendingTiles = 0;
+    const showLoader = () => { pendingTiles++; loader.classList.add('active'); };
+    const hideLoader = () => { pendingTiles = Math.max(0, pendingTiles - 1); if (!pendingTiles) loader.classList.remove('active'); };
+
     /* Basemaps */
     Object.entries(this.config.baseMaps).forEach(([key, cfg]) => {
       this.state.basemapLayers[key] = L.tileLayer(cfg.url, {
@@ -80,6 +89,8 @@ export const APP = {
     });
     this.state.basemapLayers.topo.addTo(map);
     this.state.activeBasemap = 'topo';
+    this.state.basemapLayers.topo.on('loading', showLoader);
+    this.state.basemapLayers.topo.on('load', hideLoader);
 
     this.state.map = map;
 
