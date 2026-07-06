@@ -313,3 +313,8 @@
 .breadcrumb-slide-in {
   animation: breadcrumb-slide-in 0.25s ease-out;
 }
+
+/* ── Source toggle: visible only in boundaries mode ── */
+.mode-watersheds .source-toggle-control {
+  display: none !important;
+}

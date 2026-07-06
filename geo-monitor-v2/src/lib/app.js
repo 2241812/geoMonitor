@@ -495,11 +495,7 @@ export const APP = {
     /* ── Admin boundary mode breadcrumb ── */
     const src = this._src();
 
-    /* Mode switch buttons */
-    html += `<button class="mode-toggle${this.state.activeMode === 'explore' ? ' active' : ''}" onclick="APP._setMode('explore')" title="Explore mode — click to select, map click deselects">Explore</button>`;
-    html += `<button class="mode-toggle${this.state.activeMode === 'boundary' ? ' active' : ''}" onclick="APP._setMode('boundary')" title="Boundary mode — click to drill down through hierarchy">Boundary</button>`;
-
-    /* Breadcrumb trail (both modes) */
+    /* Breadcrumb trail (both modes) — mode toggles moved to BottomBar.jsx */
     const atRoot = this.state.selectedPath.length === 0;
 
     /* Root: "CAR" */
