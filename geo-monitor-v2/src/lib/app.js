@@ -757,29 +757,6 @@ export const APP = {
 
       ${spansHTML}
 
-      ${this.state.hydroDrillLevel === 0 ? `
-      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
-        <div class="panel-section-title">Map Overlays</div>
-        <div class="overlay-controls">
-          <div class="overlay-slider-row">
-            <label>Fill Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.basinFillOpacity}" oninput="APP.state.basinFillOpacity=parseFloat(this.value);APP._updateBasinStyles()">
-          </div>
-          <div class="overlay-slider-row">
-            <label>Outline Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.basinOutlineOpacity}" oninput="APP.state.basinOutlineOpacity=parseFloat(this.value);APP._updateBasinStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Fill Color</label>
-            <input type="color" value="${this.state.basinFillColor}" onchange="APP.state.basinFillColor=this.value;APP._updateBasinStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Outline Color</label>
-            <input type="color" value="${this.state.basinOutlineColor}" onchange="APP.state.basinOutlineColor=this.value;APP._updateBasinStyles()">
-          </div>
-        </div>
-      </div>` : ''}
-
       ${this.state.hydroDrillLevel === 1 ? `
       <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
         <div class="panel-section-title">Map Overlays</div>
