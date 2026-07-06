@@ -817,6 +817,51 @@ body.panel-open .bottom-left-controls {
   flex-direction: column;
   gap: 0;
 }
+.lcm-class-toggles {
+  padding: 4px 0 2px 0;
+}
+.lcm-class-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #374151;
+  margin-bottom: 4px;
+}
+.lcm-class-actions a {
+  color: #059669;
+  text-decoration: none;
+}
+.lcm-class-actions a:hover {
+  text-decoration: underline;
+}
+.lcm-class-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.2;
+}
+.lcm-class-row input[type="checkbox"] {
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #059669;
+}
+.lcm-class-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+.lcm-class-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .overlay-slider-row,
 .overlay-color-row {
   display: flex;

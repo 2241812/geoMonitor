@@ -1,20 +1,23 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
 
-const LCM_COLORS = {
-  'Closed Forest':     '#006400',
-  'Open Forest':       '#228B22',
-  'Mangrove Forest':   '#004d40',
-  'Brush/Shrubs':      '#8FBC8F',
-  'Grassland':         '#90EE90',
-  'Annual Crop':       '#FFD700',
-  'Perennial Crop':    '#DAA520',
-  'Marshland/Swamp':   '#4682B4',
-  'Open/Barren':       '#D2B48C',
-  'Built-up':          '#DC143C',
-  'Fishpond':          '#00BFFF',
-  'Inland Water':      '#1E90FF',
-};
+export const LCM_CLASSES = [
+  { name: 'Closed Forest',   color: '#006400' },
+  { name: 'Open Forest',     color: '#228B22' },
+  { name: 'Mangrove Forest', color: '#004d40' },
+  { name: 'Brush/Shrubs',    color: '#8FBC8F' },
+  { name: 'Grassland',       color: '#90EE90' },
+  { name: 'Annual Crop',     color: '#FFD700' },
+  { name: 'Perennial Crop',  color: '#DAA520' },
+  { name: 'Marshland/Swamp', color: '#4682B4' },
+  { name: 'Open/Barren',     color: '#D2B48C' },
+  { name: 'Built-up',        color: '#DC143C' },
+  { name: 'Fishpond',        color: '#00BFFF' },
+  { name: 'Inland Water',    color: '#1E90FF' },
+];
+
+const LCM_COLORS = {};
+LCM_CLASSES.forEach(c => { LCM_COLORS[c.name] = c.color; });
 
 const PANE_NAME = 'lcmPane';
 const LOD_ZOOM = 10;
@@ -49,28 +52,20 @@ function _buildClipPath(map, rings) {
   }
 }
 
-function _lcmOnMapMove() {
-  APP.lcm.reapplyClip();
-}
+function _lcmOnMapMove() { APP.lcm.reapplyClip(); }
 
 function _lcmOnZoomStart() {
   const map = APP.state.map;
   if (!map || !APP.state.showLCM) return;
   const pane = map.getPane(PANE_NAME);
-  if (pane) {
-    pane.style.willChange = 'transform';
-    pane.style.opacity = '0';
-  }
+  if (pane) { pane.style.willChange = 'transform'; pane.style.opacity = '0'; }
 }
 
 function _lcmOnZoomEnd() {
   const map = APP.state.map;
   if (!map || !APP.state.showLCM) return;
   const pane = map.getPane(PANE_NAME);
-  if (pane) {
-    pane.style.opacity = '';
-    pane.style.willChange = '';
-  }
+  if (pane) { pane.style.opacity = ''; pane.style.willChange = ''; }
   APP.lcm.reapplyClip();
 }
 
@@ -80,8 +75,58 @@ APP.lcm = {
   _layerFull: null,
   _rafId: null,
   _clipFeature: null,
-  _basinCache: {},
   _currentCode: null,
+  _visibleClasses: null,
+
+  getVisibleClasses() {
+    if (!this._visibleClasses) {
+      this._visibleClasses = new Set(LCM_CLASSES.map(c => c.name));
+    }
+    return this._visibleClasses;
+  },
+
+  isClassVisible(name) {
+    return this.getVisibleClasses().has(name);
+  },
+
+  toggleClass(name) {
+    const vis = this.getVisibleClasses();
+    if (vis.has(name)) vis.delete(name); else vis.add(name);
+    this._applyClassVisibility();
+    APP._updateLCMControls();
+  },
+
+  showAllClasses() {
+    this._visibleClasses = new Set(LCM_CLASSES.map(c => c.name));
+    this._applyClassVisibility();
+    APP._updateLCMControls();
+  },
+
+  hideAllClasses() {
+    this._visibleClasses = new Set();
+    this._applyClassVisibility();
+    APP._updateLCMControls();
+  },
+
+  _applyClassVisibility() {
+    const vis = this.getVisibleClasses();
+    const apply = (layer) => {
+      if (!layer || !layer.eachLayer) return;
+      layer.eachLayer((l) => {
+        if (!l.setStyle || !l.feature) return;
+        const cls = l.feature.properties.LCM_CLASS;
+        if (vis.has(cls)) {
+          l.setStyle({ fillOpacity: APP.state.lcmOpacity || 0.65 });
+          l._lcmHidden = false;
+        } else {
+          l.setStyle({ fillOpacity: 0 });
+          l._lcmHidden = true;
+        }
+      });
+    };
+    apply(this._layerSimplified);
+    apply(this._layerFull);
+  },
 
   async loadBasin(code, geojson) {
     const map = APP.state.map;
@@ -94,9 +139,10 @@ APP.lcm = {
 
     this._ensurePane();
 
+    const vis = this.getVisibleClasses();
     const styleFn = (f) => ({
       fillColor: LCM_COLORS[f.properties.LCM_CLASS] || '#cccccc',
-      fillOpacity: APP.state.lcmOpacity || 0.65,
+      fillOpacity: vis.has(f.properties.LCM_CLASS) ? (APP.state.lcmOpacity || 0.65) : 0,
       stroke: false,
       weight: 0,
     });
@@ -156,7 +202,6 @@ APP.lcm = {
     map.on('zoomend', _lcmOnMapMove);
     map.on('zoomstart', _lcmOnZoomStart);
     map.on('zoomend', _lcmOnZoomEnd);
-
     map.off('zoomend', this._onZoomSwap, this);
     map.on('zoomend', this._onZoomSwap, this);
   },
@@ -196,18 +241,11 @@ APP.lcm = {
       this._clipFeature = null;
       return;
     }
-
     this._clipFeature = feature;
     const rings = _extractOuterRings(feature.geometry);
-    if (!rings.length) {
-      pane.style.clipPath = '';
-      return;
-    }
-
+    if (!rings.length) { pane.style.clipPath = ''; return; }
     const clipPath = _buildClipPath(map, rings);
-    if (clipPath) {
-      pane.style.clipPath = clipPath;
-    }
+    if (clipPath) pane.style.clipPath = clipPath;
   },
 
   removeClip() {
@@ -226,7 +264,6 @@ APP.lcm = {
       const map = APP.state.map;
       if (!map) return;
       if (map._animatingZoom) return;
-
       if (APP.state.hydroSelectedZone) {
         this.updateClip(APP.state.hydroSelectedZone);
       } else if (APP.state.hydroSelectedBasin && APP.state.hydroSelectedBasin.feature) {
@@ -240,9 +277,7 @@ APP.lcm = {
   hide() {
     const map = APP.state.map;
     if (!map || !this._layer) return;
-    if (map.hasLayer(this._layer)) {
-      map.removeLayer(this._layer);
-    }
+    if (map.hasLayer(this._layer)) map.removeLayer(this._layer);
     this._unbindMapEvents(map);
     this.removeClip();
   },
@@ -250,9 +285,7 @@ APP.lcm = {
   show() {
     const map = APP.state.map;
     if (!map || !this._layer || !APP.state.showLCM) return;
-    if (!map.hasLayer(this._layer)) {
-      map.addLayer(this._layer);
-    }
+    if (!map.hasLayer(this._layer)) map.addLayer(this._layer);
     this.reapplyClip();
     this._bindMapEvents(map);
   },
@@ -275,11 +308,48 @@ APP.lcm = {
   },
 
   _setOpacity(val) {
+    const vis = this.getVisibleClasses();
     const apply = (layer) => {
       if (!layer || !layer.eachLayer) return;
-      layer.eachLayer((l) => { if (l.setStyle) l.setStyle({ fillOpacity: val }); });
+      layer.eachLayer((l) => {
+        if (!l.setStyle || !l.feature) return;
+        const cls = l.feature.properties.LCM_CLASS;
+        l.setStyle({ fillOpacity: vis.has(cls) ? val : 0 });
+      });
     };
     apply(this._layerSimplified);
     apply(this._layerFull);
   },
+};
+
+APP._toggleLCMClass = function(name) { APP.lcm.toggleClass(name); };
+APP._lcmShowAll = function() { APP.lcm.showAllClasses(); };
+APP._lcmHideAll = function() { APP.lcm.hideAllClasses(); };
+
+APP._renderLCMClassToggles = function() {
+  const vis = APP.lcm.getVisibleClasses();
+  const allVisible = vis.size === LCM_CLASSES.length;
+  let html = `<div class="lcm-class-toggles">`;
+  html += `<div class="lcm-class-header"><b>Land Cover Classes</b>
+    <span class="lcm-class-actions">
+      <a href="#" onclick="APP._lcmShowAll();return false" style="font-size:11px;cursor:pointer">All</a>
+      <span style="color:#ccc;margin:0 2px">|</span>
+      <a href="#" onclick="APP._lcmHideAll();return false" style="font-size:11px;cursor:pointer">None</a>
+    </span></div>`;
+  LCM_CLASSES.forEach(c => {
+    const checked = vis.has(c.name) ? 'checked' : '';
+    html += `<label class="lcm-class-row">
+      <input type="checkbox" ${checked} onchange="APP._toggleLCMClass('${c.name}')">
+      <span class="lcm-class-swatch" style="background:${c.color}"></span>
+      <span class="lcm-class-label">${c.name}</span>
+    </label>`;
+  });
+  html += `</div>`;
+  return html;
+};
+
+APP._updateLCMControls = function() {
+  document.querySelectorAll('.lcm-class-toggles').forEach(el => {
+    el.outerHTML = APP._renderLCMClassToggles();
+  });
 };

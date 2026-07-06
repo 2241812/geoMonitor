@@ -894,6 +894,20 @@ export const APP = {
             </select>
           </div>
         </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Land Cover (LCM)</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="overlay-controls" id="lcm-controls" style="display:${this.state.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.lcmOpacity}" oninput="APP.state.lcmOpacity=parseFloat(this.value);APP.lcm._setOpacity(parseFloat(this.value))">
+          </div>
+          ${this.state.showLCM ? APP._renderLCMClassToggles() : ''}
+        </div>
       </div>` : ''}
 
       <div class="panel-section">

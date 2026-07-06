@@ -839,7 +839,18 @@ Object.assign(APP, {
   _toggleLCM() {
     this.state.showLCM = !this.state.showLCM;
     const ctrl = document.getElementById('lcm-controls');
-    if (ctrl) ctrl.style.display = this.state.showLCM ? 'block' : 'none';
+    if (ctrl) {
+      ctrl.style.display = this.state.showLCM ? 'block' : 'none';
+      if (this.state.showLCM) {
+        const slider = ctrl.querySelector('.overlay-slider-row');
+        if (slider && !ctrl.querySelector('.lcm-class-toggles')) {
+          slider.insertAdjacentHTML('afterend', APP._renderLCMClassToggles());
+        }
+      } else {
+        const toggles = ctrl.querySelector('.lcm-class-toggles');
+        if (toggles) toggles.remove();
+      }
+    }
 
     if (this.state.showLCM) {
       if (this.state._basinCode) {
@@ -1269,6 +1280,7 @@ Object.assign(APP, {
             <label>Opacity</label>
             <input type="range" min="0" max="1" step="0.05" value="${this.state.lcmOpacity}" oninput="APP.state.lcmOpacity=parseFloat(this.value);APP.lcm._setOpacity(parseFloat(this.value))">
           </div>
+          ${this.state.showLCM ? APP._renderLCMClassToggles() : ''}
         </div>
       </div>
       ${spansHTML}`;
