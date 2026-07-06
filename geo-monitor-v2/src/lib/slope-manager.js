@@ -105,18 +105,20 @@ APP.slope = {
   _clipFeature: null, /* the feature currently used for clipping */
   LOD_ZOOM: 10,
 
-  /** Toggle slope overlay on/off. Creates the layer on first enable. */
   async toggle() {
     APP.state.showSlope = !APP.state.showSlope;
     const map = APP.state.map;
     if (!map) return;
 
     if (APP.state.showSlope && !this._layer) {
+      this._showLoadProgress(0, 'Fetching slope data…');
       try {
         const resp = await fetch('geoJSON/Slope.geojson');
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const geojson = await resp.json();
 
+        this._showLoadProgress(20, 'Processing geometry…');
+        await new Promise(r => setTimeout(r, 0));
         this._ensurePane();
 
         const styleFn = (f) => ({
@@ -127,30 +129,42 @@ APP.slope = {
         });
         const layerOpts = { style: styleFn, interactive: false };
 
-        /* Create simplified layer for low zoom (LOD) */
         const simplified = { type: 'FeatureCollection', features: [] };
-        for (const f of geojson.features) {
+        const total = geojson.features.length;
+        for (let i = 0; i < total; i++) {
           try {
-            simplified.features.push(simplify(f, { tolerance: 0.002, highQuality: true }));
-          } catch (_) { simplified.features.push(f); }
+            simplified.features.push(simplify(geojson.features[i], { tolerance: 0.002, highQuality: true }));
+          } catch (_) { simplified.features.push(geojson.features[i]); }
+          if (i % 4 === 0) {
+            const pct = 20 + Math.round((i / total) * 40);
+            this._showLoadProgress(pct, `Simplifying… ${i}/${total}`);
+            await new Promise(r => setTimeout(r, 0));
+          }
         }
+
+        this._showLoadProgress(65, 'Building layers…');
+        await new Promise(r => setTimeout(r, 0));
+
         this._layerSimplified = L.geoJSON(simplified, {
           ...layerOpts,
           renderer: L.canvas({ pane: 'slopePane' }),
           onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
         });
 
-        /* Create full-detail layer for high zoom */
+        this._showLoadProgress(80, 'Building full-detail layer…');
+        await new Promise(r => setTimeout(r, 0));
+
         this._layerFull = L.geoJSON(geojson, {
           ...layerOpts,
           renderer: L.canvas({ pane: 'slopePane' }),
           onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
         });
 
-        /* Start with simplified at low zoom, full at high zoom */
+        this._showLoadProgress(100, 'Done');
         const z = map.getZoom();
         this._layer = z < this.LOD_ZOOM ? this._layerSimplified : this._layerFull;
       } catch (e) {
+        this._hideLoadProgress();
         APP._showToast('Failed to load slope data');
         console.error('Slope fetch error:', e);
         APP.state.showSlope = false;
@@ -163,6 +177,7 @@ APP.slope = {
     if (!this._layer) { APP.state.showSlope = false; return; }
 
     if (APP.state.showSlope) {
+      this._hideLoadProgress();
       map.addLayer(this._layer);
       this.reapplyClip();
       this._bindMapEvents(map);
@@ -173,6 +188,36 @@ APP.slope = {
       this._clipFeature = null;
     }
     APP._updateHydroLegend();
+  },
+
+  _showLoadProgress(pct, label) {
+    let el = document.getElementById('slope-load-progress');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'slope-load-progress';
+      el.innerHTML = '<div class="slope-load-bar"><div class="slope-load-fill"></div></div><span class="slope-load-label"></span>';
+      const panel = document.querySelector('.panel-body') || document.querySelector('.hydro-panel') || document.querySelector('.info-panel');
+      if (panel) {
+        const section = panel.querySelector('.slope-toggle-row') || panel.querySelector('.toggle-row');
+        if (section) {
+          section.parentNode.insertBefore(el, section.nextSibling);
+        }
+      }
+      if (!el.parentNode) document.querySelector('.map-overlays-section')?.appendChild(el);
+      if (!el.parentNode) document.querySelector('.hydro-panel-content')?.appendChild(el);
+      if (!el.parentNode) document.getElementById('map')?.appendChild(el);
+    }
+    el.querySelector('.slope-load-fill').style.width = pct + '%';
+    el.querySelector('.slope-load-label').textContent = label || '';
+    el.classList.add('active');
+  },
+
+  _hideLoadProgress() {
+    const el = document.getElementById('slope-load-progress');
+    if (el) {
+      el.classList.remove('active');
+      el.querySelector('.slope-load-fill').style.width = '0%';
+    }
   },
 
   _ensurePane() {
