@@ -47,6 +47,8 @@ export const APP = {
     subWatershedOutlineColor: '#000000',
     slopeOpacity: 0.65,
     slopeColorScheme: 'default',
+    streamOrderColor: '#0022ff',
+    streamOrderOpacity: 1,
     adminLayers: {},
     boundaryMenuOpen: false,
     customColors: null,
@@ -785,6 +787,16 @@ export const APP = {
             <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
             <span class="toggle-knob"></span>
           </label>
+        </div>
+        <div class="overlay-controls" id="so-controls" style="display:${this.state.showStreamOrder ? 'block' : 'none'}; margin-top: 0;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.streamOrderOpacity}" oninput="APP.state.streamOrderOpacity=parseFloat(this.value);APP._updateStreamOrderStyles()">
+          </div>
+          <div class="overlay-color-row">
+            <label>Color</label>
+            <input type="color" value="${this.state.streamOrderColor}" onchange="APP.state.streamOrderColor=this.value;APP._updateStreamOrderStyles()">
+          </div>
         </div>
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Slope</span>

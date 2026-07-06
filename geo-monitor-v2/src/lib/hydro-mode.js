@@ -757,20 +757,21 @@ Object.assign(APP, {
     const layer = this.state.hydroLayers[2];
     if (!layer) return;
     const selectedZone = this.state.hydroSelectedZone;
+    const color = this.state.streamOrderColor || '#0022ff';
+    const baseOpacity = this.state.streamOrderOpacity ?? 1;
     
     layer.eachLayer(leafletLayer => {
       const order = leafletLayer.feature.properties.grid_code || 1;
       const weight = Math.max(2, Math.min(order * 1.2, 4.5));
-      let opacity = 1;
+      let opacity = baseOpacity;
       
-      // If a zone is selected, and this stream line has a ZoneID, and it doesn't match, hide it.
       if (selectedZone && leafletLayer.feature.properties.ZoneID) {
         if (leafletLayer.feature.properties.ZoneID !== selectedZone.properties.ID) {
           opacity = 0;
         }
       }
       
-      leafletLayer.setStyle({ color: '#0022ff', weight: weight, opacity: opacity });
+      leafletLayer.setStyle({ color: color, weight: weight, opacity: opacity });
     });
   },
 
@@ -817,6 +818,10 @@ Object.assign(APP, {
     this.state.showStreamOrder = !this.state.showStreamOrder;
     const sl = this.state.hydroLayers[2];
     if (!sl) return;
+
+    const ctrl = document.getElementById('so-controls');
+    if (ctrl) ctrl.style.display = this.state.showStreamOrder ? 'block' : 'none';
+
     if (this.state.showStreamOrder) {
       this.state.map.addLayer(sl);
       sl.bringToFront();
@@ -1173,6 +1178,16 @@ Object.assign(APP, {
             <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
             <span class="toggle-knob"></span>
           </label>
+        </div>
+        <div class="overlay-controls" id="so-controls" style="display:${this.state.showStreamOrder ? 'block' : 'none'}; margin-top: 0;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.streamOrderOpacity}" oninput="APP.state.streamOrderOpacity=parseFloat(this.value);APP._updateStreamOrderStyles()">
+          </div>
+          <div class="overlay-color-row">
+            <label>Color</label>
+            <input type="color" value="${this.state.streamOrderColor}" onchange="APP.state.streamOrderColor=this.value;APP._updateStreamOrderStyles()">
+          </div>
         </div>
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Slope</span>
