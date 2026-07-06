@@ -478,7 +478,7 @@ Object.assign(APP, {
           if (lf.feature !== feature) {
             lf.setStyle({ fillOpacity: 0, opacity: 0.15, weight: 0.5 });
           } else {
-            lf.setStyle({ fillColor: basinColor, fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
+            lf.setStyle({ fillColor: self.state.basinFillColor || basinColor, fillOpacity: self.state.basinFillOpacity, color: self.state.basinOutlineColor || '#000000', weight: 3, opacity: self.state.basinOutlineOpacity });
             lf.bringToFront();
           }
         });
