@@ -41,6 +41,12 @@ export const APP = {
     showSubWatersheds: false,
     showStreamOrder: false,
     showSlope: false,
+    selectedFillOpacity: 0.3,
+    subWatershedOutlineOpacity: 0.8,
+    subWatershedFillColor: '#3b82f6',
+    subWatershedOutlineColor: '#000000',
+    slopeOpacity: 0.65,
+    slopeColorScheme: 'default',
     adminLayers: {},
     boundaryMenuOpen: false,
     customColors: null,
@@ -762,15 +768,15 @@ export const APP = {
           </div>
           <div class="overlay-slider-row">
             <label>Outline Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="0.8" oninput="APP.state.subWatershedOutlineOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.subWatershedOutlineOpacity}" oninput="APP.state.subWatershedOutlineOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
           </div>
           <div class="overlay-color-row">
             <label>Fill Color</label>
-            <input type="color" value="#3b82f6" onchange="APP.state.subWatershedFillColor=this.value;APP._updateSubWatershedStyles()">
+            <input type="color" value="${this.state.subWatershedFillColor}" onchange="APP.state.subWatershedFillColor=this.value;APP._updateSubWatershedStyles()">
           </div>
           <div class="overlay-color-row">
             <label>Outline Color</label>
-            <input type="color" value="#000000" onchange="APP.state.subWatershedOutlineColor=this.value;APP._updateSubWatershedStyles()">
+            <input type="color" value="${this.state.subWatershedOutlineColor}" onchange="APP.state.subWatershedOutlineColor=this.value;APP._updateSubWatershedStyles()">
           </div>
         </div>
         <div class="toggle-row" style="margin-top: 12px;">
@@ -794,14 +800,14 @@ export const APP = {
         <div class="overlay-controls" id="slope-controls" style="display:${this.state.showSlope ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
           <div class="overlay-slider-row">
             <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="0.65" oninput="APP.slope._setOpacity(parseFloat(this.value))">
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.slopeOpacity}" oninput="APP.state.slopeOpacity=parseFloat(this.value);APP.slope._setOpacity(parseFloat(this.value))">
           </div>
           <div class="overlay-color-row">
             <label>Color Scheme</label>
-            <select onchange="APP.slope._setColorScheme(this.value)" style="font-size: 0.75rem; padding: 2px 4px; border: 1px solid #d1d5db; border-radius: 4px;">
-              <option value="default" selected>Default</option>
-              <option value="terrain">Terrain</option>
-              <option value="heat">Heat</option>
+            <select onchange="APP.state.slopeColorScheme=this.value;APP.slope._setColorScheme(this.value)" style="font-size: 0.75rem; padding: 2px 4px; border: 1px solid #d1d5db; border-radius: 4px;">
+              <option value="default" ${this.state.slopeColorScheme === 'default' ? 'selected' : ''}>Default</option>
+              <option value="terrain" ${this.state.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
+              <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
             </select>
           </div>
         </div>
