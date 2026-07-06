@@ -54,6 +54,7 @@ export default function LandingPage() {
     setActiveBasin(null);
   };
   useEffect(() => {
+    document.title = "GeoCradle | Cordillera Watershed Portal";
     if(window.initLenis) window.initLenis();
     if(window.initLandingPageScripts) {
       // Small timeout ensures the DOM has fully painted before we query selectors
@@ -117,11 +118,11 @@ export default function LandingPage() {
       <div className="hero-content fade-in-up">
         <div className="hero-badge fade-in-up">
           <span className="hero-badge-dot"></span>
-          Watershed Monitoring System
+          CORDILLERA HYDRO-GEOGRAPHIC PORTAL
         </div>
 
         <h1 className="hero-title">
-          CAR Watershed Monitoring
+          GeoCradle
         </h1>
 
         <p className="hero-subtitle">
@@ -161,8 +162,8 @@ export default function LandingPage() {
             </div>
             <div className="stat-item fade-in-up delay-1">
               <span className="stat-number" data-target="6">0</span>
-              <span className="stat-label">Data Sources</span>
-              <span className="stat-desc">Integrating NAMRIA, CAD, Watersheds, Subwatersheds, Stream Order, and Elevation data.</span>
+              <span className="stat-label">GEOSPATIAL LAYERS</span>
+              <span className="stat-desc">Integrating dynamic parameters including Stream Order, Slope Analysis, and Land Cover classification.</span>
             </div>
         </div>
         
@@ -191,10 +192,10 @@ export default function LandingPage() {
             Protecting Our <span className="section-title-accent">Lifelines</span>
           </h2>
           <p className="section-text fade-in-up">
-            The Cordillera Administrative Region serves as the watershed cradle of Northern Philippines, supplying vital water resources to the lowlands. The Department of Environment and Natural Resources' mandate is to monitor, protect, and sustain these ecological boundaries that support millions of Filipinos across Regions I, II, and III.
+            The Cordillera Administrative Region is widely recognized as the Watershed Cradle of Northern Luzon, supplying vital water resources to the surrounding lowlands. This portal serves as an interactive educational baseline for hydrological study, mapping the ecological boundaries that support millions of Filipinos across Regions I, II, and III.
           </p>
           <p className="section-text fade-in-up">
-            A watershed is an area of land where all water drains to a common outlet such as a river, lake, or sea. Healthy watersheds mean clean water, productive fisheries, and resilient communities. Through systematic monitoring, we track changes in land use, water quality, and biodiversity across CAR's major river basins.
+            A watershed is a fundamental unit of land where all water drains to a common outlet such as a river or sea. Healthy watersheds dictate water quality, agricultural productivity, and community resilience. Through systematic mapping, this platform visualizes critical geospatial parameters across CAR's major river basins.
           </p>
         </div>
 

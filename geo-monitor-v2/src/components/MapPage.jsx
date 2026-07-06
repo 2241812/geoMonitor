@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useMapStore } from '../store/useMapStore';
 import OpacityMenu from './OpacityMenu';
 import { Link } from 'react-router-dom';
@@ -8,6 +9,10 @@ import 'leaflet/dist/leaflet.css';
 
 export default function MapPage() {
   const { viewMode, setViewMode } = useMapStore();
+
+  useEffect(() => {
+    document.title = "Basin Explorer | GeoCradle Interactive Map";
+  }, []);
 
   return (
     <div className="map-app">

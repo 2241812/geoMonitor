@@ -1235,24 +1235,47 @@ Object.assign(APP, {
       </div>
       <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
         <div class="panel-section-title">Map Overlays</div>
-        <div class="toggle-row">
-          <span>Sub-watersheds</span>
-          <label class="toggle-switch">
+        
+        <div class="toggle-row" style="align-items: flex-start;">
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="font-weight: 600; color: #1f2937;">Sub-watersheds</div>
+            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px; line-height: 1.4;">The fundamental unit of hydrological management, representing localized catchments used for detailed environmental and runoff analysis.</div>
+          </div>
+          <label class="toggle-switch" style="margin-top: 2px;">
             <input type="checkbox" ${this.state.showSubWatersheds ? 'checked' : ''} onchange="APP._toggleSubWatersheds()">
             <span class="toggle-knob"></span>
           </label>
         </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Stream Order</span>
-          <label class="toggle-switch">
+
+        <div class="toggle-row" style="align-items: flex-start; margin-top: 16px;">
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="font-weight: 600; color: #1f2937;">Stream Order</div>
+            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px; line-height: 1.4;">A numerical hierarchy defining the relative size and connectivity of river segments, from headwater tributaries to major drainage systems.</div>
+          </div>
+          <label class="toggle-switch" style="margin-top: 2px;">
             <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
             <span class="toggle-knob"></span>
           </label>
         </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Slope</span>
-          <label class="toggle-switch">
+
+        <div class="toggle-row" style="align-items: flex-start; margin-top: 16px;">
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="font-weight: 600; color: #1f2937;">Slope Analysis</div>
+            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px; line-height: 1.4;">A critical terrain factor determining water velocity and erosion potential, essential for land-use planning and hazard assessment.</div>
+          </div>
+          <label class="toggle-switch" style="margin-top: 2px;">
             <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP._toggleSlope()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row" style="align-items: flex-start; margin-top: 16px;">
+          <div style="flex: 1; padding-right: 12px;">
+            <div style="font-weight: 600; color: #1f2937;">Land Cover</div>
+            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px; line-height: 1.4;">Classified surface data representing forests, urban areas, and water bodies, used to monitor environmental health and ecosystem changes.</div>
+          </div>
+          <label class="toggle-switch" style="margin-top: 2px;">
+            <input type="checkbox" ${this.state.showLandCover ? 'checked' : ''} onchange="APP._toggleLandCover && APP._toggleLandCover()">
             <span class="toggle-knob"></span>
           </label>
         </div>
