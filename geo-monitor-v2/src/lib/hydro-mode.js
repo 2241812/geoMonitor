@@ -723,29 +723,30 @@ Object.assign(APP, {
     });
   },
 
-  /* Update sub-watershed styles based on current slope visibility */
   _updateSubWatershedStyles() {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
     const showOverlay = this.state.showSlope;
+    const fillColor = this.state.subWatershedFillColor || '#d1d5db';
     const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
-    const outOpa = this.state.selectedOutlineOpacity !== undefined ? this.state.selectedOutlineOpacity : 1.0;
+    const outlineColor = this.state.subWatershedOutlineColor || '#000000';
+    const outOpa = this.state.subWatershedOutlineOpacity !== undefined ? this.state.subWatershedOutlineOpacity : 0.8;
     layer.eachLayer(leafletLayer => {
       if (leafletLayer._hiddenByIsolation) {
         leafletLayer.setStyle({
-          fillColor: '#d1d5db', fillOpacity: 0, opacity: 0, weight: 0
+          fillColor: fillColor, fillOpacity: 0, color: outlineColor, opacity: 0, weight: 0
         });
       } else if (this.state.hydroSelectedZoneLayer === leafletLayer) {
-        leafletLayer.setStyle({ 
-          fillColor: '#d1d5db',
+        leafletLayer.setStyle({
+          fillColor: fillColor,
           fillOpacity: showOverlay ? 0.15 : fillOpa,
-          color: '#000000', weight: 3, opacity: outOpa
+          color: outlineColor, weight: 3, opacity: outOpa
         });
       } else {
-        leafletLayer.setStyle({ 
-          fillColor: '#d1d5db',
+        leafletLayer.setStyle({
+          fillColor: fillColor,
           fillOpacity: showOverlay ? 0 : 0.3,
-          color: '#000000', weight: 1.2, opacity: 0.8
+          color: outlineColor, weight: 1.2, opacity: outOpa
         });
       }
     });
@@ -799,6 +800,9 @@ Object.assign(APP, {
     this.state.showSubWatersheds = !this.state.showSubWatersheds;
     const sl = this.state.hydroLayers[1];
     if (!sl) return;
+
+    const ctrl = document.getElementById('sw-controls');
+    if (ctrl) ctrl.style.display = this.state.showSubWatersheds ? 'block' : 'none';
 
     if (this.state.showSubWatersheds) {
       this.state.map.addLayer(sl);
@@ -1145,6 +1149,24 @@ Object.assign(APP, {
             <span class="toggle-knob"></span>
           </label>
         </div>
+        <div class="overlay-controls" id="sw-controls" style="display:${this.state.showSubWatersheds ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
+          <div class="overlay-slider-row">
+            <label>Fill Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.selectedFillOpacity ?? 0.3}" oninput="APP.state.selectedFillOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
+          </div>
+          <div class="overlay-slider-row">
+            <label>Outline Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="0.8" oninput="APP.state.subWatershedOutlineOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
+          </div>
+          <div class="overlay-color-row">
+            <label>Fill Color</label>
+            <input type="color" value="#3b82f6" onchange="APP.state.subWatershedFillColor=this.value;APP._updateSubWatershedStyles()">
+          </div>
+          <div class="overlay-color-row">
+            <label>Outline Color</label>
+            <input type="color" value="#000000" onchange="APP.state.subWatershedOutlineColor=this.value;APP._updateSubWatershedStyles()">
+          </div>
+        </div>
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Stream Order</span>
           <label class="toggle-switch">
@@ -1158,6 +1180,24 @@ Object.assign(APP, {
             <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
             <span class="toggle-knob"></span>
           </label>
+        </div>
+        <div id="slope-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
+          <div class="slope-load-bar"><div class="slope-load-fill"></div></div>
+          <span class="slope-load-label"></span>
+        </div>
+        <div class="overlay-controls" id="slope-controls" style="display:${this.state.showSlope ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="0.65" oninput="APP.slope._setOpacity(parseFloat(this.value))">
+          </div>
+          <div class="overlay-color-row">
+            <label>Color Scheme</label>
+            <select onchange="APP.slope._setColorScheme(this.value)" style="font-size: 0.75rem; padding: 2px 4px; border: 1px solid #d1d5db; border-radius: 4px;">
+              <option value="default" selected>Default</option>
+              <option value="terrain">Terrain</option>
+              <option value="heat">Heat</option>
+            </select>
+          </div>
         </div>
       </div>
       ${spansHTML}`;

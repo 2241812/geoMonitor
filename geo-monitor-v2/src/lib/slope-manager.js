@@ -187,36 +187,27 @@ APP.slope = {
       this.removeClip();
       this._clipFeature = null;
     }
+
+    const slopeCtrl = document.getElementById('slope-controls');
+    if (slopeCtrl) slopeCtrl.style.display = APP.state.showSlope ? 'block' : 'none';
+
     APP._updateHydroLegend();
   },
 
   _showLoadProgress(pct, label) {
-    let el = document.getElementById('slope-load-progress');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'slope-load-progress';
-      el.innerHTML = '<div class="slope-load-bar"><div class="slope-load-fill"></div></div><span class="slope-load-label"></span>';
-      const panel = document.querySelector('.panel-body') || document.querySelector('.hydro-panel') || document.querySelector('.info-panel');
-      if (panel) {
-        const section = panel.querySelector('.slope-toggle-row') || panel.querySelector('.toggle-row');
-        if (section) {
-          section.parentNode.insertBefore(el, section.nextSibling);
-        }
-      }
-      if (!el.parentNode) document.querySelector('.map-overlays-section')?.appendChild(el);
-      if (!el.parentNode) document.querySelector('.hydro-panel-content')?.appendChild(el);
-      if (!el.parentNode) document.getElementById('map')?.appendChild(el);
-    }
+    const el = document.getElementById('slope-load-progress');
+    if (!el) return;
+    el.style.display = 'block';
     el.querySelector('.slope-load-fill').style.width = pct + '%';
     el.querySelector('.slope-load-label').textContent = label || '';
-    el.classList.add('active');
   },
 
   _hideLoadProgress() {
     const el = document.getElementById('slope-load-progress');
     if (el) {
-      el.classList.remove('active');
+      el.style.display = 'none';
       el.querySelector('.slope-load-fill').style.width = '0%';
+      el.querySelector('.slope-load-label').textContent = '';
     }
   },
 
@@ -375,6 +366,38 @@ APP.slope = {
     this._clipFeature = null;
     this.removeClip();
     APP.state.showSlope = false;
+  },
+
+  _setOpacity(val) {
+    const apply = (layer) => {
+      if (!layer || !layer.eachLayer) return;
+      layer.eachLayer((l) => { if (l.setStyle) l.setStyle({ fillOpacity: val }); });
+    };
+    apply(this._layerSimplified);
+    apply(this._layerFull);
+  },
+
+  _setColorScheme(scheme) {
+    const palette = scheme === 'terrain'
+      ? { 1: '#1a9850', 2: '#66bd63', 3: '#a6d96a', 4: '#d9ef8b', 5: '#fee08b' }
+      : scheme === 'heat'
+      ? { 1: '#2b83ba', 2: '#abdda4', 3: '#ffffbf', 4: '#fdae61', 5: '#d7191c' }
+      : COLORS;
+    const styleFn = (f) => ({
+      fillColor: palette[f.properties.gridcode] || '#cccccc',
+      fillOpacity: 0.65,
+      stroke: false,
+      weight: 0,
+    });
+    [this._layerSimplified, this._layerFull].forEach((layer) => {
+      if (!layer || !layer.eachLayer) return;
+      layer.eachLayer((l) => {
+        const code = l.feature?.properties?.gridcode;
+        if (l.setStyle && code != null) {
+          l.setStyle({ fillColor: palette[code] || '#cccccc' });
+        }
+      });
+    });
   },
 };
 

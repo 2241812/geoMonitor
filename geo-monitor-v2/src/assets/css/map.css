@@ -712,9 +712,6 @@ body.panel-open .bottom-left-controls {
   font-size: 0.75rem;
   color: #6b7280;
 }
-#slope-load-progress.active {
-  display: block;
-}
 .slope-load-bar {
   width: 100%;
   height: 4px;
@@ -733,6 +730,39 @@ body.panel-open .bottom-left-controls {
 .slope-load-label {
   font-size: 0.7rem;
   color: #9ca3af;
+}
+
+.overlay-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.overlay-slider-row,
+.overlay-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.overlay-slider-row label,
+.overlay-color-row label {
+  font-size: 0.7rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.overlay-slider-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  accent-color: #3b82f6;
+}
+.overlay-color-row input[type="color"] {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
 }
 
 .basemap-option {
