@@ -293,22 +293,20 @@ Object.assign(APP, {
       style: (feature) => {
         const idx = self._hydroBasinIndex(feature);
         if (silhouetteMode) {
-          /* Silhouette mode: solid fill, no strokes */
           return {
-            fillColor: '#d1d5db',
+            fillColor: self.state.basinFillColor,
             fillOpacity: 0.35,
             weight: 0,
             opacity: 0,
             className: 'fade-in-path',
           };
         } else {
-          /* Border mode: standard view with strokes */
           return {
-            fillColor: '#d1d5db',
-            fillOpacity: 0.15,
-            color: '#000000',
+            fillColor: self.state.basinFillColor,
+            fillOpacity: self.state.basinFillOpacity,
+            color: self.state.basinOutlineColor,
             weight: 2,
-            opacity: 0.9,
+            opacity: self.state.basinOutlineOpacity,
             className: 'fade-in-path',
           };
         }
@@ -323,7 +321,7 @@ Object.assign(APP, {
 
         leafletLayer.on('mouseover', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.4, weight: 3, opacity: 1 });
+          e.target.setStyle({ fillColor: self.state.basinFillColor, fillOpacity: Math.min(self.state.basinFillOpacity + 0.25, 1), weight: 3, opacity: 1 });
           e.target.bringToFront();
           const lbl = document.getElementById('map-hover-label');
           if (lbl) {
@@ -335,7 +333,7 @@ Object.assign(APP, {
 
         leafletLayer.on('mouseout', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
-          e.target.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
+          e.target.setStyle({ fillColor: self.state.basinFillColor, fillOpacity: self.state.basinFillOpacity, color: self.state.basinOutlineColor, weight: 2, opacity: self.state.basinOutlineOpacity });
           self._hideHoverLabel();
         });
 
@@ -427,11 +425,11 @@ Object.assign(APP, {
       layer.eachLayer(function(lf) {
         if (isDrilledIn) {
           if (lf.feature === selectedFeature) {
-            lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0, color: '#000000', weight: 3, opacity: 1 });
+            lf.setStyle({ fillColor: this.state.basinFillColor, fillOpacity: 0, color: this.state.basinOutlineColor, weight: 3, opacity: 1 });
           }
           /* else: skip — preserve the dim state */
         } else {
-          lf.setStyle({ fillColor: '#d1d5db', fillOpacity: 0.15, color: '#000000', weight: 2, opacity: 0.9 });
+          lf.setStyle({ fillColor: this.state.basinFillColor, fillOpacity: this.state.basinFillOpacity, color: this.state.basinOutlineColor, weight: 2, opacity: this.state.basinOutlineOpacity });
         }
       });
 
@@ -748,6 +746,20 @@ Object.assign(APP, {
           fillOpacity: showOverlay ? 0 : 0.3,
           color: outlineColor, weight: 1.2, opacity: outOpa
         });
+      }
+    });
+  },
+
+  _updateBasinStyles() {
+    const layer = this.state.hydroLayers[0];
+    if (!layer) return;
+    const fillColor = this.state.basinFillColor || '#d1d5db';
+    const fillOpacity = this.state.basinFillOpacity ?? 0.15;
+    const outlineColor = this.state.basinOutlineColor || '#000000';
+    const outlineOpacity = this.state.basinOutlineOpacity ?? 0.9;
+    layer.eachLayer(lf => {
+      if (this.state.hydroDrillLevel === 0 && !lf._hiddenByDrill) {
+        lf.setStyle({ fillColor, fillOpacity, color: outlineColor, opacity: outlineOpacity });
       }
     });
   },
