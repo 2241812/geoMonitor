@@ -1,6 +1,7 @@
 import BottomBar from './BottomBar';
 import { Link } from 'react-router-dom';
 import MapContainer from './MapContainer';
+import OverlayPanel from './OverlayPanel';
 import '../assets/css/style.css';
 import '../assets/css/map.css';
 import 'leaflet/dist/leaflet.css';
@@ -9,6 +10,7 @@ export default function MapPage() {
   return (
     <div className="map-app">
       <MapContainer />
+      <OverlayPanel />
 
       <Link className="map-back-btn map-icon-btn" to="/" title="Home">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
@@ -79,32 +81,6 @@ export default function MapPage() {
           </div>
         </div>
 
-        <div className="basin-style-switcher" id="basin-style-switcher">
-          <button className="map-icon-btn basin-style-btn" id="basin-style-btn" onClick={() => window.APP?._toggleBasinStyleMenu()} title="Basin Style">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="11.5" r="2.5"/><circle cx="17" cy="18.5" r="2.5"/><circle cx="8" cy="18.5" r="2.5"/><circle cx="5" cy="11.5" r="2.5"/><circle cx="11" cy="6.5" r="0.5" fill="currentColor"/></svg>
-          </button>
-          <div className="basin-style-options" id="basin-style-options">
-            <div className="basin-style-options-header">Basin Style</div>
-            <div className="basin-style-controls">
-              <div className="basin-style-row">
-                <label>Fill Opacity</label>
-                <input type="range" min="0" max="1" step="0.05" defaultValue="0.15" onInput={(e) => { window.APP.state.basinFillOpacity = parseFloat(e.target.value); window.APP._updateBasinStyles(); }} />
-              </div>
-              <div className="basin-style-row">
-                <label>Outline Opacity</label>
-                <input type="range" min="0" max="1" step="0.05" defaultValue="0.9" onInput={(e) => { window.APP.state.basinOutlineOpacity = parseFloat(e.target.value); window.APP._updateBasinStyles(); }} />
-              </div>
-              <div className="basin-style-row">
-                <label>Fill Color</label>
-                <input type="color" defaultValue="#d1d5db" onChange={(e) => { window.APP.state.basinFillColor = e.target.value; window.APP._updateBasinStyles(); }} />
-              </div>
-              <div className="basin-style-row">
-                <label>Outline Color</label>
-                <input type="color" defaultValue="#000000" onChange={(e) => { window.APP.state.basinOutlineColor = e.target.value; window.APP._updateBasinStyles(); }} />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

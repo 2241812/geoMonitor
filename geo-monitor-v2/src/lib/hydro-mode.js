@@ -1,4 +1,5 @@
 import { APP } from './app.js';
+import { useMapStore } from '../store/useMapStore.js';
 /**
  * hydro-mode.js
  * Contains all watershed drill-down, zone isolation, and hydro UI logic.
@@ -72,6 +73,7 @@ Object.assign(APP, {
         document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
       }
     this.state.hydroDrillLevel = 0;
+    useMapStore.setState({ hydroDrillLevel: 0 });
     this.state.hydroSelectedBasin = null;
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
@@ -81,6 +83,7 @@ Object.assign(APP, {
       this.state.showSubWatersheds = false;
       this.state.showStreamOrder = false;
       this.state.showSlope = false;
+      useMapStore.setState({ showSlope: false });
       this._clearHydroLayers();
       this._renderHydroBasins();
       this._showBasinPickerPanel();
@@ -132,6 +135,7 @@ Object.assign(APP, {
     }
     
     this.state.hydroDrillLevel = 0;
+    useMapStore.setState({ hydroDrillLevel: 0 });
     this.state.hydroSelectedBasin = null;
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
@@ -459,6 +463,7 @@ Object.assign(APP, {
         return;
       }
       this.state.hydroDrillLevel = 1;
+      useMapStore.setState({ hydroDrillLevel: 1 });
       this.state.hydroSelectedBasin = { name, folder: mapEntry.folder, code: mapEntry.code, feature };
 
       this.state.selectedPath = [{ level: 0, feature, name }];
@@ -804,6 +809,7 @@ Object.assign(APP, {
   /* Toggle sub-watersheds overlay on/off */
   _toggleSubWatersheds() {
     this.state.showSubWatersheds = !this.state.showSubWatersheds;
+    useMapStore.setState({ showSubWatersheds: this.state.showSubWatersheds });
     const sl = this.state.hydroLayers[1];
     if (!sl) return;
 
@@ -821,6 +827,7 @@ Object.assign(APP, {
   /* Toggle stream order overlay on/off */
   _toggleStreamOrder() {
     this.state.showStreamOrder = !this.state.showStreamOrder;
+    useMapStore.setState({ showStreamOrder: this.state.showStreamOrder });
     const sl = this.state.hydroLayers[2];
     if (!sl) return;
 
@@ -838,6 +845,7 @@ Object.assign(APP, {
 
   _toggleLCM() {
     this.state.showLCM = !this.state.showLCM;
+    useMapStore.setState({ showLCM: this.state.showLCM });
     const ctrl = document.getElementById('lcm-controls');
     if (ctrl) {
       ctrl.style.display = this.state.showLCM ? 'block' : 'none';
@@ -886,11 +894,13 @@ Object.assign(APP, {
     document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
 
     this.state.hydroDrillLevel = 0;
+    useMapStore.setState({ hydroDrillLevel: 0 });
     this.state.hydroSelectedBasin = null;
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
     this.state.selectedPath = [];
     APP.lcm.destroy();
+    APP.slope.destroy();
 
     /* Re-render basins interactively (no silhouette) */
     this._clearHydroLayers();
@@ -955,6 +965,7 @@ Object.assign(APP, {
     this._clearHydroLayers();
     this._removeHydroSilhouette();
     this.state.hydroDrillLevel = 0;
+    useMapStore.setState({ hydroDrillLevel: 0 });
     this.state.hydroSelectedBasin = null;
     if (this.state.hydroBoundaryLayer && this.state.map) {
       this.state.map.removeLayer(this.state.hydroBoundaryLayer);
@@ -973,6 +984,7 @@ Object.assign(APP, {
     this.state.showSubWatersheds = false;
     this.state.showStreamOrder = false;
     this.state.showSlope = false;
+    useMapStore.setState({ showSlope: false });
     this.state.hydroShowBoundary = false;
     this.state.activeOutline = null;
     this.state.outlineLayers = {};

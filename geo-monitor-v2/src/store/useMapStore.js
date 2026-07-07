@@ -19,6 +19,9 @@ export const useMapStore = create((set, get) => ({
   hydroSelectedBasin: null,
   hydroSelectedZone: null,
   showStreamOrder: false,
+  showSlope: false,
+  showSubWatersheds: false,
+  showLCM: false,
   hydroShowBoundary: false,
 
   // ═══════════ DATA & LAYERS (References) ═══════════

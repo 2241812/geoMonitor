@@ -1,5 +1,6 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
+import { useMapStore } from '../store/useMapStore.js';
 
 /**
  * slope-manager.js
@@ -62,8 +63,10 @@ function _buildClipPath(map, rings) {
   try {
     const points = ring.map(c => {
       const p = map.latLngToLayerPoint([c[1], c[0]]);
+      if (!isFinite(p.x) || !isFinite(p.y)) return null;
       return `${Math.round(p.x)}px ${Math.round(p.y)}px`;
-    }).join(',');
+    }).filter(Boolean).join(',');
+    if (!points) return '';
     return `polygon(${points})`;
   } catch (_) {
     return '';
@@ -94,7 +97,7 @@ function _onZoomEnd() {
     pane.style.opacity = '';
     pane.style.willChange = '';
   }
-  APP.slope.reapplyClip();
+  /* reapplyClip handled by _onZoomSwap on the same zoomend event */
 }
 
 APP.slope = {
@@ -103,10 +106,15 @@ APP.slope = {
   _layerFull: null,
   _rafId: null,
   _clipFeature: null, /* the feature currently used for clipping */
+  _toggling: false, /* guard against double-toggle race */
   LOD_ZOOM: 10,
 
   async toggle() {
+    if (this._toggling) return; /* prevent concurrent toggles */
+    this._toggling = true;
+    try {
     APP.state.showSlope = !APP.state.showSlope;
+    useMapStore.setState({ showSlope: APP.state.showSlope });
     const map = APP.state.map;
     if (!map) return;
 
@@ -168,13 +176,18 @@ APP.slope = {
         APP._showToast('Failed to load slope data');
         console.error('Slope fetch error:', e);
         APP.state.showSlope = false;
+        useMapStore.setState({ showSlope: false });
         APP._updateHydroLegend();
-        return;
+        return; /* finally still runs — _toggling will be cleared */
       }
     }
 
     APP._updateSubWatershedStyles();
-    if (!this._layer) { APP.state.showSlope = false; return; }
+    if (!this._layer) {
+      APP.state.showSlope = false;
+      useMapStore.setState({ showSlope: false });
+      return;
+    }
 
     if (APP.state.showSlope) {
       this._hideLoadProgress();
@@ -192,6 +205,7 @@ APP.slope = {
     if (slopeCtrl) slopeCtrl.style.display = APP.state.showSlope ? 'block' : 'none';
 
     APP._updateHydroLegend();
+    } finally { this._toggling = false; }
   },
 
   _showLoadProgress(pct, label) {
@@ -241,6 +255,7 @@ APP.slope = {
   },
 
   _onZoomSwap() {
+    if (!APP.state.showSlope) return;
     const map = APP.state.map;
     if (!map || !this._layerSimplified || !this._layerFull) return;
     const z = map.getZoom();
@@ -306,7 +321,12 @@ APP.slope = {
    * Skips if map is mid-zoom-animation (transforms are stale).
    */
   reapplyClip() {
-    if (!APP.state.showSlope) return;
+    if (!APP.state.showSlope) {
+      /* Clear stale clip-path even when slope is off — prevents
+         a leftover clip from reappearing on next toggle. */
+      this.removeClip();
+      return;
+    }
     if (this._rafId) cancelAnimationFrame(this._rafId);
     this._rafId = requestAnimationFrame(() => {
       this._rafId = null;
@@ -359,6 +379,8 @@ APP.slope = {
       this._unbindMapEvents(map);
       if (this._layerSimplified) map.removeLayer(this._layerSimplified);
       if (this._layerFull) map.removeLayer(this._layerFull);
+      const pane = map.getPane('slopePane');
+      if (pane && pane.parentNode) pane.parentNode.removeChild(pane);
     }
     this._layer = null;
     this._layerSimplified = null;
@@ -366,6 +388,9 @@ APP.slope = {
     this._clipFeature = null;
     this.removeClip();
     APP.state.showSlope = false;
+    useMapStore.setState({ showSlope: false });
+    const slopeCtrl = document.getElementById('slope-controls');
+    if (slopeCtrl) slopeCtrl.style.display = 'none';
   },
 
   _setOpacity(val) {
@@ -383,12 +408,6 @@ APP.slope = {
       : scheme === 'heat'
       ? { 1: '#2b83ba', 2: '#abdda4', 3: '#ffffbf', 4: '#fdae61', 5: '#d7191c' }
       : COLORS;
-    const styleFn = (f) => ({
-      fillColor: palette[f.properties.gridcode] || '#cccccc',
-      fillOpacity: 0.65,
-      stroke: false,
-      weight: 0,
-    });
     [this._layerSimplified, this._layerFull].forEach((layer) => {
       if (!layer || !layer.eachLayer) return;
       layer.eachLayer((l) => {
