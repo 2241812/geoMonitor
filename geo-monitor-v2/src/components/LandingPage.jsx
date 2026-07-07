@@ -1,22 +1,21 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import '../assets/css/style.css';
 
 const BASINS_DATA = [
-  { id: 1, name: "Agno River Watershed", image: "assets/images/basin-1.jpg", desc: "Originates in the Cordillera mountains of Benguet, specifically Mount Data. It is the fifth largest river system in the Philippines and a vital resource for Northern Luzon. It supports three major hydroelectric plants: Ambuklao, Binga, and San Roque. The basin supplies extensive irrigation for the agricultural plains of Pangasinan, serving as the lifeblood for local farming communities, fisheries, and regional power generation.", area: "4,000 km²", location: "Cordillera", provinces: "Benguet, Pangasinan" },
-  { id: 2, name: "Upper Chico River", image: "assets/images/basin-2.jpg", desc: "Headwaters are located in the mountains of Benguet, Mountain Province, and Kalinga. Known as the 'River of Life' for the Kalinga people, it spans a vast area before merging with the Cagayan River. It supports numerous mini-hydro power plants and provides essential irrigation for rice terraces and farmlands across Kalinga, Apayao, Cagayan, and Isabela.", area: "4,000 km²", location: "Cordillera", provinces: "Kalinga, Mountain Province" },
-  { id: 3, name: "Abra River Watershed", image: "assets/images/basin-3.jpg", desc: "Originates from the slopes of Mount Data in Benguet and runs through Mountain Province and Abra before emptying into the West Philippine Sea. It is one of the five largest river systems in the Philippines, featuring deep gorges and wide valleys. The basin provides crucial irrigation for Ilocos Sur and Abra, supporting local agriculture and inland fisheries.", area: "4,000 km²", location: "Cordillera", provinces: "Abra, Ilocos Sur" },
-  { id: 4, name: "Abulog River Watershed", image: "assets/images/basin-4.jpg", desc: "Also known as the Abulug-Apayao River Watershed, its headwaters lie deep within the mountainous province of Apayao. It is characterized by pristine forest cover and a wide river channel that flows down to the Babuyan Channel. It serves as a critical source of irrigation for the plains of northern Cagayan Province and sustains local aquatic biodiversity.", area: "4,000 km²", location: "Cordillera", provinces: "Apayao, Cagayan" },
-  { id: 5, name: "Amburayan River", image: "assets/images/basin-5.jpg", desc: "Emanates in Benguet and flows to the West Philippine Sea. It serves as a natural boundary between Ilocos Sur and La Union. The basin provides crucial irrigation for lowland agriculture and supports local freshwater ecosystems.", area: "4,000 km²", location: "Cordillera", provinces: "Benguet, La Union" },
-  { id: 6, name: "Aringay River", image: "assets/images/basin-6.jpg", desc: "Originates from Benguet and Baguio City. Its watershed plays a vital role in sustaining local agricultural livelihoods in the surrounding municipalities. Conservation efforts here are key to mitigating downstream flooding before exiting at the Luzon Sea.", area: "4,000 km²", location: "Cordillera", provinces: "Benguet, La Union" },
-  { id: 7, name: "Naguilian River", image: "assets/images/basin-7.jpg", desc: "With headwaters in Benguet, this system irrigates La Union and exits at the Luzon Sea. Known for its scenic riverways, it supports both agriculture and local tourism, acting as an integral socio-economic driver for communities along its banks.", area: "4,000 km²", location: "Cordillera", provinces: "Benguet, La Union" },
-  { id: 8, name: "Upper Magat River", image: "assets/images/basin-8.jpg", desc: "Originates from the mountainous terrain of Ifugao. It feeds into the massive Magat Dam, one of the largest infrastructure projects in the country. The watershed is critically important for generating hydroelectric power and irrigating vast tracts of land in the Cagayan Valley.", area: "4,000 km²", location: "Cordillera", provinces: "Ifugao, Isabela" },
-  { id: 9, name: "Siffu River", image: "assets/images/basin-9.jpg", desc: "Headwaters are located in Eastern Ifugao and Mountain Province. It channels vital water resources down into the plains of Isabela. The river sustains extensive rice terraces and lowland farming, forming a cornerstone of the regional agricultural economy.", area: "4,000 km²", location: "Cordillera", provinces: "Ifugao, Isabela" },
-  { id: 10, name: "Mallig River", image: "assets/images/basin-9.jpg", desc: "Flowing through the rolling terrains of the Cordilleras, this river merges with regional networks to support Isabela's agricultural zones. The watershed is essential for maintaining soil fertility and crop yields in adjacent downstream provinces.", area: "4,000 km²", location: "Cordillera", provinces: "Mountain Province, Isabela" },
-  { id: 11, name: "Cabicungan River", image: "assets/images/basin-10.jpg", desc: "Situated in Apayao, it features relatively pristine forest cover and high biodiversity. The river irrigates farmlands in northern Cagayan Province before exiting towards the Babuyan Channel, acting as a lifeline for northern communities.", area: "4,000 km²", location: "Cordillera", provinces: "Apayao, Cagayan" },
-  { id: 12, name: "Zumigui-Ziwanan River", image: "assets/images/basin-11.jpg", desc: "Emanating from Apayao, this basin is characterized by its remote, rugged terrain and rich ecological profile. It provides essential water routing for neighboring agricultural plains and sustains indigenous flora and fauna.", area: "4,000 km²", location: "Cordillera", provinces: "Apayao, Cagayan" },
-  { id: 13, name: "Santa Maria River", image: "assets/images/basin-12.jpg", desc: "Draining the western ridges of the Cordillera mountain range, it channels localized headwaters directly to the coastal networks of the West Philippine Sea. The watershed supports local aquaculture and farming, emphasizing the need for upstream forest protection.", area: "4,000 km²", location: "Cordillera", provinces: "Ilocos Sur" },
-  { id: 14, name: "Bued River Watershed", image: "assets/images/basin-13.jpg", desc: "Gathering from the high altitudes of Benguet, this river is famous for running parallel to the historic Kennon Road. The watershed manages critical runoff through steep transit corridors, requiring constant monitoring for landslide prevention down to the Lingayen Gulf.", area: "4,000 km²", location: "Cordillera", provinces: "Benguet, Pangasinan" }
+  { id: 1, name: "Agno River Watershed", image: "assets/images/basin-1.jpg", desc: "Originates in the Cordillera mountains of Benguet, specifically Mount Data. It is the fifth largest river system in the Philippines and a vital resource for Northern Luzon. It supports three major hydroelectric plants: Ambuklao, Binga, and San Roque. The basin supplies extensive irrigation for the agricultural plains of Pangasinan, serving as the lifeblood for local farming communities, fisheries, and regional power generation." },
+  { id: 2, name: "Upper Chico River", image: "assets/images/basin-2.jpg", desc: "Headwaters are located in the mountains of Benguet, Mountain Province, and Kalinga. Known as the 'River of Life' for the Kalinga people, it spans a vast area before merging with the Cagayan River. It supports numerous mini-hydro power plants and provides essential irrigation for rice terraces and farmlands across Kalinga, Apayao, Cagayan, and Isabela." },
+  { id: 3, name: "Abra River Watershed", image: "assets/images/basin-3.jpg", desc: "Originates from the slopes of Mount Data in Benguet and runs through Mountain Province and Abra before emptying into the West Philippine Sea. It is one of the five largest river systems in the Philippines, featuring deep gorges and wide valleys. The basin provides crucial irrigation for Ilocos Sur and Abra, supporting local agriculture and inland fisheries." },
+  { id: 4, name: "Abulog River Watershed", image: "assets/images/basin-4.jpg", desc: "Also known as the Abulug-Apayao River Watershed, its headwaters lie deep within the mountainous province of Apayao. It is characterized by pristine forest cover and a wide river channel that flows down to the Babuyan Channel. It serves as a critical source of irrigation for the plains of northern Cagayan Province and sustains local aquatic biodiversity." },
+  { id: 5, name: "Amburayan River", image: "assets/images/basin-5.jpg", desc: "Emanates in Benguet, flows to the Luzon Sea at La Union, and supplies irrigation water for the Province of La Union." },
+  { id: 6, name: "Aringay River", image: "assets/images/basin-6.jpg", desc: "Originates from Benguet and Baguio City. A source of irrigation for La Union Province, exiting at the Luzon Sea." },
+  { id: 7, name: "Naguilian River", image: "assets/images/basin-7.jpg", desc: "Headwaters in Benguet, irrigates La Union, and exits at the Luzon Sea." },
+  { id: 8, name: "Upper Magat River", image: "assets/images/basin-8.jpg", desc: "Originates from Ifugao, supports Magat Dam hydroelectric plant, and irrigates Isabela, Nueva Vizcaya, and Quirino." },
+  { id: 9, name: "Siffu-Mallig River", image: "assets/images/basin-9.jpg", desc: "Headwaters originating from eastern Ifugao and Mountain Province, flowing as a merged network towards the Cagayan River to irrigate major agricultural areas in Isabela." },
+  { id: 10, name: "Cabicungan River", image: "assets/images/basin-10.jpg", desc: "Situated in Apayao, irrigates farmers in Cagayan Province and exits towards Claveria." },
+  { id: 11, name: "Zumigui-Ziwanan River", image: "assets/images/basin-11.jpg", desc: "Emanates in Apayao, irrigates Cagayan, and exits towards the Pamplona River." },
+  { id: 12, name: "Santa Maria River", image: "assets/images/basin-12.jpg", desc: "Draining the western ridges of the Cordillera mountain range, it channels localized headwaters directly into the coastal networks of the West Philippine Sea." },
+  { id: 13, name: "Bued River Watershed", image: "assets/images/basin-13.jpg", desc: "Gathering from the high-altitude southern slopes of Benguet, it channels critical mountain runoff through steep transit corridors down toward the Lingayen Gulf." }
 ];
 
 export default function LandingPage() {
@@ -184,7 +183,7 @@ export default function LandingPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
             </div>
             <div className="float-badge-text">
-              <span className="float-badge-number">14</span>
+              <span className="float-badge-number">13</span>
               <span className="float-badge-label">River Basins</span>
             </div>
           </div>
@@ -211,11 +210,13 @@ export default function LandingPage() {
 
         
         <div className="basins-grid fade-in-up">
-          {BASINS_DATA.slice(0, showMoreBasins ? BASINS_DATA.length : 4).map((basin) => (
-            <div key={basin.id} className="basin-card" onClick={() => openModal(basin)}>
+          {BASINS_DATA.slice(0, 4).map((basin, index) => (
+            <div key={basin.id} className={asin-card basin-card-tall fade-in-up delay-} onClick={() => openModal(basin)}>
               <img src={basin.image} alt={basin.name} className="basin-card-image" loading="lazy" />
               <div className="basin-card-overlay"></div>
               <div className="basin-card-content">
+                <div className="basin-card-line"></div>
+                <span className="basin-card-index">Basin {String(basin.id).padStart(2, '0')}</span>
                 <h3 className="basin-card-name">{basin.name}</h3>
                 <p className="basin-card-desc">{basin.desc}</p>
               </div>
@@ -223,9 +224,27 @@ export default function LandingPage() {
           ))}
         </div>
 
+        
+        <div className={asins-collapse } id="basins-extra-grid">
+          <div className="basins-extra-grid">
+            {BASINS_DATA.slice(4).map((basin) => (
+              <div key={basin.id} className="basin-card basin-card-tall fade-in-up" onClick={() => openModal(basin)}>
+                <img src={basin.image} alt={basin.name} className="basin-card-image" loading="lazy" />
+                <div className="basin-card-overlay"></div>
+                <div className="basin-card-content">
+                  <div className="basin-card-line"></div>
+                  <span className="basin-card-index">Basin {String(basin.id).padStart(2, '0')}</span>
+                  <h3 className="basin-card-name">{basin.name}</h3>
+                  <p className="basin-card-desc">{basin.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="view-all-container fade-in-up">
           <button className="view-all-btn" onClick={() => setShowMoreBasins(!showMoreBasins)}>
-            <span>{showMoreBasins ? "Show Less" : "View All 14 River Basins"}</span>
+            <span>{showMoreBasins ? "Show Less" : "View All 13 River Basins"}</span>
             <svg className="view-all-icon" style={{ transform: showMoreBasins ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
@@ -316,6 +335,12 @@ export default function LandingPage() {
                 car@denr.gov.ph
               </span>
             </li>
+            <li>
+              <span className="footer-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6 0 1.2-.2 1.7-.6C4.8 5 5.4 4.8 6 4.8s1.2.2 1.7.6C8.8 6 9.4 6.2 10 6.2s1.2-.2 1.7-.6C12.8 5 13.4 4.8 14 4.8s1.2.2 1.7.6c.5.4 1.1.6 1.7.6s1.2-.2 1.7-.6C20.2 5 20.8 4.8 21.4 4.8M2 12c.6 0 1.2-.2 1.7-.6C4.8 11 5.4 10.8 6 10.8s1.2.2 1.7.6c.5.4 1.1.6 1.7.6s1.2-.2 1.7-.6C12.8 11 13.4 10.8 14 10.8s1.2.2 1.7.6c.5.4 1.1.6 1.7.6s1.2-.2 1.7-.6c.5-.4 1.1-.6 1.7-.6M2 18c.6 0 1.2-.2 1.7-.6C4.8 17 5.4 16.8 6 16.8s1.2.2 1.7.6c.5.4 1.1.6 1.7.6s1.2-.2 1.7-.6C12.8 17 13.4 16.8 14 16.8s1.2.2 1.7.6c.5.4 1.1.6 1.7.6s1.2-.2 1.7-.6c.5-.4 1.1-.6 1.7-.6"/></svg>
+                Watershed Division
+              </span>
+            </li>
           </ul>
         </div>
       </div>
@@ -333,34 +358,19 @@ export default function LandingPage() {
 
   </div>
 
-  {/* React Controlled Basin Lightbox Modal */}
-  <div className={`basin-lightbox ${activeBasin ? 'active' : ''}`}>
+  {/* Basin Lightbox Modal - Main Style */}
+  <div className={asin-lightbox }>
     <div className="basin-lightbox-bg" onClick={closeModal}></div>
     <div className="basin-lightbox-content">
-      <div className="modal-split-top">
-        <img src={activeBasin?.image || ""} alt={activeBasin?.name || ""} />
-        <div className="modal-split-top-overlay"></div>
-        <h3 className="modal-basin-title">{activeBasin?.name}</h3>
-      </div>
-      <div className="modal-split-bottom">
-        <div className="modal-quick-stats">
-          <span className="modal-stat-pill">Area: {activeBasin?.area || ""}</span>
-          <span className="modal-stat-pill">Location: {activeBasin?.location || ""}</span>
-          <span className="modal-stat-pill">Provinces: {activeBasin?.provinces || ""}</span>
-        </div>
-        <div className="modal-desc-container">
-          <p className="modal-basin-desc">{activeBasin?.desc}</p>
-        </div>
-        <button className="modal-cta-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-          </svg>
-          Explore on Map
-        </button>
+      <img src={activeBasin?.image || ""} alt={activeBasin?.name || ""} />
+      <div className="basin-lightbox-overlay"></div>
+      <div className="basin-lightbox-text">
+        <span className="basin-card-index">Basin {activeBasin ? String(activeBasin.id).padStart(2, '0') : ''}</span>
+        <h3 className="basin-card-name">{activeBasin?.name}</h3>
+        <p className="basin-card-desc">{activeBasin?.desc}</p>
       </div>
       <button className="basin-lightbox-close" title="Close" onClick={closeModal}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
