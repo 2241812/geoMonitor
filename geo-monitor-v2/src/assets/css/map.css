@@ -2347,7 +2347,9 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   transform: translateY(20px) scale(0.98);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -2399,6 +2401,9 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 
 .data-request-body {
   padding: 16px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .data-request-object {
