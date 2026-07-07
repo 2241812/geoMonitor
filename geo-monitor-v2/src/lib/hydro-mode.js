@@ -1,5 +1,6 @@
 import { APP } from './app.js';
 import { useMapStore } from '../store/useMapStore.js';
+import { fetchLCMFromSupabase } from './supabase-geo.js';
 /**
  * hydro-mode.js
  * Contains all watershed drill-down, zone isolation, and hydro UI logic.
@@ -941,13 +942,18 @@ Object.assign(APP, {
   async _loadBasinLCM(code) {
     if (!APP.state.showLCM) return;
     const lcmCode = ({ ACH: 'UCH' })[code] || code;
-    const path = `geoJSON/LCM/${lcmCode}_LCM2025.geojson`;
     APP.lcm._showLoadProgress(0, 'Fetching LCM data…');
     try {
-      const resp = await fetch(path);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      APP.lcm._showLoadProgress(10, 'Parsing GeoJSON…');
-      const geojson = await resp.json();
+      let geojson;
+      try {
+        geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg));
+      } catch (_) {
+        const path = `geoJSON/LCM/${lcmCode}_LCM2025.geojson`;
+        const resp = await fetch(path);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        APP.lcm._showLoadProgress(10, 'Parsing GeoJSON…');
+        geojson = await resp.json();
+      }
       await APP.lcm.loadBasin(code, geojson);
     } catch (e) {
       APP.lcm._hideLoadProgress();

@@ -1,6 +1,7 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
 import { useMapStore } from '../store/useMapStore.js';
+import { fetchAllSlopeFromSupabase } from './supabase-geo.js';
 
 /**
  * slope-manager.js
@@ -121,9 +122,14 @@ APP.slope = {
     if (APP.state.showSlope && !this._layer) {
       this._showLoadProgress(0, 'Fetching slope data…');
       try {
-        const resp = await fetch('geoJSON/Slope.geojson');
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const geojson = await resp.json();
+        let geojson;
+        try {
+          geojson = await fetchAllSlopeFromSupabase((pct, msg) => this._showLoadProgress(pct, msg));
+        } catch (_) {
+          const resp = await fetch('geoJSON/Slope.geojson');
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          geojson = await resp.json();
+        }
 
         this._showLoadProgress(20, 'Processing geometry…');
         await new Promise(r => setTimeout(r, 0));
