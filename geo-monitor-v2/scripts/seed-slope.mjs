@@ -34,7 +34,21 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 1; // 1 at a time — geometries are huge
+const DECIMALS = 4; // ~11m accuracy, reduces 19MB → ~2MB per feature
+
+/** Round all coordinates in a geometry to N decimal places */
+function roundCoords(geometry, decimals) {
+  const f = Math.pow(10, decimals);
+  function roundRing(ring) { return ring.map(c => [Math.round(c[0] * f) / f, Math.round(c[1] * f) / f]); }
+  if (geometry.type === 'Polygon') {
+    return { ...geometry, coordinates: geometry.coordinates.map(roundRing) };
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return { ...geometry, coordinates: geometry.coordinates.map(poly => poly.map(roundRing)) };
+  }
+  return geometry;
+}
 
 async function main() {
   console.log('Clearing existing slope data...');
@@ -58,7 +72,7 @@ async function main() {
     const rows = features.map(f => ({
       basin_code: basinCode,
       gridcode: f.properties.gridcode,
-      geom: f.geometry,
+      geom: roundCoords(f.geometry, DECIMALS),
     }));
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {

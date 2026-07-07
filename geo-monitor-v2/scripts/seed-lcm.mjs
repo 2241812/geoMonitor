@@ -32,7 +32,21 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const BATCH_SIZE = 30;
+const BATCH_SIZE = 10;
+const DECIMALS = 4;
+
+/** Round all coordinates in a geometry to N decimal places */
+function roundCoords(geometry, decimals) {
+  const f = Math.pow(10, decimals);
+  function roundRing(ring) { return ring.map(c => [Math.round(c[0] * f) / f, Math.round(c[1] * f) / f]); }
+  if (geometry.type === 'Polygon') {
+    return { ...geometry, coordinates: geometry.coordinates.map(roundRing) };
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return { ...geometry, coordinates: geometry.coordinates.map(poly => poly.map(roundRing)) };
+  }
+  return geometry;
+}
 
 async function main() {
   console.log('Clearing existing LCM data...');
@@ -57,7 +71,7 @@ async function main() {
       basin_code: basinCode,
       lcm_class: f.properties.LCM_CLASS || null,
       properties: f.properties,
-      geom: f.geometry,
+      geom: roundCoords(f.geometry, DECIMALS),
     }));
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
