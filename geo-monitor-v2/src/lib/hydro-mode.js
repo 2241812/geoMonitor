@@ -903,7 +903,7 @@ Object.assign(APP, {
     this.state.hydroSelectedZoneLayer = null;
     this.state.selectedPath = [];
     APP.lcm.destroy();
-    APP.slope.destroy();
+    APP.slope.hide();
 
     /* Re-render basins interactively (no silhouette) */
     this._clearHydroLayers();
@@ -927,8 +927,7 @@ Object.assign(APP, {
     this._updateBreadcrumb();
     this._showBasinPickerPanel();
     this._updateHydroLabels();
-    /* If overlays are active, re-fetch for all basins at level 0 */
-    if (this.state.showSlope) this._loadAllSlope();
+    if (this.state.showSlope) APP.slope.show();
     if (this.state.showLCM) this._loadAllLCM();
   },
 

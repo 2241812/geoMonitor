@@ -5,6 +5,10 @@ let _client = null;
 const SUPABASE_URL = 'https://micsfokodqqqgwtlctca.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pY3Nmb2tvZHFxcWd3dGxjdGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NjExNjgsImV4cCI6MjA5ODUzNzE2OH0.zTrxYk4-QJ-nsM_SlcqiA1IR7XpZXpFmjCN2xBQgTY4';
 const BASIN_CODES = ['ABR','ABU','AGN','AMB','ARI','BUD','CAB','MLG','NAG','SIF','SMR','UCH','UMT','ZUM'];
+const BASIN_FEATURE_COUNTS = { ABR: 20366, ABU: 6220, AGN: 5000, AMB: 5875, ARI: 2481, BUD: 2277, CAB: 784, MLG: 3000, NAG: 3160, SIF: 2705, SMR: 1400, UCH: 19868, UMT: 4000, ZUM: 1221 };
+
+let _cachedAllLCM = null;
+let _cachedBasinLCM = {};
 
 function getClient() {
   if (_client) return _client;
@@ -12,15 +16,15 @@ function getClient() {
   return _client;
 }
 
-async function _fetchPaginated(table, columns, basinCode, onProgress) {
+async function _fetchPaginated(table, columns, basinCode, onProgress, estimateSize) {
   const supabase = getClient();
-  const PAGE_SIZE = 5000;
+  const PAGE_SIZE = 1000;
   let allData = [];
   let offset = 0;
   let hasMore = true;
 
   while (hasMore) {
-    if (onProgress) onProgress(Math.min(90, Math.round((offset / 50000) * 90)), `Fetching batch ${Math.floor(offset / PAGE_SIZE) + 1}…`);
+    if (onProgress) onProgress(Math.min(90, Math.round((offset / (estimateSize || 5000)) * 90)), `Fetching batch ${Math.floor(offset / PAGE_SIZE) + 1}…`);
 
     const { data, error } = await supabase
       .from(table)
@@ -55,25 +59,40 @@ function _buildLCMFeatures(rows) {
  * Fetch LCM features for a single basin from Supabase.
  */
 export async function fetchLCMFromSupabase(basinCode, onProgress) {
+  if (_cachedBasinLCM[basinCode]) {
+    if (onProgress) onProgress(100, `${basinCode} LCM loaded from cache`);
+    return _cachedBasinLCM[basinCode];
+  }
   if (onProgress) onProgress(0, `Fetching ${basinCode} LCM…`);
-  const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', basinCode, onProgress);
+  const estimate = BASIN_FEATURE_COUNTS[basinCode] || 5000;
+  const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', basinCode, onProgress, estimate);
   if (data.length === 0) throw new Error('No LCM data found for basin: ' + basinCode);
   if (onProgress) onProgress(90, `Rebuilding GeoJSON (${data.length} features)…`);
-  return { type: 'FeatureCollection', features: _buildLCMFeatures(data) };
+  const geojson = { type: 'FeatureCollection', features: _buildLCMFeatures(data) };
+  _cachedBasinLCM[basinCode] = geojson;
+  return geojson;
 }
 
 /**
  * Fetch LCM features for ALL basins from Supabase (for level 0 overview).
- * Fetches each basin in parallel.
+ * Fetches each basin sequentially with caching.
  */
 export async function fetchAllLCMFromSupabase(onProgress) {
+  if (_cachedAllLCM) {
+    if (onProgress) onProgress(100, 'All basins LCM loaded from cache');
+    return _cachedAllLCM;
+  }
   if (onProgress) onProgress(0, 'Fetching LCM for all basins…');
 
-  const allFeatures = [];
+  const totalEstimate = BASIN_CODES.reduce((sum, c) => sum + (BASIN_FEATURE_COUNTS[c] || 5000), 0);
+  let allFeatures = [];
+  let fetchedCount = 0;
+
   for (let i = 0; i < BASIN_CODES.length; i++) {
     const code = BASIN_CODES[i];
     try {
-      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null);
+      const estimate = BASIN_FEATURE_COUNTS[code] || 5000;
+      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null, estimate);
       data.forEach(row => {
         const props = { LCM_CLASS: row.lcm_class };
         if (row.properties) {
@@ -81,7 +100,8 @@ export async function fetchAllLCMFromSupabase(onProgress) {
         }
         allFeatures.push({ type: 'Feature', properties: props, geometry: row.geom });
       });
-      if (onProgress) onProgress(10 + Math.round(((i + 1) / BASIN_CODES.length) * 80), `Fetched ${code} (${data.length})…`);
+      fetchedCount += data.length;
+      if (onProgress) onProgress(10 + Math.round(((i + 1) / BASIN_CODES.length) * 80), `Fetched ${code} (${data.length}) [${fetchedCount}/${totalEstimate}]…`);
     } catch (e) {
       console.warn(`LCM fetch failed for ${code}:`, e.message);
     }
@@ -89,5 +109,15 @@ export async function fetchAllLCMFromSupabase(onProgress) {
 
   if (allFeatures.length === 0) throw new Error('No LCM data found in Supabase');
   if (onProgress) onProgress(95, `Rebuilding GeoJSON (${allFeatures.length} features)…`);
-  return { type: 'FeatureCollection', features: allFeatures };
+  _cachedAllLCM = { type: 'FeatureCollection', features: allFeatures };
+  return _cachedAllLCM;
+}
+
+export function invalidateLCMCache(basinCode) {
+  if (basinCode) {
+    delete _cachedBasinLCM[basinCode];
+  } else {
+    _cachedAllLCM = null;
+    _cachedBasinLCM = {};
+  }
 }
