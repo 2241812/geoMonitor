@@ -141,7 +141,8 @@ Object.assign(APP, {
       },
     },
 
-    dataRequestEmail: 'car@denr.gov.ph',
+    dataRequestEmail: 'renzoj156@gmail.com',
+    dataRequestEndpoint: 'https://script.google.com/macros/s/AKfycbyLldQUH_cxEBWXg8B1mJPnI1DqSqNNHX42_q_WauGVF0nhJLzVXcsrCskuPu5RAa1MLw/exec',
 
     supabase: {
       url: 'https://micsfokodqqqgwtlctca.supabase.co',
