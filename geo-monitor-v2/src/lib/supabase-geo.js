@@ -10,13 +10,17 @@ const BASIN_FEATURE_COUNTS = { ABR: 20366, ABU: 6220, AGN: 5000, AMB: 5875, ARI:
 let _cachedAllLCM = null;
 let _cachedBasinLCM = {};
 
+function _cacheKey(basinCode, classes) {
+  return basinCode + '::' + (classes || []).sort().join(',');
+}
+
 function getClient() {
   if (_client) return _client;
   _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return _client;
 }
 
-async function _fetchPaginated(table, columns, basinCode, onProgress, estimateSize) {
+async function _fetchPaginated(table, columns, basinCode, onProgress, estimateSize, classes) {
   const supabase = getClient();
   const PAGE_SIZE = 1000;
   let allData = [];
@@ -26,11 +30,16 @@ async function _fetchPaginated(table, columns, basinCode, onProgress, estimateSi
   while (hasMore) {
     if (onProgress) onProgress(Math.min(90, Math.round((offset / (estimateSize || 5000)) * 90)), `Fetching batch ${Math.floor(offset / PAGE_SIZE) + 1}…`);
 
-    const { data, error } = await supabase
+    let query = supabase
       .from(table)
       .select(columns)
-      .eq('basin_code', basinCode)
-      .range(offset, offset + PAGE_SIZE - 1);
+      .eq('basin_code', basinCode);
+
+    if (classes && classes.length > 0) {
+      query = query.in('lcm_class', classes);
+    }
+
+    const { data, error } = await query.range(offset, offset + PAGE_SIZE - 1);
 
     if (error) throw new Error('Supabase query failed: ' + error.message);
 
@@ -58,27 +67,25 @@ function _buildLCMFeatures(rows) {
 /**
  * Fetch LCM features for a single basin from Supabase.
  */
-export async function fetchLCMFromSupabase(basinCode, onProgress) {
-  if (_cachedBasinLCM[basinCode]) {
+export async function fetchLCMFromSupabase(basinCode, onProgress, classes) {
+  const key = _cacheKey(basinCode, classes);
+  if (_cachedBasinLCM[key]) {
     if (onProgress) onProgress(100, `${basinCode} LCM loaded from cache`);
-    return _cachedBasinLCM[basinCode];
+    return _cachedBasinLCM[key];
   }
   if (onProgress) onProgress(0, `Fetching ${basinCode} LCM…`);
   const estimate = BASIN_FEATURE_COUNTS[basinCode] || 5000;
-  const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', basinCode, onProgress, estimate);
+  const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', basinCode, onProgress, estimate, classes);
   if (data.length === 0) throw new Error('No LCM data found for basin: ' + basinCode);
   if (onProgress) onProgress(90, `Rebuilding GeoJSON (${data.length} features)…`);
   const geojson = { type: 'FeatureCollection', features: _buildLCMFeatures(data) };
-  _cachedBasinLCM[basinCode] = geojson;
+  _cachedBasinLCM[key] = geojson;
   return geojson;
 }
 
-/**
- * Fetch LCM features for ALL basins from Supabase (for level 0 overview).
- * Fetches each basin sequentially with caching.
- */
-export async function fetchAllLCMFromSupabase(onProgress) {
-  if (_cachedAllLCM) {
+export async function fetchAllLCMFromSupabase(onProgress, classes) {
+  const key = _cacheKey('ALL', classes);
+  if (_cachedAllLCM && _cachedAllLCM._key === key) {
     if (onProgress) onProgress(100, 'All basins LCM loaded from cache');
     return _cachedAllLCM;
   }
@@ -92,7 +99,7 @@ export async function fetchAllLCMFromSupabase(onProgress) {
     const code = BASIN_CODES[i];
     try {
       const estimate = BASIN_FEATURE_COUNTS[code] || 5000;
-      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null, estimate);
+      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null, estimate, classes);
       data.forEach(row => {
         const props = { LCM_CLASS: row.lcm_class };
         if (row.properties) {
@@ -109,7 +116,9 @@ export async function fetchAllLCMFromSupabase(onProgress) {
 
   if (allFeatures.length === 0) throw new Error('No LCM data found in Supabase');
   if (onProgress) onProgress(95, `Rebuilding GeoJSON (${allFeatures.length} features)…`);
-  _cachedAllLCM = { type: 'FeatureCollection', features: allFeatures };
+  const result = { type: 'FeatureCollection', features: allFeatures };
+  result._key = key;
+  _cachedAllLCM = result;
   return _cachedAllLCM;
 }
 

@@ -1,5 +1,6 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
+import { invalidateLCMCache } from './supabase-geo.js';
 
 export const LCM_CLASSES = [
   { name: 'Closed Forest',   color: '#006400' },
@@ -100,6 +101,10 @@ APP.lcm = {
     this._visibleClasses = new Set(LCM_CLASSES.map(c => c.name));
     this._applyClassVisibility();
     APP._updateLCMControls();
+  },
+
+  invalidateCache() {
+    invalidateLCMCache();
   },
 
   hideAllClasses() {
@@ -361,7 +366,6 @@ APP._lcmHideAll = function() { APP.lcm.hideAllClasses(); };
 
 APP._renderLCMClassToggles = function() {
   const vis = APP.lcm.getVisibleClasses();
-  const allVisible = vis.size === LCM_CLASSES.length;
   let html = `<div class="lcm-class-toggles">`;
   html += `<div class="lcm-class-header"><b>Land Cover Classes</b>
     <span class="lcm-class-actions">
@@ -377,8 +381,18 @@ APP._renderLCMClassToggles = function() {
       <span class="lcm-class-label">${c.name}</span>
     </label>`;
   });
+  html += `<button class="lcm-fetch-btn" onclick="APP._refetchLCMWithClasses()">Apply & Fetch</button>`;
   html += `</div>`;
   return html;
+};
+
+APP._refetchLCMWithClasses = function() {
+  APP.lcm.invalidateCache();
+  if (APP.state.hydroDrillLevel === 0) {
+    APP._loadAllLCM();
+  } else if (APP.state._basinCode) {
+    APP._loadBasinLCM(APP.state._basinCode);
+  }
 };
 
 APP._updateLCMControls = function() {

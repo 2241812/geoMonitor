@@ -861,13 +861,7 @@ Object.assign(APP, {
       }
     }
 
-    if (this.state.showLCM) {
-      if (this.state._basinCode) {
-        this._loadBasinLCM(this.state._basinCode);
-      } else if (this.state.hydroDrillLevel === 0) {
-        this._loadAllLCM();
-      }
-    } else {
+    if (!this.state.showLCM) {
       APP.lcm.destroy();
     }
     APP._updateHydroLegend();
@@ -944,9 +938,10 @@ Object.assign(APP, {
   async _loadBasinLCM(code) {
     if (!APP.state.showLCM) return;
     const lcmCode = ({ ACH: 'UCH' })[code] || code;
+    const classes = [...APP.lcm.getVisibleClasses()];
     APP.lcm._showLoadProgress(0, 'Fetching LCM data…');
     try {
-      const geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg));
+      const geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
       await APP.lcm.loadBasin(code, geojson);
     } catch (e) {
       APP.lcm._hideLoadProgress();
@@ -956,9 +951,10 @@ Object.assign(APP, {
 
   async _loadAllLCM() {
     if (!APP.state.showLCM) return;
+    const classes = [...APP.lcm.getVisibleClasses()];
     APP.lcm._showLoadProgress(0, 'Fetching LCM for all basins…');
     try {
-      const geojson = await fetchAllLCMFromSupabase((pct, msg) => APP.lcm._showLoadProgress(pct, msg));
+      const geojson = await fetchAllLCMFromSupabase((pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
       await APP.lcm.loadBasin('ALL', geojson);
     } catch (e) {
       APP.lcm._hideLoadProgress();
