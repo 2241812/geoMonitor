@@ -1,6 +1,8 @@
 import { APP } from './app.js';
 import { useMapStore } from '../store/useMapStore.js';
 import { fetchLCMFromSupabase, fetchAllLCMFromSupabase } from './supabase-geo.js';
+
+let _lcmFetchToken = 0;
 /**
  * hydro-mode.js
  * Contains all watershed drill-down, zone isolation, and hydro UI logic.
@@ -924,7 +926,6 @@ Object.assign(APP, {
     this._showBasinPickerPanel();
     this._updateHydroLabels();
     if (this.state.showSlope) APP.slope.show();
-    if (this.state.showLCM) this._loadAllLCM();
   },
 
   /* Remove all hydro layers from the map */
@@ -939,27 +940,31 @@ Object.assign(APP, {
 
   async _loadBasinLCM(code) {
     if (!APP.state.showLCM) return;
+    const token = ++_lcmFetchToken;
     const lcmCode = ({ ACH: 'UCH' })[code] || code;
     const classes = [...APP.lcm.getVisibleClasses()];
     APP.lcm._showLoadProgress(0, 'Fetching LCM data…');
     try {
       const geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
+      if (token !== _lcmFetchToken || !APP.state.showLCM) return;
       await APP.lcm.loadBasin(code, geojson);
     } catch (e) {
-      APP.lcm._hideLoadProgress();
+      if (token === _lcmFetchToken) APP.lcm._hideLoadProgress();
       console.warn('LCM load failed for', code, e);
     }
   },
 
   async _loadAllLCM() {
     if (!APP.state.showLCM) return;
+    const token = ++_lcmFetchToken;
     const classes = [...APP.lcm.getVisibleClasses()];
     APP.lcm._showLoadProgress(0, 'Fetching LCM for all basins…');
     try {
       const geojson = await fetchAllLCMFromSupabase((pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
+      if (token !== _lcmFetchToken || !APP.state.showLCM) return;
       await APP.lcm.loadBasin('ALL', geojson);
     } catch (e) {
-      APP.lcm._hideLoadProgress();
+      if (token === _lcmFetchToken) APP.lcm._hideLoadProgress();
       console.warn('LCM load failed for all basins', e);
     }
   },

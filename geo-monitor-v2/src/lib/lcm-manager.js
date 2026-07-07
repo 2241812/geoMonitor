@@ -386,6 +386,11 @@ APP._renderLCMClassToggles = function() {
 };
 
 APP._refetchLCMWithClasses = function() {
+  const classes = [...APP.lcm.getVisibleClasses()];
+  if (classes.length === 0) {
+    APP._showToast('Select at least one land cover class');
+    return;
+  }
   APP.lcm.invalidateCache();
   if (APP.state.hydroDrillLevel === 0) {
     APP._loadAllLCM();
