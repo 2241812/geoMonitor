@@ -944,16 +944,7 @@ Object.assign(APP, {
     const lcmCode = ({ ACH: 'UCH' })[code] || code;
     APP.lcm._showLoadProgress(0, 'Fetching LCM data…');
     try {
-      let geojson;
-      try {
-        geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg));
-      } catch (_) {
-        const path = `geoJSON/LCM/${lcmCode}_LCM2025.geojson`;
-        const resp = await fetch(path);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        APP.lcm._showLoadProgress(10, 'Parsing GeoJSON…');
-        geojson = await resp.json();
-      }
+      const geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg));
       await APP.lcm.loadBasin(code, geojson);
     } catch (e) {
       APP.lcm._hideLoadProgress();

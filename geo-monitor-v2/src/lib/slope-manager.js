@@ -122,14 +122,7 @@ APP.slope = {
     if (APP.state.showSlope && !this._layer) {
       this._showLoadProgress(0, 'Fetching slope data…');
       try {
-        let geojson;
-        try {
-          geojson = await fetchAllSlopeFromSupabase((pct, msg) => this._showLoadProgress(pct, msg));
-        } catch (_) {
-          const resp = await fetch('geoJSON/Slope.geojson');
-          if (!resp.ok) throw new Error('HTTP ' + resp.status);
-          geojson = await resp.json();
-        }
+        const geojson = await fetchAllSlopeFromSupabase((pct, msg) => this._showLoadProgress(pct, msg));
 
         this._showLoadProgress(20, 'Processing geometry…');
         await new Promise(r => setTimeout(r, 0));
