@@ -70,23 +70,22 @@ export async function fetchAllLCMFromSupabase(onProgress) {
   if (onProgress) onProgress(0, 'Fetching LCM for all basins…');
 
   const allFeatures = [];
-  const results = await Promise.allSettled(
-    BASIN_CODES.map((code, i) =>
-      _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null).then(data => {
-        data.forEach(row => {
-          const props = { LCM_CLASS: row.lcm_class };
-          if (row.properties) {
-            Object.assign(props, typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties);
-          }
-          allFeatures.push({ type: 'Feature', properties: props, geometry: row.geom });
-        });
-        if (onProgress) onProgress(10 + Math.round(((i + 1) / BASIN_CODES.length) * 80), `Fetched ${code} (${data.length})…`);
-      })
-    )
-  );
-
-  const failures = results.filter(r => r.status === 'rejected');
-  if (failures.length > 0) console.warn('LCM basin fetches failed:', failures.map(f => f.reason?.message));
+  for (let i = 0; i < BASIN_CODES.length; i++) {
+    const code = BASIN_CODES[i];
+    try {
+      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null);
+      data.forEach(row => {
+        const props = { LCM_CLASS: row.lcm_class };
+        if (row.properties) {
+          Object.assign(props, typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties);
+        }
+        allFeatures.push({ type: 'Feature', properties: props, geometry: row.geom });
+      });
+      if (onProgress) onProgress(10 + Math.round(((i + 1) / BASIN_CODES.length) * 80), `Fetched ${code} (${data.length})…`);
+    } catch (e) {
+      console.warn(`LCM fetch failed for ${code}:`, e.message);
+    }
+  }
 
   if (allFeatures.length === 0) throw new Error('No LCM data found in Supabase');
   if (onProgress) onProgress(95, `Rebuilding GeoJSON (${allFeatures.length} features)…`);

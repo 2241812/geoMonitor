@@ -927,8 +927,9 @@ Object.assign(APP, {
     this._updateBreadcrumb();
     this._showBasinPickerPanel();
     this._updateHydroLabels();
-    APP.slope.reapplyClip();
-    APP.lcm.reapplyClip();
+    /* If overlays are active, re-fetch for all basins at level 0 */
+    if (this.state.showSlope) this._loadAllSlope();
+    if (this.state.showLCM) this._loadAllLCM();
   },
 
   /* Remove all hydro layers from the map */
