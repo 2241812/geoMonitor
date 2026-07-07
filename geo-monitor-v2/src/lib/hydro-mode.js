@@ -725,7 +725,7 @@ Object.assign(APP, {
   _updateSubWatershedStyles() {
     const layer = this.state.hydroLayers[1];
     if (!layer) return;
-    const showOverlay = this.state.showSlope;
+    const showOverlay = this.state.showSlope || this.state.showLCM;
     const fillColor = this.state.subWatershedFillColor || '#d1d5db';
     const fillOpa = this.state.selectedFillOpacity !== undefined ? this.state.selectedFillOpacity : 0.55;
     const outlineColor = this.state.subWatershedOutlineColor || '#000000';
