@@ -477,135 +477,127 @@ Object.assign(APP, {
       '</label>';
     }).join('');
 
-    /* ── Build Form HTML ── */
-    var html = '<div class="data-request-modal">' +
-      /* Header */
-      '<div class="data-request-header">' +
-        '<h3>Request Data<small>Submit an enquiry to obtain this geographic data</small></h3>' +
-        '<button class="data-request-close" onclick="APP._closeDataRequest()" aria-label="Close">' +
-          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-        '</button>' +
-      '</div>' +
-      /* Body */
+    var detailsHtml = summary.details.map(function(d) { return '<span>' + self._escHtml(d) + '</span>'; }).join('');
+
+    var html = [
+      '<div class="data-request-modal">',
+      '<div class="data-request-header">',
+        '<h3>Request Data<small>Submit an enquiry to obtain this geographic data</small></h3>',
+        '<button class="data-request-close" onclick="APP._closeDataRequest()" aria-label="Close">',
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        '</button>',
+      '</div>',
       '<div class="data-request-body">',
 
-      /* A. Selected Object */
-      '<div class="data-request-object">' +
-        '<div class="data-request-object-label">Selected Object</div>' +
-        '<div class="data-request-object-name">' + this._escHtml(summary.name) + '</div>' +
-        '<div class="data-request-object-meta">' +
-          '<span>Type: ' + this._escHtml(summary.typeLabel) + '</span>' +
-          summary.details.map(function(d) { return '<span>' + self._escHtml(d) + '</span>'; }).join('') +
-        '</div>' +
+      '<div class="data-request-object">',
+        '<div class="data-request-object-label">Selected Object</div>',
+        '<div class="data-request-object-name">' + this._escHtml(summary.name) + '</div>',
+        '<div class="data-request-object-meta">',
+          '<span>Type: ' + this._escHtml(summary.typeLabel) + '</span>',
+          detailsHtml,
+        '</div>',
       '</div>',
 
-      /* B. Data Layers */
-      '<div class="dr-section">' +
-        '<div class="dr-section-title">Data Layers <span class="dr-required">*</span></div>' +
-        '<div class="dr-chip-grid">' +
-          self._drChip('dr-layer-watershed', 'Watershed Boundaries', 'Watershed Boundaries', true) +
-          self._drChip('dr-layer-subwatershed', 'Sub-watershed Zones', 'Sub-watershed Zones', true) +
-          self._drChip('dr-layer-stream', 'Stream Order', 'Stream Order', true) +
-          self._drChip('dr-layer-slope', 'Slope Data', 'Slope Data', true) +
-          self._drChip('dr-layer-lcm', 'Land Cover (LCM)', 'Land Cover (LCM)', true) +
-          self._drChip('dr-layer-admin', 'Administrative Boundaries', 'Administrative Boundaries', false) +
-        '</div>' +
+      '<div class="dr-section">',
+        '<div class="dr-section-title">Data Layers <span class="dr-required">*</span></div>',
+        '<div class="dr-chip-grid">',
+          self._drChip('dr-layer-watershed', 'Watershed Boundaries', 'Watershed Boundaries', true),
+          self._drChip('dr-layer-subwatershed', 'Sub-watershed Zones', 'Sub-watershed Zones', true),
+          self._drChip('dr-layer-stream', 'Stream Order', 'Stream Order', true),
+          self._drChip('dr-layer-slope', 'Slope Data', 'Slope Data', true),
+          self._drChip('dr-layer-lcm', 'Land Cover (LCM)', 'Land Cover (LCM)', true),
+          self._drChip('dr-layer-admin', 'Administrative Boundaries', 'Administrative Boundaries', false),
+        '</div>',
       '</div>',
 
-      /* C. Data Format */
-      '<div class="dr-section">' +
-        '<div class="dr-section-title">Data Format</div>' +
-        '<div class="dr-radio-grid">' +
-          '<label class="dr-radio-card" for="dr-fmt-geojson">' +
-            '<input type="radio" name="dr-format" id="dr-fmt-geojson" value="GeoJSON" checked>' +
-            '<span class="dr-radio-indicator"></span>' +
-            '<span class="dr-radio-label">GeoJSON</span>' +
-            '<span class="dr-radio-desc">Web-friendly, lightweight</span>' +
-          '</label>' +
-          '<label class="dr-radio-card" for="dr-fmt-shape">' +
-            '<input type="radio" name="dr-format" id="dr-fmt-shape" value="Shapefile">' +
-            '<span class="dr-radio-indicator"></span>' +
-            '<span class="dr-radio-label">Shapefile</span>' +
-            '<span class="dr-radio-desc">GIS software compatible</span>' +
-          '</label>' +
-          '<label class="dr-radio-card" for="dr-fmt-csv">' +
-            '<input type="radio" name="dr-format" id="dr-fmt-csv" value="CSV">' +
-            '<span class="dr-radio-indicator"></span>' +
-            '<span class="dr-radio-label">CSV</span>' +
-            '<span class="dr-radio-desc">Tabular data</span>' +
-          '</label>' +
-          '<label class="dr-radio-card" for="dr-fmt-all">' +
-            '<input type="radio" name="dr-format" id="dr-fmt-all" value="All Formats">' +
-            '<span class="dr-radio-indicator"></span>' +
-            '<span class="dr-radio-label">All Formats</span>' +
-            '<span class="dr-radio-desc">Everything above</span>' +
-          '</label>' +
-        '</div>' +
+      '<div class="dr-section">',
+        '<div class="dr-section-title">Data Format</div>',
+        '<div class="dr-radio-grid">',
+          '<label class="dr-radio-card" for="dr-fmt-geojson">',
+            '<input type="radio" name="dr-format" id="dr-fmt-geojson" value="GeoJSON" checked>',
+            '<span class="dr-radio-indicator"></span>',
+            '<span class="dr-radio-label">GeoJSON</span>',
+            '<span class="dr-radio-desc">Web-friendly, lightweight</span>',
+          '</label>',
+          '<label class="dr-radio-card" for="dr-fmt-shape">',
+            '<input type="radio" name="dr-format" id="dr-fmt-shape" value="Shapefile">',
+            '<span class="dr-radio-indicator"></span>',
+            '<span class="dr-radio-label">Shapefile</span>',
+            '<span class="dr-radio-desc">GIS software compatible</span>',
+          '</label>',
+          '<label class="dr-radio-card" for="dr-fmt-csv">',
+            '<input type="radio" name="dr-format" id="dr-fmt-csv" value="CSV">',
+            '<span class="dr-radio-indicator"></span>',
+            '<span class="dr-radio-label">CSV</span>',
+            '<span class="dr-radio-desc">Tabular data</span>',
+          '</label>',
+          '<label class="dr-radio-card" for="dr-fmt-all">',
+            '<input type="radio" name="dr-format" id="dr-fmt-all" value="All Formats">',
+            '<span class="dr-radio-indicator"></span>',
+            '<span class="dr-radio-label">All Formats</span>',
+            '<span class="dr-radio-desc">Everything above</span>',
+          '</label>',
+        '</div>',
       '</div>',
 
-      /* D. Spatial Extent */
-      '<div class="dr-section">' +
-        '<div class="dr-section-title">Spatial Extent</div>' +
-        '<div class="dr-radio-grid">' + extentHtml + '</div>' +
+      '<div class="dr-section">',
+        '<div class="dr-section-title">Spatial Extent</div>',
+        '<div class="dr-radio-grid">' + extentHtml + '</div>',
       '</div>',
 
-      /* E. Requestor Info */
-      '<div class="dr-section">' +
-        '<div class="dr-section-title">Requestor Information</div>' +
-        '<div class="dr-form-row">' +
-          '<div class="dr-field">' +
-            '<label class="dr-label">Full Name <span class="dr-required">*</span></label>' +
-            '<input type="text" id="dr-name" class="dr-input" placeholder="e.g. Juan Dela Cruz">' +
-          '</div>' +
-          '<div class="dr-field">' +
-            '<label class="dr-label">Email Address <span class="dr-required">*</span></label>' +
-            '<input type="email" id="dr-email" class="dr-input" placeholder="e.g. juan@example.com">' +
-          '</div>' +
-        '</div>' +
-        '<div class="dr-form-row">' +
-          '<div class="dr-field">' +
-            '<label class="dr-label">Organization</label>' +
-            '<input type="text" id="dr-org" class="dr-input" placeholder="e.g. DENR, NAMRIA, University">' +
-          '</div>' +
-          '<div class="dr-field">' +
-            '<label class="dr-label">Contact Number</label>' +
-            '<input type="tel" id="dr-phone" class="dr-input" placeholder="e.g. 0917 123 4567">' +
-          '</div>' +
-        '</div>' +
+      '<div class="dr-section">',
+        '<div class="dr-section-title">Requestor Information</div>',
+        '<div class="dr-form-row">',
+          '<div class="dr-field">',
+            '<label class="dr-label">Full Name <span class="dr-required">*</span></label>',
+            '<input type="text" id="dr-name" class="dr-input" placeholder="e.g. Juan Dela Cruz">',
+          '</div>',
+          '<div class="dr-field">',
+            '<label class="dr-label">Email Address <span class="dr-required">*</span></label>',
+            '<input type="email" id="dr-email" class="dr-input" placeholder="e.g. juan@example.com">',
+          '</div>',
+        '</div>',
+        '<div class="dr-form-row">',
+          '<div class="dr-field">',
+            '<label class="dr-label">Organization</label>',
+            '<input type="text" id="dr-org" class="dr-input" placeholder="e.g. DENR, NAMRIA, University">',
+          '</div>',
+          '<div class="dr-field">',
+            '<label class="dr-label">Contact Number</label>',
+            '<input type="tel" id="dr-phone" class="dr-input" placeholder="e.g. 0917 123 4567">',
+          '</div>',
+        '</div>',
       '</div>',
 
-      /* F. Purpose */
-      '<div class="dr-section">' +
-        '<div class="dr-section-title">Purpose of Request <span class="dr-required">*</span></div>' +
-        '<div class="dr-chip-grid">' +
-          self._drRadioChip('dr-purpose', 'Academic Research', 'Academic Research') +
-          self._drRadioChip('dr-purpose', 'Environmental Planning', 'Environmental Planning') +
-          self._drRadioChip('dr-purpose', 'Policy Development', 'Policy Development') +
-          self._drRadioChip('dr-purpose', 'Infrastructure Project', 'Infrastructure Project') +
-          self._drRadioChip('dr-purpose', 'Disaster Risk Reduction', 'Disaster Risk Reduction') +
-          self._drRadioChip('dr-purpose', 'Resource Management', 'Resource Management') +
-          self._drRadioChip('dr-purpose', 'Personal / Educational', 'Personal / Educational') +
-          self._drRadioChip('dr-purpose', 'Other', 'Other') +
-        '</div>' +
+      '<div class="dr-section">',
+        '<div class="dr-section-title">Purpose of Request <span class="dr-required">*</span></div>',
+        '<div class="dr-chip-grid">',
+          self._drRadioChip('dr-purpose', 'Academic Research', 'Academic Research'),
+          self._drRadioChip('dr-purpose', 'Environmental Planning', 'Environmental Planning'),
+          self._drRadioChip('dr-purpose', 'Policy Development', 'Policy Development'),
+          self._drRadioChip('dr-purpose', 'Infrastructure Project', 'Infrastructure Project'),
+          self._drRadioChip('dr-purpose', 'Disaster Risk Reduction', 'Disaster Risk Reduction'),
+          self._drRadioChip('dr-purpose', 'Resource Management', 'Resource Management'),
+          self._drRadioChip('dr-purpose', 'Personal / Educational', 'Personal / Educational'),
+          self._drRadioChip('dr-purpose', 'Other', 'Other'),
+        '</div>',
       '</div>',
 
-      /* G. Notes */
-      '<div class="dr-section">' +
-        '<div class="dr-section-title">Additional Notes</div>' +
-        '<textarea id="dr-notes" class="dr-textarea" placeholder="Describe specific data requirements, coordinate system, time period, etc."></textarea>' +
+      '<div class="dr-section">',
+        '<div class="dr-section-title">Additional Notes</div>',
+        '<textarea id="dr-notes" class="dr-textarea" placeholder="Describe specific data requirements, coordinate system, time period, etc."></textarea>',
       '</div>',
 
-      '</div>', /* end body */
-
-      /* Footer */
-      '<div class="data-request-footer">' +
-        '<button class="btn-secondary" onclick="APP._closeDataRequest()">Cancel</button>' +
-        '<button class="btn-primary" onclick="APP._submitDataRequest()">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
-          ' Submit Request' +
-        '</button>' +
-      '</div>' +
-    '</div>';
+      '</div>',
+      '<div class="data-request-footer">',
+        '<button class="btn-secondary" onclick="APP._closeDataRequest()">Cancel</button>',
+        '<button class="btn-primary" onclick="APP._submitDataRequest()">',
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+          ' Submit Request',
+        '</button>',
+      '</div>',
+    '</div>'
+    ].join('');
 
     var overlay = document.createElement('div');
     overlay.className = 'data-request-overlay';
@@ -771,7 +763,7 @@ Object.assign(APP, {
         'https://geo-monitor-ten.vercel.app',
       ];
       var body = encodeURIComponent(bodyLines.join('\n'));
-      var recipient = this.config.dataRequestEmail || 'car@denr.gov.ph';
+      var recipient = this.config.dataRequestEmail || 'renzoj156@gmail.com';
       window.location.href = 'mailto:' + recipient + '?subject=' + subject + '&body=' + body;
       this._closeDataRequest();
     }
