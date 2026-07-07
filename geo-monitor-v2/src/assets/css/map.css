@@ -2610,7 +2610,6 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 }
 .dr-chip-radio input:checked ~ .dr-chip-label {
   color: #065f46;
-  font-weight: 600;
 }
 .dr-chip-radio input:focus-visible ~ .dr-chip-radio-dot {
   box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25);
