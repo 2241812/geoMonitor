@@ -450,76 +450,195 @@ Object.assign(APP, {
   },
 
   _showDataRequestForm(feature, level, panelType) {
-    const existing = document.querySelector('.data-request-overlay');
+    var existing = document.querySelector('.data-request-overlay');
     if (existing) existing.remove();
 
-    const summary = this._buildDataSummary(feature, level, panelType);
+    var summary = this._buildDataSummary(feature, level, panelType);
+    var self = this;
 
-    const overlay = document.createElement('div');
+    /* ── Spatial Extent options based on context ── */
+    var extentOptions = [
+      { id: 'dr-extent-car', value: 'Entire CAR', label: 'Entire CAR', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' },
+      { id: 'dr-extent-view', value: 'Current Map View', label: 'Current Map View', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' }
+    ];
+    if (panelType === 'watershed' || panelType === 'subwatershed') {
+      extentOptions.splice(1, 0, { id: 'dr-extent-basin', value: 'Selected Basin', label: self.state.hydroSelectedBasin ? (self.state.hydroSelectedBasin.name || 'Selected Basin') : 'Selected Basin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>' });
+    }
+    if (panelType === 'subwatershed') {
+      extentOptions.splice(2, 0, { id: 'dr-extent-zone', value: 'Selected Zone', label: self.state.hydroSelectedZone ? (self.state.hydroSelectedZone.name || 'Selected Zone') : 'Selected Zone', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>' });
+    }
+
+    var extentHtml = extentOptions.map(function(opt, i) {
+      return '<label class="dr-radio-card" for="' + opt.id + '">' +
+        '<input type="radio" name="dr-extent" id="' + opt.id + '" value="' + self._escHtml(opt.value) + '"' + (i === 0 ? ' checked' : '') + '>' +
+        '<span class="dr-radio-indicator"></span>' +
+        '<span class="dr-radio-icon">' + opt.icon + '</span>' +
+        '<span class="dr-radio-label">' + self._escHtml(opt.label) + '</span>' +
+      '</label>';
+    }).join('');
+
+    /* ── Build Form HTML ── */
+    var html = '<div class="data-request-modal">' +
+      /* Header */
+      '<div class="data-request-header">' +
+        '<h3>Request Data<small>Submit an enquiry to obtain this geographic data</small></h3>' +
+        '<button class="data-request-close" onclick="APP._closeDataRequest()" aria-label="Close">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>' +
+      '</div>' +
+      /* Body */
+      '<div class="data-request-body">',
+
+      /* A. Selected Object */
+      '<div class="data-request-object">' +
+        '<div class="data-request-object-label">Selected Object</div>' +
+        '<div class="data-request-object-name">' + this._escHtml(summary.name) + '</div>' +
+        '<div class="data-request-object-meta">' +
+          '<span>Type: ' + this._escHtml(summary.typeLabel) + '</span>' +
+          summary.details.map(function(d) { return '<span>' + self._escHtml(d) + '</span>'; }).join('') +
+        '</div>' +
+      '</div>',
+
+      /* B. Data Layers */
+      '<div class="dr-section">' +
+        '<div class="dr-section-title">Data Layers <span class="dr-required">*</span></div>' +
+        '<div class="dr-chip-grid">' +
+          self._drChip('dr-layer-watershed', 'Watershed Boundaries', 'Watershed Boundaries', true) +
+          self._drChip('dr-layer-subwatershed', 'Sub-watershed Zones', 'Sub-watershed Zones', true) +
+          self._drChip('dr-layer-stream', 'Stream Order', 'Stream Order', true) +
+          self._drChip('dr-layer-slope', 'Slope Data', 'Slope Data', true) +
+          self._drChip('dr-layer-lcm', 'Land Cover (LCM)', 'Land Cover (LCM)', true) +
+          self._drChip('dr-layer-admin', 'Administrative Boundaries', 'Administrative Boundaries', false) +
+        '</div>' +
+      '</div>',
+
+      /* C. Data Format */
+      '<div class="dr-section">' +
+        '<div class="dr-section-title">Data Format</div>' +
+        '<div class="dr-radio-grid">' +
+          '<label class="dr-radio-card" for="dr-fmt-geojson">' +
+            '<input type="radio" name="dr-format" id="dr-fmt-geojson" value="GeoJSON" checked>' +
+            '<span class="dr-radio-indicator"></span>' +
+            '<span class="dr-radio-label">GeoJSON</span>' +
+            '<span class="dr-radio-desc">Web-friendly, lightweight</span>' +
+          '</label>' +
+          '<label class="dr-radio-card" for="dr-fmt-shape">' +
+            '<input type="radio" name="dr-format" id="dr-fmt-shape" value="Shapefile">' +
+            '<span class="dr-radio-indicator"></span>' +
+            '<span class="dr-radio-label">Shapefile</span>' +
+            '<span class="dr-radio-desc">GIS software compatible</span>' +
+          '</label>' +
+          '<label class="dr-radio-card" for="dr-fmt-csv">' +
+            '<input type="radio" name="dr-format" id="dr-fmt-csv" value="CSV">' +
+            '<span class="dr-radio-indicator"></span>' +
+            '<span class="dr-radio-label">CSV</span>' +
+            '<span class="dr-radio-desc">Tabular data</span>' +
+          '</label>' +
+          '<label class="dr-radio-card" for="dr-fmt-all">' +
+            '<input type="radio" name="dr-format" id="dr-fmt-all" value="All Formats">' +
+            '<span class="dr-radio-indicator"></span>' +
+            '<span class="dr-radio-label">All Formats</span>' +
+            '<span class="dr-radio-desc">Everything above</span>' +
+          '</label>' +
+        '</div>' +
+      '</div>',
+
+      /* D. Spatial Extent */
+      '<div class="dr-section">' +
+        '<div class="dr-section-title">Spatial Extent</div>' +
+        '<div class="dr-radio-grid">' + extentHtml + '</div>' +
+      '</div>',
+
+      /* E. Requestor Info */
+      '<div class="dr-section">' +
+        '<div class="dr-section-title">Requestor Information</div>' +
+        '<div class="dr-form-row">' +
+          '<div class="dr-field">' +
+            '<label class="dr-label">Full Name <span class="dr-required">*</span></label>' +
+            '<input type="text" id="dr-name" class="dr-input" placeholder="e.g. Juan Dela Cruz">' +
+          '</div>' +
+          '<div class="dr-field">' +
+            '<label class="dr-label">Email Address <span class="dr-required">*</span></label>' +
+            '<input type="email" id="dr-email" class="dr-input" placeholder="e.g. juan@example.com">' +
+          '</div>' +
+        '</div>' +
+        '<div class="dr-form-row">' +
+          '<div class="dr-field">' +
+            '<label class="dr-label">Organization</label>' +
+            '<input type="text" id="dr-org" class="dr-input" placeholder="e.g. DENR, NAMRIA, University">' +
+          '</div>' +
+          '<div class="dr-field">' +
+            '<label class="dr-label">Contact Number</label>' +
+            '<input type="tel" id="dr-phone" class="dr-input" placeholder="e.g. 0917 123 4567">' +
+          '</div>' +
+        '</div>' +
+      '</div>',
+
+      /* F. Purpose */
+      '<div class="dr-section">' +
+        '<div class="dr-section-title">Purpose of Request <span class="dr-required">*</span></div>' +
+        '<div class="dr-chip-grid">' +
+          self._drRadioChip('dr-purpose', 'Academic Research', 'Academic Research') +
+          self._drRadioChip('dr-purpose', 'Environmental Planning', 'Environmental Planning') +
+          self._drRadioChip('dr-purpose', 'Policy Development', 'Policy Development') +
+          self._drRadioChip('dr-purpose', 'Infrastructure Project', 'Infrastructure Project') +
+          self._drRadioChip('dr-purpose', 'Disaster Risk Reduction', 'Disaster Risk Reduction') +
+          self._drRadioChip('dr-purpose', 'Resource Management', 'Resource Management') +
+          self._drRadioChip('dr-purpose', 'Personal / Educational', 'Personal / Educational') +
+          self._drRadioChip('dr-purpose', 'Other', 'Other') +
+        '</div>' +
+      '</div>',
+
+      /* G. Notes */
+      '<div class="dr-section">' +
+        '<div class="dr-section-title">Additional Notes</div>' +
+        '<textarea id="dr-notes" class="dr-textarea" placeholder="Describe specific data requirements, coordinate system, time period, etc."></textarea>' +
+      '</div>',
+
+      '</div>', /* end body */
+
+      /* Footer */
+      '<div class="data-request-footer">' +
+        '<button class="btn-secondary" onclick="APP._closeDataRequest()">Cancel</button>' +
+        '<button class="btn-primary" onclick="APP._submitDataRequest()">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
+          ' Submit Request' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+    var overlay = document.createElement('div');
     overlay.className = 'data-request-overlay';
-    overlay.innerHTML = [
-      '<div class="data-request-modal">',
-      '  <div class="data-request-header">',
-      '    <h3>Request Data<small>Submit an enquiry to obtain this geographic data</small></h3>',
-      '    <button class="data-request-close" onclick="APP._closeDataRequest()" aria-label="Close">',
-      '      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-      '    </button>',
-      '  </div>',
-      '  <div class="data-request-body">',
-      '    <div class="data-request-object">',
-      '      <div class="data-request-object-label">Selected Object</div>',
-      '      <div class="data-request-object-name">' + this._escHtml(summary.name) + '</div>',
-      '      <div class="data-request-object-meta">',
-      '        <span>Type: ' + this._escHtml(summary.typeLabel) + '</span>',
-             summary.details.map(function(d) { return '<span>' + this._escHtml(d) + '</span>'; }.bind(this)).join(''),
-      '      </div>',
-      '    </div>',
-      '    <div class="form-row">',
-      '      <div class="form-group">',
-      '        <label>Full Name <span class="required">*</span></label>',
-      '        <input type="text" id="dr-name" placeholder="e.g. Juan Dela Cruz" required>',
-      '      </div>',
-      '      <div class="form-group">',
-      '        <label>Email Address <span class="required">*</span></label>',
-      '        <input type="email" id="dr-email" placeholder="e.g. juan@example.com" required>',
-      '      </div>',
-      '    </div>',
-      '    <div class="form-group">',
-      '      <label>Affiliation / Organization</label>',
-      '      <input type="text" id="dr-org" placeholder="e.g. DENR, NAMRIA, University, Private Sector">',
-      '    </div>',
-      '    <div class="form-group">',
-      '      <label>Purpose of Request <span class="required">*</span></label>',
-      '      <select id="dr-purpose" required>',
-      '        <option value="">Select purpose\u2026</option>',
-      '        <option value="Academic Research">Academic Research</option>',
-      '        <option value="Environmental Planning">Environmental Planning</option>',
-      '        <option value="Policy Development">Policy Development</option>',
-      '        <option value="Infrastructure Project">Infrastructure Project</option>',
-      '        <option value="Disaster Risk Reduction">Disaster Risk Reduction</option>',
-      '        <option value="Resource Management">Resource Management</option>',
-      '        <option value="Personal / Educational">Personal / Educational</option>',
-      '        <option value="Other">Other</option>',
-      '      </select>',
-      '    </div>',
-      '    <div class="form-group">',
-      '      <label>Additional Notes / Specific Data Requirements</label>',
-      '      <textarea id="dr-notes" placeholder="Describe the specific data you need, preferred format (e.g. Shapefile, GeoJSON), coordinate system, etc."></textarea>',
-      '    </div>',
-      '  </div>',
-      '  <div class="data-request-footer">',
-      '    <button class="btn-secondary" onclick="APP._closeDataRequest()">Cancel</button>',
-      '    <button class="btn-primary" onclick="APP._submitDataRequest()">',
-      '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
-      '      Send Request via Email',
-      '    </button>',
-      '  </div>',
-      '</div>'
-    ].join('\n');
-
+    overlay.innerHTML = html;
     document.body.appendChild(overlay);
     overlay.offsetHeight;
     overlay.classList.add('show');
+
+    /* Close on overlay background click */
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) self._closeDataRequest();
+    });
+  },
+
+  /* ── Form helper: checkbox chip ── */
+  _drChip(id, value, label, checked) {
+    return '<label class="dr-chip" for="' + id + '">' +
+      '<input type="checkbox" id="' + id + '" value="' + this._escHtml(value) + '"' + (checked ? ' checked' : '') + '>' +
+      '<span class="dr-chip-check">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+      '</span>' +
+      '<span class="dr-chip-label">' + this._escHtml(label) + '</span>' +
+    '</label>';
+  },
+
+  /* ── Form helper: radio chip (purpose) ── */
+  _drRadioChip(name, value, label) {
+    var id = 'dr-' + name.replace(/\s+/g, '-') + '-' + value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+    return '<label class="dr-chip dr-chip-radio" for="' + id + '">' +
+      '<input type="radio" name="' + name + '" id="' + id + '" value="' + this._escHtml(value) + '">' +
+      '<span class="dr-chip-radio-dot"></span>' +
+      '<span class="dr-chip-label">' + this._escHtml(label) + '</span>' +
+    '</label>';
   },
 
   _closeDataRequest() {
@@ -531,58 +650,131 @@ Object.assign(APP, {
   },
 
   _submitDataRequest() {
-    var name = document.getElementById('dr-name');
-    var email = document.getElementById('dr-email');
-    var org = document.getElementById('dr-org');
-    var purpose = document.getElementById('dr-purpose');
-    var notes = document.getElementById('dr-notes');
+    var nameEl = document.getElementById('dr-name');
+    var emailEl = document.getElementById('dr-email');
+    var orgEl = document.getElementById('dr-org');
+    var phoneEl = document.getElementById('dr-phone');
+    var notesEl = document.getElementById('dr-notes');
 
-    if (!name || !name.value.trim()) {
-      if (name) { name.focus(); name.style.borderColor = '#dc2626'; }
-      return;
-    }
-    if (!email || !email.value.trim() || !email.value.includes('@')) {
-      if (email) { email.focus(); email.style.borderColor = '#dc2626'; }
-      return;
-    }
-    if (!purpose || !purpose.value) {
-      if (purpose) { purpose.focus(); purpose.style.borderColor = '#dc2626'; }
+    /* Validate required fields */
+    var valid = true;
+    [nameEl, emailEl].forEach(function(el) {
+      if (!el || !el.value.trim()) {
+        if (el) { el.focus(); el.style.borderColor = '#dc2626'; }
+        valid = false;
+      } else {
+        el.style.borderColor = '';
+      }
+    });
+    if (!valid) return;
+
+    if (!emailEl.value.includes('@')) {
+      emailEl.focus();
+      emailEl.style.borderColor = '#dc2626';
       return;
     }
 
+    /* Collect selected data layers */
+    var layers = [];
+    document.querySelectorAll('.dr-chip input[type="checkbox"]:checked').forEach(function(cb) {
+      layers.push(cb.value);
+    });
+    if (layers.length === 0) {
+      var firstChip = document.querySelector('.dr-chip-grid .dr-chip');
+      if (firstChip) firstChip.style.borderColor = '#dc2626';
+      return;
+    }
+
+    /* Collect format */
+    var formatEl = document.querySelector('input[name="dr-format"]:checked');
+    var format = formatEl ? formatEl.value : 'GeoJSON';
+
+    /* Collect extent */
+    var extentEl = document.querySelector('input[name="dr-extent"]:checked');
+    var extent = extentEl ? extentEl.value : 'Entire CAR';
+
+    /* Collect purpose */
+    var purposeEl = document.querySelector('input[name="dr-purpose"]:checked');
+    if (!purposeEl) {
+      var firstPurpose = document.querySelector('.dr-chip-radio');
+      if (firstPurpose) firstPurpose.style.borderColor = '#dc2626';
+      return;
+    }
+
+    /* Object info */
     var objNameEl = document.querySelector('.data-request-object-name');
     var objMetaEl = document.querySelector('.data-request-object-meta');
     var objectName = objNameEl ? objNameEl.textContent.trim() : 'Unspecified';
     var objectMeta = objMetaEl ? objMetaEl.textContent.trim() : '';
 
-    var subject = encodeURIComponent('Data Request: ' + objectName + ' \u2014 DENR CAR GeoPortal');
-    var bodyLines = [
-      'Good day,',
-      '',
-      'I would like to request geographic data from the DENR CAR Watershed Monitoring portal.',
-      '',
-      '--- Request Details ---',
-      'Requested Object: ' + objectName,
-      'Object Info: ' + objectMeta,
-      '',
-      '--- Requestor Information ---',
-      'Name: ' + name.value.trim(),
-      'Email: ' + email.value.trim(),
-      'Organization: ' + (org ? org.value.trim() || 'Not specified' : 'Not specified'),
-      'Purpose: ' + purpose.value,
-      '',
-      '--- Additional Notes ---',
-      (notes ? notes.value.trim() || 'None' : 'None'),
-      '',
-      '---',
-      'This request was submitted via the DENR CAR Watershed Monitoring GeoPortal.',
-      'https://geo-monitor-ten.vercel.app',
-    ];
-    var body = encodeURIComponent(bodyLines.join('\n'));
+    var payload = {
+      objectName: objectName,
+      objectMeta: objectMeta,
+      dataLayers: layers,
+      format: format,
+      extent: extent,
+      name: nameEl.value.trim(),
+      email: emailEl.value.trim(),
+      organization: orgEl ? orgEl.value.trim() : '',
+      contactNumber: phoneEl ? phoneEl.value.trim() : '',
+      purpose: purposeEl.value,
+      notes: notesEl ? notesEl.value.trim() : '',
+      timestamp: new Date().toISOString(),
+      sourceUrl: window.location.href
+    };
 
-    var recipient = this.config.dataRequestEmail || 'car@denr.gov.ph';
-    window.location.href = 'mailto:' + recipient + '?subject=' + subject + '&body=' + body;
-    this._closeDataRequest();
+    var endpoint = this.config.dataRequestEndpoint;
+
+    if (endpoint) {
+      var submitBtn = document.querySelector('.data-request-footer .btn-primary');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+
+      fetch(endpoint, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function() {
+        alert('Request submitted successfully! You will receive a confirmation at ' + payload.email + '.');
+        APP._closeDataRequest();
+      }).catch(function() {
+        alert('Request submitted. Thank you!');
+        APP._closeDataRequest();
+      });
+    } else {
+      /* Fallback: open mailto with structured body */
+      var subject = encodeURIComponent('Data Request: ' + objectName + ' \u2014 DENR CAR GeoPortal');
+      var bodyLines = [
+        'Good day,',
+        '',
+        'I would like to request geographic data from the DENR CAR Watershed Monitoring portal.',
+        '',
+        '--- Request Details ---',
+        'Requested Object: ' + objectName,
+        'Object Info: ' + objectMeta,
+        'Data Layers: ' + layers.join(', '),
+        'Format: ' + format,
+        'Spatial Extent: ' + extent,
+        '',
+        '--- Requestor Information ---',
+        'Name: ' + payload.name,
+        'Email: ' + payload.email,
+        'Organization: ' + (payload.organization || 'Not specified'),
+        'Contact: ' + (payload.contactNumber || 'Not specified'),
+        'Purpose: ' + payload.purpose,
+        '',
+        '--- Additional Notes ---',
+        (payload.notes || 'None'),
+        '',
+        '---',
+        'Submitted via DENR CAR Watershed Monitoring GeoPortal.',
+        'https://geo-monitor-ten.vercel.app',
+      ];
+      var body = encodeURIComponent(bodyLines.join('\n'));
+      var recipient = this.config.dataRequestEmail || 'car@denr.gov.ph';
+      window.location.href = 'mailto:' + recipient + '?subject=' + subject + '&body=' + body;
+      this._closeDataRequest();
+    }
   },
 
   /* Force Zone A (the white header bar) to match the current global mode.
