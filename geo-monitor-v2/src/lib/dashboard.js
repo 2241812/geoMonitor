@@ -605,6 +605,7 @@ Object.assign(APP, {
     document.body.appendChild(overlay);
     overlay.offsetHeight;
     overlay.classList.add('show');
+    if (window.__lenis) window.__lenis.stop();
 
     /* Close on overlay background click */
     overlay.addEventListener('click', function(e) {
@@ -638,6 +639,7 @@ Object.assign(APP, {
     if (overlay) {
       overlay.classList.remove('show');
       setTimeout(function() { overlay.remove(); }, 250);
+      if (window.__lenis) window.__lenis.start();
     }
   },
 
