@@ -896,10 +896,13 @@ export const APP = {
         </div>
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Land Cover (LCM)</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
-            <span class="toggle-knob"></span>
-          </label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button id="lcm-fetch-btn" class="lcm-fetch-btn-inline" onclick="APP._refetchLCMWithClasses()" style="display:${this.state.showLCM ? 'block' : 'none'}">Apply & Fetch</button>
+            <label class="toggle-switch">
+              <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
+              <span class="toggle-knob"></span>
+            </label>
+          </div>
         </div>
         <div id="lcm-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
           <div class="lcm-load-bar"><div class="lcm-load-fill"></div></div>

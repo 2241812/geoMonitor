@@ -381,7 +381,6 @@ APP._renderLCMClassToggles = function() {
       <span class="lcm-class-label">${c.name}</span>
     </label>`;
   });
-  html += `<button class="lcm-fetch-btn" onclick="APP._refetchLCMWithClasses()">Apply & Fetch</button>`;
   html += `</div>`;
   return html;
 };
