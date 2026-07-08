@@ -40,19 +40,12 @@ Object.assign(APP, {
         }
         
         const cfg = this.config.colors[currentLevel];
-        const layer = this.state.layers[currentLevel];
-        layer.eachLayer((lf) => {
-          if (lf.getTooltip()) {
-            lf.unbindTooltip();
-            lf._labelBound = false;
-          }
+        this.state.layers[currentLevel].eachLayer(function(lf) {
           if (lf.feature === feature) {
-            this.state._selectedLeafletLayer = lf;
             lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
             lf.bringToFront();
           } else {
-            /* Dim siblings instead of hiding them completely */
-            lf.setStyle({ fillOpacity: 0, opacity: 0.25, weight: 1.0 });
+            lf.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
           }
         });
         this.state.layers[currentLevel]._hiddenByDrill = true;
@@ -111,10 +104,7 @@ Object.assign(APP, {
           }
         }
         /* Restore levels 0 to full style */
-        if (this.state.layers[0]) {
-          this._resetLevelStyle(0);
-          this.state.layers[0]._hiddenByDrill = false;
-        }
+        if (this.state.layers[0]) this._resetLevelStyle(0);
         this.state.selectedPath = [];
         this.state.currentLevel = 0;
         /* Only rebuild if layers don't exist yet (avoids visual flicker) */
@@ -488,7 +478,7 @@ Object.assign(APP, {
 
   /* ── Hover label ──────────────────────────── */
   /* ── Home / Reset ─────────────────────────── */
-  _goHome() {
+  _goHome(skipFly) {
     this.state._selectedFeature = null;
     this.state._selectedLevel = null;
     this.state._selectedLeafletLayer = null;
@@ -502,7 +492,7 @@ Object.assign(APP, {
     }
     this._showLevel(0);
     this.state.currentLevel = 0;
-    if (this.state.layers[0]) {
+    if (!skipFly && this.state.layers[0]) {
       this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
         ...this._getPaddingOpts(),
         duration: 0.45,

@@ -59,7 +59,6 @@ export const APP = {
     boundaryMenuOpen: false,
     customColors: null,
     showWatershedColors: false,
-    frameworkOverlays: { namriaLayer: null, cadLayer: null, namriaActive: false, cadActive: false },
   },
 
   config: {},
@@ -195,19 +194,7 @@ export const APP = {
       
       if (this.state.selectedPath.length === 0) return;
       if (this.state.currentLevel >= 1) {
-        if (this.state._selectedFeature && this._clearIsolation) {
-          this._clearIsolation(this.state.currentLevel);
-          this.state._selectedFeature = null;
-          this.state.selectedPath.pop();
-          if (this.state.selectedPath.length > 0) {
-            const p = this.state.selectedPath[this.state.selectedPath.length - 1];
-            if (p.layer) this.state.map.flyToBounds(p.layer.getBounds(), { padding: [20, 20], duration: 0.8 });
-            if (this.openPanel) this.openPanel(p.feature, p.level);
-          }
-          if (this._updateBreadcrumb) this._updateBreadcrumb();
-        } else {
-          this.drillUp(this.state.currentLevel - 1);
-        }
+        this.drillUp(this.state.currentLevel - 1);
       }
     });
 
@@ -231,26 +218,6 @@ export const APP = {
       .then(r => r.json()).then(window.decodeGeo)
       .then(h => { this.state.hierarchy = h; })
       .catch(() => {});
-  },
-
-  /* ── Legacy Shim ───────────────────────── */
-  _showBasinPickerPanel() {
-    this._enterHydroMode();
-    this._hydroDrillUp(0);
-  },
-
-  /* ── Global Data Source Toggle (Phase 2) ── */
-  setGlobalDataSource(source) {
-    if (this.state.activeSource === source) return;
-
-    // Delegate entirely to switchSource which already handles:
-    // 1. Setting activeSource
-    // 2. Aggressive cache clearing (rawData wiping)
-    // 3. Purging map layers
-    // 4. Forcing re-render to Level 0 via initLayers()
-    if (this.switchSource) {
-      this.switchSource(source);
-    }
   },
 
   /* ── Source toggle ────────────────────────── */
@@ -308,11 +275,16 @@ export const APP = {
       if (l) this.state.map.removeLayer(l);
     });
     this.state.outlineLayers = {};
+    const wasOpen = this.state.panelState === 'open' || this.state.panelState === 'peek';
+
     this._resetWatershedState();
 
     window.initLayers().then(() => {
-      if (this._goHome) {
-        this._goHome(true); // skipFly = true to preserve camera
+      if (wasOpen) {
+        const carData = this.state.rawData[0];
+        if (carData && carData.features && carData.features[0]) {
+          this.openPanel(carData.features[0], 0);
+        }
       }
     });
   },
@@ -473,17 +445,20 @@ export const APP = {
     const p = feature.properties;
     if (!p) return 'Unknown';
 
-    let name = 'Unknown';
-    if (level === 0) name = p.Region || p.REGION || 'Cordillera Administrative Region';
-    else if (this.state.activeSource === 'cad') {
-      if (level === 1) name = p.Province || p.PROVINCE || p.REGION || 'Unknown';
-      else if (level === 2) name = p.Muni_City || p.Municipali || p.Province || 'Unknown';
-    } else {
-      if (level === 1) name = p.PROVINCE || p.Province || p.NAME_1 || 'Unknown';
-      else if (level === 2) name = p.Municipali || p.NAME_2 || p.Province || 'Unknown';
+    if (this.state.activeSource === 'cad') {
+      if (level === 1) return p.Muni_City || 'Unknown';
+      return 'Cordillera Administrative Region';
     }
 
-    return this._toTitleCase(name);
+    const candidates = [
+      p.NAME_3, p.NAME_2, p.NAME_1,
+      p.Municipali, p.PROVINCE, p.Province,
+      p.Region,
+    ].filter(Boolean);
+
+    if (level === 2) return p.Municipali || p.NAME_2 || candidates[0] || 'Unknown';
+    if (level === 1) return p.PROVINCE || p.Province || p.NAME_1 || candidates[0] || 'Unknown';
+    return 'Cordillera Administrative Region';
   },
 
   /* ── Highlight selected layer ─────────────── */
@@ -510,37 +485,6 @@ export const APP = {
   _hideHoverLabel() {
     const lbl = document.getElementById('map-hover-label');
     if (lbl) lbl.classList.remove('visible');
-  },
-
-  breadcrumbClick(targetLevel) {
-    if (targetLevel === 0) {
-      this.drillUp(0);
-      return;
-    }
-
-    if (targetLevel === 1 && this.state.currentLevel === 2) {
-      if (this.state._selectedFeature) {
-        this._clearIsolation(this.state.currentLevel);
-        this.state._selectedFeature = null;
-        this.state.selectedPath.pop();
-        const p = this.state.selectedPath[this.state.selectedPath.length - 1];
-        if (p && p.layer) this.state.map.flyToBounds(p.layer.getBounds(), { padding: [20, 20], duration: 0.8 });
-        if (this.openPanel && p) this.openPanel(p.feature, p.level);
-        this._updateBreadcrumb();
-      } else {
-        const p = this.state.selectedPath.find(x => x.level === 1);
-        if (p && p.layer) this.state.map.flyToBounds(p.layer.getBounds(), { padding: [20, 20], duration: 0.8 });
-      }
-      return;
-    }
-
-    if (targetLevel === this.state.currentLevel && this.state._selectedFeature) {
-        const p = this.state.selectedPath.find(x => x.level === targetLevel);
-        if (p && p.layer) this.state.map.flyToBounds(p.layer.getBounds(), { padding: [20, 20], duration: 0.8 });
-        return;
-    }
-
-    this.drillUp(targetLevel);
   },
 
   _updateBreadcrumb() {
@@ -578,7 +522,7 @@ export const APP = {
     const atRoot = this.state.selectedPath.length === 0;
 
     /* Root: "CAR" */
-    html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.breadcrumbClick(0)">
+    html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(0)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       CAR
     </button>`;
@@ -587,10 +531,11 @@ export const APP = {
       if (item.level === 0) return; /* Skip level 0, root handles it */
       const isLast = idx === this.state.selectedPath.length - 1;
       html += `<span class="breadcrumb-sep">›</span>`;
-      html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.breadcrumbClick(${item.level})">${this._escHtml(item.name)}</button>`;
+      html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.drillUp(${item.level})">${this._escHtml(item.name)}</button>`;
     });
 
     bc.innerHTML = html;
+    this._renderOutlineToggles();
   },
 
   _toastTimer: null,

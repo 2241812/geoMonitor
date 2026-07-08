@@ -16,9 +16,9 @@ Object.assign(APP, {
       namria: {
         label: 'NAMRIA',
         geoJSON: {
-          0: 'geoJSON/Overlays/namria_region.json',
-          1: 'geoJSON/Overlays/namria_province.json',
-          2: 'geoJSON/Overlays/namria_municipality.json',
+          0: 'geoJSON/CAR NAMRIA Boundary.topojson',
+          1: 'geoJSON/CAR NAMRIA Provincial Boundary.topojson',
+          2: 'geoJSON/CAR NAMRIA Municipal Boundary.topojson',
         },
         hierarchy: 'geoJSON/hierarchy-namria.json',
         levelNames: ['Region', 'Province', 'Municipality'],
@@ -27,13 +27,12 @@ Object.assign(APP, {
       cad: {
         label: 'CAD',
         geoJSON: {
-          0: 'geoJSON/Overlays/cad_region.json',
-          1: 'geoJSON/Overlays/cad_province.json',
-          2: 'geoJSON/Overlays/cad_municipality.json',
+          0: 'geoJSON/CAR CAD Boundary.topojson',
+          1: 'geoJSON/CAR CAD Municipal Boundary.topojson',
         },
         hierarchy: 'geoJSON/hierarchy-cad.json',
-        levelNames: ['Region', 'Province', 'Municipality'],
-        maxLevel: 2,
+        levelNames: ['Region', 'Municipality'],
+        maxLevel: 1,
       },
     },
 
@@ -142,7 +141,7 @@ Object.assign(APP, {
       },
     },
 
-    dataRequestEmail: 'renzoj156@gmail.com',
+    dataRequestEmail: 'ddsalvador@denr.gov.ph',
     dataRequestEndpoint: 'https://script.google.com/macros/s/AKfycbyLldQUH_cxEBWXg8B1mJPnI1DqSqNNHX42_q_WauGVF0nhJLzVXcsrCskuPu5RAa1MLw/exec',
 
     supabase: {
