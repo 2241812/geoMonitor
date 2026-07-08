@@ -943,13 +943,19 @@ Object.assign(APP, {
     const token = ++_lcmFetchToken;
     const lcmCode = ({ ACH: 'UCH' })[code] || code;
     const classes = [...APP.lcm.getVisibleClasses()];
+    useMapStore.setState({ lcmLoading: true });
+    APP._showToast('Loading land cover data…');
     APP.lcm._showLoadProgress(0, 'Fetching LCM data…');
     try {
       const geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
-      if (token !== _lcmFetchToken || !APP.state.showLCM) return;
+      if (token !== _lcmFetchToken || !APP.state.showLCM) { useMapStore.setState({ lcmLoading: false }); return; }
       await APP.lcm.loadBasin(code, geojson);
+      useMapStore.setState({ lcmLoading: false });
+      APP._showToast('Land cover overlay loaded ✓');
     } catch (e) {
       if (token === _lcmFetchToken) APP.lcm._hideLoadProgress();
+      useMapStore.setState({ lcmLoading: false });
+      APP._showToast('Failed to load land cover data');
       console.warn('LCM load failed for', code, e);
     }
   },
@@ -958,13 +964,19 @@ Object.assign(APP, {
     if (!APP.state.showLCM) return;
     const token = ++_lcmFetchToken;
     const classes = [...APP.lcm.getVisibleClasses()];
+    useMapStore.setState({ lcmLoading: true });
+    APP._showToast('Loading land cover data…');
     APP.lcm._showLoadProgress(0, 'Fetching LCM for all basins…');
     try {
       const geojson = await fetchAllLCMFromSupabase((pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
-      if (token !== _lcmFetchToken || !APP.state.showLCM) return;
+      if (token !== _lcmFetchToken || !APP.state.showLCM) { useMapStore.setState({ lcmLoading: false }); return; }
       await APP.lcm.loadBasin('ALL', geojson);
+      useMapStore.setState({ lcmLoading: false });
+      APP._showToast('Land cover overlay loaded ✓');
     } catch (e) {
       if (token === _lcmFetchToken) APP.lcm._hideLoadProgress();
+      useMapStore.setState({ lcmLoading: false });
+      APP._showToast('Failed to load land cover data');
       console.warn('LCM load failed for all basins', e);
     }
   },
@@ -973,6 +985,7 @@ Object.assign(APP, {
   _clearHydroState(keepViewMode) {
     APP.slope.destroy();
     APP.lcm.destroy();
+    useMapStore.setState({ slopeLoading: false, lcmLoading: false, slopeConfirmPending: false, lcmConfirmPending: false });
     if (this.state.map) {
       this.state.map.off('zoomend', this._onZoomChange, this);
     }

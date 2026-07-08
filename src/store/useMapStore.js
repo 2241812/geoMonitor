@@ -22,6 +22,10 @@ export const useMapStore = create((set, get) => ({
   showSlope: false,
   showSubWatersheds: false,
   showLCM: false,
+  slopeLoading: false,
+  lcmLoading: false,
+  slopeConfirmPending: false,
+  lcmConfirmPending: false,
   hydroShowBoundary: false,
 
   // ═══════════ DATA & LAYERS (References) ═══════════

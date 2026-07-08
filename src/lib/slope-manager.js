@@ -119,6 +119,8 @@ APP.slope = {
     if (!map) return;
 
     if (APP.state.showSlope && !this._layer) {
+      useMapStore.setState({ slopeLoading: true });
+      APP._showToast('Loading slope data… this may take a moment');
       this._showLoadProgress(0, 'Fetching slope data…');
       try {
         const resp = await fetch('geoJSON/Slope.geojson');
@@ -176,7 +178,7 @@ APP.slope = {
         APP._showToast('Failed to load slope data');
         console.error('Slope fetch error:', e);
         APP.state.showSlope = false;
-        useMapStore.setState({ showSlope: false });
+        useMapStore.setState({ showSlope: false, slopeLoading: false });
         APP._updateHydroLegend();
         return; /* finally still runs — _toggling will be cleared */
       }
@@ -191,6 +193,8 @@ APP.slope = {
 
     if (APP.state.showSlope) {
       this._hideLoadProgress();
+      useMapStore.setState({ slopeLoading: false });
+      APP._showToast('Slope overlay loaded ✓');
       map.addLayer(this._layer);
       this.reapplyClip();
       this._bindMapEvents(map);

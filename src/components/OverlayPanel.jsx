@@ -17,7 +17,10 @@ export default function OverlayPanel() {
   const showStreamOrder = useMapStore((s) => s.showStreamOrder);
   const showSubWatersheds = useMapStore((s) => s.showSubWatersheds ?? false);
   const showLCM = useMapStore((s) => s.showLCM ?? false);
-
+  const slopeLoading = useMapStore((s) => s.slopeLoading);
+  const lcmLoading = useMapStore((s) => s.lcmLoading);
+  const slopeConfirmPending = useMapStore((s) => s.slopeConfirmPending);
+  const lcmConfirmPending = useMapStore((s) => s.lcmConfirmPending);
   const isLevel0 = hydroDrillLevel === 0;
 
   useEffect(() => {
@@ -195,15 +198,57 @@ export default function OverlayPanel() {
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
               <span>Slope</span>
-              <label className="toggle-switch">
+              {slopeLoading && <span className="overlay-spinner" />}
+              <label className="toggle-switch" style={{ opacity: slopeLoading ? 0.5 : 1 }}>
                 <input
                   type="checkbox"
                   checked={showSlope}
-                  onChange={() => APP.slope.toggle()}
+                  disabled={slopeLoading}
+                  onChange={() => {
+                    if (slopeLoading) return;
+                    if (!showSlope && isLevel0 && !APP.slope._layer) {
+                      useMapStore.setState({ slopeConfirmPending: true });
+                    } else {
+                      APP.slope.toggle();
+                    }
+                  }}
                 />
                 <span className="toggle-knob"></span>
               </label>
             </div>
+
+            {/* Level 0 Confirmation Card */}
+            {slopeConfirmPending && (
+              <div className="overlay-confirm-card">
+                <div className="overlay-confirm-text">
+                  The slope overlay is a large dataset. It will be fetched and processed, which may take a few moments.
+                </div>
+                <div className="overlay-confirm-actions">
+                  <button
+                    className="overlay-confirm-btn overlay-confirm-cancel"
+                    onClick={() => useMapStore.setState({ slopeConfirmPending: false })}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="overlay-confirm-btn overlay-confirm-apply"
+                    onClick={() => {
+                      useMapStore.setState({ slopeConfirmPending: false });
+                      APP.slope.toggle();
+                    }}
+                  >
+                    Apply &amp; Fetch
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {slopeLoading && (
+              <div className="overlay-loading-row">
+                <div className="overlay-loading-bar" />
+                <span className="overlay-loading-label">Loading slope data…</span>
+              </div>
+            )}
 
             <div
               id="slope-load-progress"
@@ -256,15 +301,57 @@ export default function OverlayPanel() {
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
               <span>Land Cover (LCM)</span>
-              <label className="toggle-switch">
+              {lcmLoading && <span className="overlay-spinner" />}
+              <label className="toggle-switch" style={{ opacity: lcmLoading ? 0.5 : 1 }}>
                 <input
                   type="checkbox"
                   checked={showLCM}
-                  onChange={() => APP._toggleLCM()}
+                  disabled={lcmLoading}
+                  onChange={() => {
+                    if (lcmLoading) return;
+                    if (!showLCM && isLevel0) {
+                      useMapStore.setState({ lcmConfirmPending: true });
+                    } else {
+                      APP._toggleLCM();
+                    }
+                  }}
                 />
                 <span className="toggle-knob"></span>
               </label>
             </div>
+
+            {/* Level 0 Confirmation Card */}
+            {lcmConfirmPending && (
+              <div className="overlay-confirm-card">
+                <div className="overlay-confirm-text">
+                  The land cover overlay requires fetching data from Supabase. This may take a moment.
+                </div>
+                <div className="overlay-confirm-actions">
+                  <button
+                    className="overlay-confirm-btn overlay-confirm-cancel"
+                    onClick={() => useMapStore.setState({ lcmConfirmPending: false })}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="overlay-confirm-btn overlay-confirm-apply"
+                    onClick={() => {
+                      useMapStore.setState({ lcmConfirmPending: false });
+                      APP._toggleLCM();
+                    }}
+                  >
+                    Apply &amp; Fetch
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {lcmLoading && (
+              <div className="overlay-loading-row">
+                <div className="overlay-loading-bar" />
+                <span className="overlay-loading-label">Loading land cover data…</span>
+              </div>
+            )}
 
             <div
               id="lcm-load-progress"

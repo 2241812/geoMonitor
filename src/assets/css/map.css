@@ -2989,3 +2989,99 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
     transform: translateX(20px);
   }
 }
+
+/* ═══════════════════════════════════════════════
+   OVERLAY CONFIRMATION CARDS & LOADING STATES
+   ═══════════════════════════════════════════════ */
+
+.overlay-confirm-card {
+  background: #fef9c3;
+  border: 1px solid #facc15;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.overlay-confirm-text {
+  font-size: 0.8rem;
+  color: #854d0e;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.overlay-confirm-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.overlay-confirm-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.overlay-confirm-cancel {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.overlay-confirm-cancel:hover {
+  background: #f3f4f6;
+}
+
+.overlay-confirm-apply {
+  background: #2563eb;
+  color: #fff;
+}
+
+.overlay-confirm-apply:hover {
+  background: #1d4ed8;
+}
+
+/* Loading spinner next to toggle label */
+.overlay-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #d1d5db;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: overlay-spin 0.6s linear infinite;
+  margin-left: auto;
+}
+
+@keyframes overlay-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Loading row (simpler progress indicator) */
+.overlay-loading-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: #f0f9ff;
+  border-radius: 6px;
+}
+
+.overlay-loading-bar {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #bfdbfe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: overlay-spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+.overlay-loading-label {
+  font-size: 0.78rem;
+  color: #1e40af;
+}

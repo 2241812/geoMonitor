@@ -40,12 +40,19 @@ Object.assign(APP, {
         }
         
         const cfg = this.config.colors[currentLevel];
-        this.state.layers[currentLevel].eachLayer(function(lf) {
+        const layer = this.state.layers[currentLevel];
+        layer.eachLayer((lf) => {
+          if (lf.getTooltip()) {
+            lf.unbindTooltip();
+            lf._labelBound = false;
+          }
           if (lf.feature === feature) {
+            this.state._selectedLeafletLayer = lf;
             lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
             lf.bringToFront();
           } else {
-            lf.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
+            /* Dim siblings instead of hiding them completely */
+            lf.setStyle({ fillOpacity: 0, opacity: 0.25, weight: 1.0 });
           }
         });
         this.state.layers[currentLevel]._hiddenByDrill = true;
@@ -104,7 +111,10 @@ Object.assign(APP, {
           }
         }
         /* Restore levels 0 to full style */
-        if (this.state.layers[0]) this._resetLevelStyle(0);
+        if (this.state.layers[0]) {
+          this._resetLevelStyle(0);
+          this.state.layers[0]._hiddenByDrill = false;
+        }
         this.state.selectedPath = [];
         this.state.currentLevel = 0;
         /* Only rebuild if layers don't exist yet (avoids visual flicker) */

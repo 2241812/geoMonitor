@@ -16,9 +16,9 @@ Object.assign(APP, {
       namria: {
         label: 'NAMRIA',
         geoJSON: {
-          0: 'geoJSON/CAR NAMRIA Boundary.topojson',
-          1: 'geoJSON/CAR NAMRIA Provincial Boundary.topojson',
-          2: 'geoJSON/CAR NAMRIA Municipal Boundary.topojson',
+          0: 'geoJSON/Overlays/namria_region.json',
+          1: 'geoJSON/Overlays/namria_province.json',
+          2: 'geoJSON/Overlays/namria_municipality.json',
         },
         hierarchy: 'geoJSON/hierarchy-namria.json',
         levelNames: ['Region', 'Province', 'Municipality'],
@@ -27,12 +27,13 @@ Object.assign(APP, {
       cad: {
         label: 'CAD',
         geoJSON: {
-          0: 'geoJSON/CAR CAD Boundary.topojson',
-          1: 'geoJSON/CAR CAD Municipal Boundary.topojson',
+          0: 'geoJSON/Overlays/cad_region.json',
+          1: 'geoJSON/Overlays/cad_province.json',
+          2: 'geoJSON/Overlays/cad_municipality.json',
         },
         hierarchy: 'geoJSON/hierarchy-cad.json',
-        levelNames: ['Region', 'Municipality'],
-        maxLevel: 1,
+        levelNames: ['Region', 'Province', 'Municipality'],
+        maxLevel: 2,
       },
     },
 
