@@ -8,7 +8,9 @@
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite)](https://vitejs.dev)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](#license)
 
-![App screenshot](Screenshot%20from%202026-06-30%2013-07-29.png)
+![geoCradle landing page](public/assets/images/geoCradle-landing.png)
+
+![geoCradle map view](public/assets/images/geoCradle-map.png)
 
 geoMonitor is a single-page application that lets researchers, government staff, and the public visualize and drill into the 14 major watersheds of CAR and the region's administrative boundaries (NAMRIA / CAD sources). It pairs a fast Leaflet/Canvas map engine with a React UI, vector-tile rendering, and on-the-fly geometry analysis.
 
