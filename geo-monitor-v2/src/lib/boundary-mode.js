@@ -275,6 +275,9 @@ Object.assign(APP, {
           leafletLayer.on('mouseover', function (e) {
             if (level !== self.state.currentLevel) return;
             if (self.state.activeOutline === level) return;
+
+            /* Kill hover bleed on dimmed siblings */
+            if (e.target._hiddenByIsolation) return;
             
             if (level >= 1) {
               leafletLayer.unbindTooltip();
@@ -286,20 +289,19 @@ Object.assign(APP, {
             /* Do not alter style if this feature is currently selected */
             if (self.state._selectedFeature === feature) return;
 
-            /* If it's a dimmed sibling, highlight it slightly but keep it somewhat dimmed */
-            if (e.target._hiddenByIsolation) {
-              e.target.setStyle({ fillColor: fillColor, fillOpacity: 0.15, opacity: 0.6, weight: styleConfig.weight + 1 });
-            } else {
-              e.target.setStyle({ fillColor: fillColor, fillOpacity: level === 0 ? 0.15 : 0.35, weight: styleConfig.weight + 1, dashArray: null });
-            }
+            /* Subtle gray highlight on hover */
+            e.target.setStyle({ fillColor: '#9ca3af', fillOpacity: 0.15, weight: styleConfig.weight + 1, dashArray: null });
             e.target.bringToFront();
           });
           leafletLayer.on('mouseout', function (e) {
             if (level !== self.state.currentLevel) return;
             if (self.state.activeOutline === level) return;
 
+            /* Kill hover bleed on dimmed siblings */
+            if (e.target._hiddenByIsolation) return;
+
             /* Restore permanent label if it's not isolated */
-            if (level >= 1 && !leafletLayer._labelBound && !e.target._hiddenByIsolation) {
+            if (level >= 1 && !leafletLayer._labelBound) {
               leafletLayer.bindTooltip(self._featureName(feature, level), {
                 permanent: true,
                 direction: 'center',
@@ -313,23 +315,12 @@ Object.assign(APP, {
             /* Do not alter style if this feature is currently selected */
             if (self.state._selectedFeature === feature) return;
 
-            if (e.target._hiddenByIsolation) {
-              e.target.setStyle({
-                fillOpacity: 0,
-                opacity: 0.25,
-                weight: 1.0,
-                dashArray: null,
-              });
-            } else {
-              e.target.setStyle({
-                fillColor: fillColor,
-                fillOpacity: level === 0 ? 0.15 : 0,
-                color: styleConfig.stroke,
-                weight: styleConfig.weight,
-                opacity: 0.9,
-                dashArray: null,
-              });
-            }
+            e.target.setStyle({
+              fillOpacity: 0,
+              opacity: 0.9,
+              weight: styleConfig.weight,
+              dashArray: null
+            });
           });
         }
 
@@ -486,12 +477,24 @@ Object.assign(APP, {
   },
 
   /* ── Highlight selection via dim (max-level click) ── */
-  /* ── Highlight selection via dim (max-level click) ── */
   _highlightAndDim(feature, leafletLayer, level) {
     this._dimLevel(level, feature);
     this.state._selectedFeature = feature;
     this.state._selectedLevel = level;
     this.state._selectedLeafletLayer = leafletLayer;
+
+    /* Ensure parent boundary remains visible as a structural outline */
+    if (level === 2 && this.state.selectedPath && this.state.selectedPath.length > 0) {
+      const parentNode = this.state.selectedPath.find(p => p.level === 1);
+      if (parentNode && this.state.layers[1]) {
+        this.state.layers[1].eachLayer(lf => {
+          if (lf.feature === parentNode.feature) {
+            lf.bringToFront();
+            if (lf._path) lf._path.style.pointerEvents = 'none';
+          }
+        });
+      }
+    }
 
     /* Zoom to selected feature (gentler, capped zoom with smooth animation) */
     if (leafletLayer && leafletLayer.getBounds) {
@@ -535,7 +538,7 @@ Object.assign(APP, {
         color: cfg.stroke,
         weight: cfg.weight,
         opacity: 0.9,
-        fillOpacity: 0.25,
+        fillOpacity: 0,
       });
       if (leafletLayer._path) leafletLayer._path.style.pointerEvents = 'auto';
       if (level >= 1 && !leafletLayer.getTooltip()) {
@@ -926,6 +929,61 @@ Object.assign(APP, {
         }
       }
     });
+  },
+
+  /* Sidebar-only red highlight for pills */
+  _highlightSidebarSelection(childName, childLevel, chipEl) {
+    /* Toggle active class on chips */
+    if (chipEl && chipEl.parentNode) {
+      chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+    }
+    if (chipEl) chipEl.classList.add('active');
+
+    const childData = this.state.rawData[childLevel];
+    if (!childData || !childName) return;
+    const lookup = childName.toLowerCase();
+    const childFeature = childData.features.find(f => this._featureName(f, childLevel).toLowerCase() === lookup);
+    if (!childFeature) return;
+    
+    const layer = this.state.layers[childLevel];
+    if (!layer) return;
+
+    /* Reset previous sidebar highlights by resetting the level style,
+       but DO NOT dim siblings or change isolation state */
+    this._resetLevelStyle(childLevel);
+    layer.eachLayer(lf => {
+      if (lf.feature === childFeature) {
+        lf.setStyle({
+          color: '#ef4444',
+          fillColor: '#ef4444',
+          fillOpacity: 0.2,
+          weight: 2,
+          opacity: 1,
+          dashArray: null
+        });
+        lf.bringToFront();
+        if (lf.getBounds) {
+          this.state.map.flyToBounds(lf.getBounds(), {
+            padding: [50, 50],
+            maxZoom: 12,
+            duration: 0.8
+          });
+        }
+      }
+    });
+
+    /* Ensure parent boundary remains visible as a structural outline over the highlighted pill */
+    if (childLevel === 2 && this.state.selectedPath && this.state.selectedPath.length > 0) {
+      const parentNode = this.state.selectedPath.find(p => p.level === 1);
+      if (parentNode && this.state.layers[1]) {
+        this.state.layers[1].eachLayer(lf => {
+          if (lf.feature === parentNode.feature) {
+            lf.bringToFront();
+            if (lf._path) lf._path.style.pointerEvents = 'none';
+          }
+        });
+      }
+    }
   },
 
   /* ── Dynamic Framework Overlays ── */

@@ -38,10 +38,10 @@ Object.assign(APP, {
     },
 
     colors: {
-      0: { fill: '#059669', stroke: '#0f172a', weight: 2.5 },
-      1: { fill: '#2563eb', stroke: '#000000', weight: 2 },
-      2: { fill: '#d97706', stroke: '#000000', weight: 1.5 },
-      highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
+      0: { fill: 'transparent', stroke: '#1e293b', weight: 4.0 },
+      1: { fill: 'transparent', stroke: '#334155', weight: 2.5 },
+      2: { fill: 'transparent', stroke: '#475569', weight: 1.0 },
+      highlight: { fill: 'transparent', stroke: '#000000', weight: 3 },
       watershed: { fill: '#0ea5e9', stroke: '#0284c7', weight: 2, fillOpacity: 0.35 },
       watershedHighlight: { fill: '#0ea5e9', stroke: '#0369a1', weight: 4, fillOpacity: 0.55 },
     },

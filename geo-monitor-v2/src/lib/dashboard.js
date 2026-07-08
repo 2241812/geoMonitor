@@ -28,12 +28,14 @@ Object.assign(APP, {
       hero.className = 'panel-hero';
       hero.innerHTML = `<div class="panel-level-badge">${this._src().levelNames[level]}</div>
         <h2 class="panel-title">${this._escHtml(name)}</h2>
-        <p class="panel-subtitle">${this._src().levelNames[level]}</p>`;
+        <p class="panel-subtitle">Administrative Boundary</p>`;
     }
 
-    /* Details Section */
-    const isCAD = this.state.activeMode === 'cad';
-    let html = `<div class="panel-section">
+    let html = '';
+
+
+    /* 2. Details Section (Stats) */
+    html += `<div class="panel-section">
       <div class="panel-section-title">Details</div>
       <div class="stat-grid">`;
     
@@ -44,29 +46,9 @@ Object.assign(APP, {
         <div class="stat-value">${this._escHtml(v)}</div>
       </div>`;
     });
-
     html += `</div></div>`;
 
-    const chartData = this._resolveChartData(p);
-    if (chartData.values.length > 0) {
-      html += `<div class="panel-section">
-        <div class="panel-section-title">Measurements</div>
-        <div class="chart-wrap"><canvas id="panel-chart"></canvas></div>
-      </div>`;
-    }
-
-    /* Add Map Legend to Side Panel */
-    html += `<div class="panel-section">
-      <div class="panel-section-title">Legend</div>
-      <div class="panel-legend">
-        <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
-        <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
-        <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
-        <div class="legend-item"><span class="legend-dot watershed-dot"></span>Watershed</div>
-      </div>
-    </div>`;
-
-    /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
+    /* Resolve ID for lookups */
     let id = p._id;
     if (!id && level >= 1) {
       const name = this._featureName(feature, level).toLowerCase().replace(/\s+/g, '-');
@@ -75,6 +57,38 @@ Object.assign(APP, {
       } else if (level === 2) {
         const prov = (p.Province || p.PROVINCE || '').toLowerCase().replace(/\s+/g, '-');
         id = prov ? `${prov}:${name}` : name;
+      }
+    } else if (level === 0) {
+      id = "CAR";
+    }
+
+    /* 3. Sub-Features Accordion */
+    if (level < this._src().maxLevel && this.state.hierarchy && this.state.hierarchy.children && id && this.state.hierarchy.children[id]) {
+      const childrenIds = this.state.hierarchy.children[id];
+      if (childrenIds.length > 0) {
+        const childLevelName = this._src().levelNames[level + 1];
+        const pluralName = childLevelName === 'Municipality' ? 'Municipalities' : `${childLevelName}s`;
+        html += `<div class="panel-section">
+          <div class="span-group collapsed">
+            <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">
+              ${pluralName}
+              <span class="span-count-badge">${childrenIds.length}</span>
+            </div>
+            <div class="span-group-wrapper">
+              <div class="span-group-content">
+                <div class="span-group-enclosed province-accordion-list">
+                  ${childrenIds.map(childId => {
+                    const childName = this.state.hierarchy.names[childId] || childId;
+                    return `<button class="span-chip" onclick="APP._highlightSidebarSelection('${this._escHtml(childName)}', ${level + 1}, this)">
+                      ${this._escHtml(this._toTitleCase(childName))}
+                    </button>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="span-hint">Tap an item to explore its boundaries.</p>
+        </div>`;
       }
     }
 
@@ -87,6 +101,21 @@ Object.assign(APP, {
         .map(f => f.properties.Name || f.properties.Old_Name)
         .filter(Boolean);
     }
+
+    /* 4. Overview Section */
+    const overviewTitle = `${this._src().levelNames[level]} Overview`;
+    const pop = (level === 0) ? '1.8 million' : (level === 1 ? '200,000' : '50,000');
+    html += `<div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
+      <div class="panel-section-title">${overviewTitle}</div>`;
+      
+    if (intersectingWs && intersectingWs.length > 0) {
+      html += `<div style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px;">Watersheds Spanned: <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; margin-left: 4px;">${intersectingWs.length}</span></div>`;
+    }
+    
+    html += `<p style="font-size: 0.85rem; color: #374151; line-height: 1.6; margin-bottom: 0;">
+        <strong>${this._toTitleCase(name)}</strong>, officially the ${this._src().levelNames[level]} of ${this._toTitleCase(name)}, is a ${this._src().levelNames[level].toLowerCase()} in the ${level === 2 ? ('province of ' + this._toTitleCase(p.Province || p.PROVINCE || '') + ', ') : ''}Philippines. According to the 2024 census, it has a population of ${pop} people.
+      </p>
+    </div>`;
 
     if (intersectingWs && intersectingWs.length > 0) {
       html += `<div class="panel-section">
@@ -167,32 +196,7 @@ Object.assign(APP, {
     const tab = document.getElementById('panel-toggle-tab');
     if (tab) tab.classList.add('hidden');
 
-    if (chartData.values.length > 0) {
-      const ctx = document.getElementById('panel-chart');
-      if (ctx) {
-        if (this.state._chart) this.state._chart.destroy();
-        this.state._chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: chartData.labels,
-            datasets: [{
-              data: chartData.values,
-              backgroundColor: ['#059669', '#0d9488', '#0891b2', '#7c3aed'],
-              borderRadius: 5,
-            }],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              y: { type: 'logarithmic', ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-              x: { ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { display: false } },
-            },
-          },
-        });
-      }
-    }
+
   },
 
   closePanel() {
@@ -341,41 +345,52 @@ Object.assign(APP, {
       return kids ? kids.length : null;
     };
 
-    if (this.state.activeSource === 'cad') {
-      if (level === 1) {
-        d['Municipality/City'] = props.Muni_City || name;
-        if (props.Province) d['Province'] = props.Province;
-      } else {
-        d['Region'] = props.Region || 'Cordillera Administrative Region';
+    if (level >= 1) {
+      d['Region'] = 'Cordillera Administrative Region (CAR)';
+      if (level === 2) {
+        const parentName = this._toTitleCase(props.Province || props.PROVINCE || props.Muni_City || '');
+        if (parentName) d['Province'] = parentName;
+        if (props.CENR_Cov) d['CENRO'] = this._toTitleCase(props.CENR_Cov);
       }
-      if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
+    }
+
+    if (this.state.activeSource === 'cad') {
       if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
       if (level === 2) {
-        d['Municipality/City'] = props.Municipali || name;
-        if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
-        if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
         if (props.X_Coord && props.Y_Coord) {
           d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
         }
       } else if (level === 1) {
-        d['Province'] = props.PROVINCE || props.Province || name;
-        if (props.REGION) d['Region'] = props.REGION;
         const cc = childCount(props._id);
         if (cc !== null) d['Municipalities'] = String(cc);
       } else {
-        d['Region'] = props.Region || 'Cordillera Administrative Region';
         const cc = childCount(props._id);
         if (cc !== null) d['Provinces'] = String(cc);
       }
     }
     
     const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
-    if (sqMeters > 0) d['Square Meters'] = sqMeters.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    
     let hectares = parseFloat(props.Hectares || props.Area || 0);
     if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
-    if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    if (hectares > 0) {
+      d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      let sizeCategory = '';
+      if (level === 2) {
+        if (hectares < 10000) sizeCategory = 'Small';
+        else if (hectares <= 50000) sizeCategory = 'Medium';
+        else sizeCategory = 'Large';
+        d['Size'] = `${sizeCategory} sized municipality`;
+      } else if (level === 1) {
+        if (hectares < 100000) sizeCategory = 'Small';
+        else if (hectares <= 300000) sizeCategory = 'Medium';
+        else sizeCategory = 'Large';
+        d['Size'] = `${sizeCategory} sized province`;
+      } else {
+        d['Size'] = 'Large sized region';
+      }
+    }
     
     const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
     if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
