@@ -86,12 +86,7 @@ Object.assign(APP, {
       this._updateBreadcrumb();
       this._updateHydroLabels();
     } else {
-      this.state.currentLevel = 0;
-      this.state.selectedPath = [];
-      this._showLevel(0);
-      if (this.state.rawData[0] && this.state.rawData[0].features && this.state.rawData[0].features[0]) {
-        this.openPanel(this.state.rawData[0].features[0], 0);
-      }
+      this.drillUp(0);
     }
   },
 

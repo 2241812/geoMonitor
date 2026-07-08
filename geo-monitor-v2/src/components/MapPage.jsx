@@ -66,12 +66,8 @@ export default function MapPage() {
               Boundaries
             </button>
           </div>
-          
-          <div className="source-toggle-control" id="source-toggle-control">
-            <button className="source-toggle-btn active" id="btn-namria" onClick={() => window.APP?.switchSource('namria')}>NAMRIA</button>
-            <button className="source-toggle-btn" id="btn-cad" onClick={() => window.APP?.switchSource('cad')}>CAD</button>
-          </div>
         </div>
+
         
         <div className="map-breadcrumb" id="map-breadcrumb"></div>
         <button className="map-reset-btn" id="map-reset-btn" onClick={() => window.APP?._resetAll()} title="Reset view">

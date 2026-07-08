@@ -40,10 +40,37 @@ export default function MapContainer() {
       </div>
 
       {/*
-        The legacy dashboard and outline-toggles UI injects DOM dynamically into these containers
+        The legacy dashboard injects DOM dynamically into this container
       */}
-      <div className="outline-toggles" id="outline-toggles"></div>
       <div id="map-dashboard" className="map-dashboard closed"></div>
+
+      {/* Global Data Source Toggle (Top-Middle) */}
+      <div className="outline-toggles global-source-toggle" id="outline-toggles">
+        <div className="boundary-controls">
+          <button 
+            className="boundary-option active" 
+            id="btn-namria-global"
+            onClick={(e) => {
+              document.getElementById('btn-cad-global')?.classList.remove('active');
+              e.currentTarget.classList.add('active');
+              window.APP?.setGlobalDataSource('namria');
+            }}
+          >
+            <span>NAMRIA</span>
+          </button>
+          <button 
+            className="boundary-option" 
+            id="btn-cad-global"
+            onClick={(e) => {
+              document.getElementById('btn-namria-global')?.classList.remove('active');
+              e.currentTarget.classList.add('active');
+              window.APP?.setGlobalDataSource('cad');
+            }}
+          >
+            <span>CAD</span>
+          </button>
+        </div>
+      </div>
 
       <div className="map-hover-label" id="map-hover-label"></div>
 

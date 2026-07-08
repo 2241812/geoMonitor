@@ -67,7 +67,17 @@ Object.assign(APP, {
     </div>`;
 
     /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
-    const id = p._id;
+    let id = p._id;
+    if (!id && level >= 1) {
+      const name = this._featureName(feature, level).toLowerCase().replace(/\s+/g, '-');
+      if (level === 1) {
+        id = name;
+      } else if (level === 2) {
+        const prov = (p.Province || p.PROVINCE || '').toLowerCase().replace(/\s+/g, '-');
+        id = prov ? `${prov}:${name}` : name;
+      }
+    }
+
     let intersectingWs = null;
     if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
       intersectingWs = this.state.watershedIntersections[id];
