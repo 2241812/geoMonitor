@@ -146,6 +146,22 @@ export const APP = {
     map.on('click', () => {
       if (this.state._drilling) return;
 
+      if (this.state._wsHighlightLayer) {
+        this.state.map.removeLayer(this.state._wsHighlightLayer);
+        this.state._wsHighlightLayer = null;
+        this.state._wsHighlightName = null;
+        
+        if (this.state.selectedPath && this.state.selectedPath.length > 0) {
+          const p = this.state.selectedPath[this.state.selectedPath.length - 1];
+          if (p.layer && p.layer.getBounds) {
+            try { this.state.map.flyToBounds(p.layer.getBounds(), { padding: [20, 20], duration: 0.8 }); } catch(e){}
+          }
+        } else if (this.state.layers && this.state.layers[0]) {
+          try { this.state.map.flyToBounds(this.state.layers[0].getBounds(), { padding: [20, 20], duration: 0.8 }); } catch(e){}
+        }
+        return;
+      }
+
       /* Hydro mode: clicking empty space deselects isolated zone first, then drills back to basin overview */
       if (this.state.viewMode === 'watersheds' && this.state.hydroDrillLevel >= 1) {
         if (this.state.hydroSelectedZone) {
@@ -269,11 +285,16 @@ export const APP = {
     }
 
     /* Admin boundaries mode: full reload of layers + cached data */
+    if (this._clearSelection) this._clearSelection(true);
     Object.values(this.state.layers).forEach(l => {
       if (l) this.state.map.removeLayer(l);
     });
     this.state.layers = {};
+    const savedWatershed = this.state.rawData['watershed'];
     this.state.rawData = {};
+    if (savedWatershed) {
+      this.state.rawData['watershed'] = savedWatershed;
+    }
     this.state.selectedPath = [];
     this.state.currentLevel = 0;
     this.state.activeOutline = null;
@@ -395,7 +416,7 @@ export const APP = {
     if (!p) return 'Unknown';
 
     let name = 'Unknown';
-    if (level === 0) name = p.Region || p.REGION || 'Cordillera Administrative Region';
+    if (level === 0) return 'Cordillera Administrative Region';
     else if (this.state.activeSource === 'cad') {
       if (level === 1) name = p.Province || p.PROVINCE || p.REGION || 'Unknown';
       else if (level === 2) name = p.Muni_City || p.Municipali || p.Province || 'Unknown';

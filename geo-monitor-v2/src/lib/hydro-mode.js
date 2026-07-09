@@ -60,7 +60,7 @@ Object.assign(APP, {
   _resetAll() {
     if (!this.state.map || this.state._drilling) return;
     const map = this.state.map;
-    map.setView(this.config.mapCenter, this.config.mapZoom);
+    if (this._clearSelection) this._clearSelection(true);
     this.closePanel();
 
     if (this.state.viewMode === 'watersheds') {
@@ -68,25 +68,54 @@ Object.assign(APP, {
         [1, 2].forEach(l => {
           if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
         });
-        if (this.state.hydroAdminOutlineLayer) { map.removeLayer(this.state.hydroAdminOutlineLayer); this.state.hydroAdminOutlineLayer = null; }
-        document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
       }
-    this.state.hydroDrillLevel = 0;
-    this.state.hydroSelectedBasin = null;
-    this.state.hydroSelectedZone = null;
-    this.state.hydroSelectedZoneLayer = null;
-    this._removeSlopeClip();
+      if (this.state.hydroAdminOutlineLayer) { map.removeLayer(this.state.hydroAdminOutlineLayer); this.state.hydroAdminOutlineLayer = null; }
+      document.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+      
+      this.state.hydroDrillLevel = 0;
+      this.state.hydroSelectedBasin = null;
+      this.state.hydroSelectedZone = null;
+      this.state.hydroSelectedZoneLayer = null;
+      this._removeSlopeClip();
       this.state.hydroActiveFilterIds = [];
       this.state.showSubWatersheds = false;
       this.state.showStreamOrder = false;
       this.state.showSlope = false;
+      
+      if (this.state.hydroBoundaryLayer) {
+        map.removeLayer(this.state.hydroBoundaryLayer);
+        this.state.hydroBoundaryLayer = null;
+      }
+      this.state.hydroShowBoundary = 'none';
+
+      const boundSelect = document.getElementById('hydro-boundary-select');
+      if (boundSelect) boundSelect.value = 'none';
+      const basinFilter = document.getElementById('hydro-basin-select');
+      if (basinFilter) basinFilter.value = 'all';
+
       this._clearHydroLayers();
       this._renderHydroBasins();
       this._showBasinPickerPanel();
       this._updateBreadcrumb();
       this._updateHydroLabels();
+
+      const wsData = this.state.rawData['watershed'];
+      if (wsData) {
+        try {
+          const tempLayer = L.geoJSON(wsData);
+          map.flyToBounds(tempLayer.getBounds(), {
+            ...this._getPaddingOpts(),
+            duration: 0.45,
+            easeLinearity: 0.25,
+          });
+        } catch (e) {}
+      }
     } else {
-      this.drillUp(0);
+      if (this._goHome) {
+        this._goHome();
+      } else {
+        this.drillUp(0);
+      }
     }
   },
 

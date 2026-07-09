@@ -48,7 +48,7 @@ Object.assign(APP, {
           }
           if (lf.feature === feature) {
             this.state._selectedLeafletLayer = lf;
-            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
+            lf.setStyle({ fillOpacity: 0, color: cfg.stroke, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
             lf.bringToFront();
           } else {
             /* Dim siblings instead of hiding them completely */
@@ -252,7 +252,7 @@ Object.assign(APP, {
       interactive: true,
       style: () => ({
         fillColor: fillColor,
-        fillOpacity: level === 0 ? 0.15 : 0,
+        fillOpacity: 0,
         color: styleConfig.stroke,
         weight: styleConfig.weight,
         opacity: 0.9,
@@ -474,6 +474,20 @@ Object.assign(APP, {
         if (lf._path) lf._path.style.pointerEvents = 'auto';
       });
     }
+
+    /* Restore parent province dashed style if returning to State D */
+    if (level === 2 && this.state.selectedPath && this.state.selectedPath.length > 0) {
+      const parentNode = this.state.selectedPath.find(p => p.level === 1);
+      if (parentNode && this.state.layers[1]) {
+        this.state.layers[1].eachLayer(lf => {
+          if (lf.feature === parentNode.feature) {
+            const cfg = this.config.colors[1];
+            lf.setStyle({ color: cfg.stroke, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
+            if (lf._path) lf._path.style.pointerEvents = 'none';
+          }
+        });
+      }
+    }
   },
 
   /* ── Highlight selection via dim (max-level click) ── */
@@ -489,6 +503,7 @@ Object.assign(APP, {
       if (parentNode && this.state.layers[1]) {
         this.state.layers[1].eachLayer(lf => {
           if (lf.feature === parentNode.feature) {
+            lf.setStyle({ color: '#1e293b', weight: 2.5, opacity: 0.8, dashArray: null });
             lf.bringToFront();
             if (lf._path) lf._path.style.pointerEvents = 'none';
           }
@@ -515,15 +530,19 @@ Object.assign(APP, {
 
   /* ── Clear selection ──────────────────────────── */
   /* ── Clear selection ──────────────────────────── */
-  _clearSelection() {
+  _clearSelection(skipClosePanel = false) {
     this._hideHoverLabel();
-    if (this.state._selectedLevel != null) {
-      this._resetLevelStyle(this.state._selectedLevel);
-      this.state._selectedFeature = null;
-      this.state._selectedLevel = null;
-      this.state._selectedLeafletLayer = null;
+    if (this.state._selectedLevel !== null) {
+      this._clearIsolation(this.state._selectedLevel);
     }
-    this.closePanel();
+    if (this.state._wsHighlightLayer && this.state.map) {
+      this.state.map.removeLayer(this.state._wsHighlightLayer);
+      this.state._wsHighlightLayer = null;
+    }
+    this.state._selectedFeature = null;
+    this.state._selectedLevel = null;
+    this.state._selectedLeafletLayer = null;
+    if (!skipClosePanel) this.closePanel();
   },
 
   _resetLevelStyle(level) {
@@ -590,11 +609,31 @@ Object.assign(APP, {
   /* ── Hover label ──────────────────────────── */
   /* ── Home / Reset ─────────────────────────── */
   _goHome(skipFly = false) {
+    this._clearSelection(true);
+    
     this.state._selectedFeature = null;
     this.state._selectedLevel = null;
     this.state._selectedLeafletLayer = null;
     this.state.selectedPath = [];
     this.state.currentLevel = 0;
+    
+    /* Completely reset outline layers */
+    this.state.activeOutline = null;
+    const outlineToggles = document.querySelectorAll('input[name="outline-toggle"]');
+    if (outlineToggles.length) {
+      outlineToggles.forEach(r => { if (r.value === 'none') r.checked = true; });
+    }
+    if (this.state.outlineLayers) {
+      Object.values(this.state.outlineLayers).forEach(l => {
+        if (l && this.state.map.hasLayer(l)) this.state.map.removeLayer(l);
+      });
+    }
+    this.state.outlineLayers = {};
+    if (this.state._outlineHighlight) {
+      this.state.map.removeLayer(this.state._outlineHighlight);
+      this.state._outlineHighlight = null;
+    }
+
     for (let lvl = this._src().maxLevel; lvl > 0; lvl--) {
       if (this.state.layers[lvl]) {
         this.state.map.removeLayer(this.state.layers[lvl]);
@@ -610,17 +649,10 @@ Object.assign(APP, {
         easeLinearity: 0.25,
       });
     }
-    /* Show admin picker in boundaries mode, CAR info otherwise */
-    if (this.state.viewMode === 'boundaries') {
-      const carData = this.state.rawData[0];
-      if (carData && carData.features && carData.features[0]) {
-        this._showBoundaryPicker(carData.features[0], 0);
-      }
-    } else {
-      const carData = this.state.rawData[0];
-      if (carData && carData.features && carData.features[0]) {
-        this.openPanel(carData.features[0], 0);
-      }
+    /* Always show the standard panel for the region */
+    const carData = this.state.rawData[0];
+    if (carData && carData.features && carData.features[0]) {
+      this.openPanel(carData.features[0], 0);
     }
     this._updateBreadcrumb();
     this._updateOutlines();
@@ -780,84 +812,6 @@ Object.assign(APP, {
 
 
   /* ── R1: Boundary Picker Panel (Boundary mode, level 0) ── */
-  _showBoundaryPicker(feature, level) {
-    const panel = document.getElementById('info-panel');
-    const content = document.getElementById('info-panel-content');
-    if (!panel || !content) return;
-
-    this.state.lastViewed = null;
-    this._updatePanelHeader();
-
-    const src = this._src();
-    const data = this.state.rawData[1];
-    if (!data || !data.features) return;
-
-    let groupHtml = '';
-
-    const provinces = this._filterToParent(data, 1, null);
-    const header = `Provinces (${provinces.features.length})`;
-    let itemsHtml = '';
-    
-    // Sort features alphabetically by name
-    const sortedFeatures = [...provinces.features].sort((a, b) => {
-      const nameA = this._featureName(a, 1).toLowerCase();
-      const nameB = this._featureName(b, 1).toLowerCase();
-      return nameA.localeCompare(nameB);
-    });
-
-    sortedFeatures.forEach(f => {
-      const name = this._toTitleCase(this._featureName(f, 1));
-      const slug = name.toLowerCase().replace(/\s+/g, '-');
-      const muniCount = this.state.hierarchy?.children?.[slug]?.length || 0;
-      const areaM2 = parseFloat(f.properties.Shape_Area || 0);
-      const areaStr = areaM2 > 0 ? (areaM2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
-      itemsHtml += `
-        <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
-          <div class="basin-picker-info">
-            <span class="basin-picker-name">${this._escHtml(name)}</span>
-            <span class="basin-picker-meta">
-              ${muniCount ? `<span class="basin-size">${muniCount} municipalities</span>` : ''}
-              ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
-            </span>
-          </div>
-          <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>`;
-    });
-    groupHtml += `
-      <div class="basin-picker-group">
-        <div class="basin-picker-group-title">${this._escHtml(header)}</div>
-        ${itemsHtml}
-      </div>`;
-
-    const hero = document.getElementById('panel-hero');
-    if (hero) {
-      hero.className = 'panel-hero basin-picker-hero';
-      hero.innerHTML = `<div class="panel-level-badge">Administrative Boundaries</div>
-        <h2 class="panel-title">Cordillera Administrative Region</h2>
-        <p class="panel-subtitle">Tap a province or municipality to explore boundaries and regional data</p>`;
-    }
-
-    const html = `
-      <div class="panel-section basin-picker-section">
-        ${groupHtml}
-      </div>`;
-
-    content.innerHTML = html;
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded', 'open', 'closed', 'peek');
-    
-    if (window.innerWidth <= 640) {
-      panel.classList.add('peek');
-      this.state.panelState = 'peek';
-    } else {
-      panel.classList.add('open');
-      this.state.panelState = 'open';
-    }
-    this._updatePanelToggleIcon();
-  },
-
-
   /* Click handler for boundary picker items — mimics the map polygon click pattern */
   _drillBoundaryFromPicker(childName, childLevel) {
     const childData = this.state.rawData[childLevel];
@@ -933,6 +887,30 @@ Object.assign(APP, {
 
   /* Sidebar-only red highlight for pills */
   _highlightSidebarSelection(childName, childLevel, chipEl) {
+    if (this.state._selectedSidebarItem === childName) {
+      /* UNSELECT LOGIC (Toggle off) */
+      if (chipEl && chipEl.parentNode) {
+        chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+      }
+      this.state._selectedSidebarItem = null;
+      this._resetLevelStyle(childLevel);
+      
+      const parentNode = this.state.selectedPath && this.state.selectedPath.find(p => p.level === childLevel - 1);
+      if (parentNode && parentNode.feature) {
+        /* Fly back to parent bounds */
+        if (this.state.layers[childLevel - 1]) {
+          this.state.layers[childLevel - 1].eachLayer(lf => {
+            if (lf.feature === parentNode.feature && lf.getBounds) {
+              this.state.map.flyToBounds(lf.getBounds(), { padding: [50, 50], duration: 0.8 });
+            }
+          });
+        }
+      }
+      return;
+    }
+
+    this.state._selectedSidebarItem = childName;
+
     /* Toggle active class on chips */
     if (chipEl && chipEl.parentNode) {
       chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
@@ -959,7 +937,7 @@ Object.assign(APP, {
           fillOpacity: 0.2,
           weight: 2,
           opacity: 1,
-          dashArray: null
+          dashArray: '5, 8'
         });
         lf.bringToFront();
         if (lf.getBounds) {
