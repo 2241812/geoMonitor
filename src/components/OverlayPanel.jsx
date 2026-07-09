@@ -32,12 +32,15 @@ export default function OverlayPanel() {
   useEffect(() => {
     const el = panelRef.current;
     if (!el) return;
+    const mapApp = el.closest('.map-app');
     if (isOpen && isLevel0) {
       el.classList.add('overlay-panel-visible');
       el.classList.remove('overlay-panel-hidden');
+      if (mapApp) mapApp.classList.add('overlay-panel-open');
     } else {
       el.classList.remove('overlay-panel-visible');
       el.classList.add('overlay-panel-hidden');
+      if (mapApp) mapApp.classList.remove('overlay-panel-open');
     }
   }, [isOpen, isLevel0]);
 
@@ -50,9 +53,15 @@ export default function OverlayPanel() {
         style={{ display: isLevel0 ? 'flex' : 'none' }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-          <polyline points="2 12 12 17 22 12"></polyline>
-          <polyline points="2 17 12 22 22 17"></polyline>
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
         </svg>
       </button>
 
@@ -63,9 +72,15 @@ export default function OverlayPanel() {
       >
         <div className="overlay-panel-header">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-            <polyline points="2 12 12 17 22 12"></polyline>
-            <polyline points="2 17 12 22 22 17"></polyline>
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
           </svg>
           <span>Overlays</span>
           <button className="overlay-close-btn" onClick={() => setIsOpen(false)} title="Close">
@@ -80,7 +95,12 @@ export default function OverlayPanel() {
           {/* Sub-watersheds Section */}
           <div className="overlay-section">
             <div className="toggle-row">
-              <span>Sub-watersheds</span>
+              <div className="toggle-row-left">
+                <span>Sub-watersheds</span>
+                <span className="overlay-desc-btn" data-tooltip="The fundamental unit of hydrological management, representing localized catchments used for detailed environmental and runoff analysis.">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+              </div>
               <label className="toggle-switch">
                 <input
                   type="checkbox"
@@ -151,7 +171,12 @@ export default function OverlayPanel() {
           {/* Stream Order Section */}
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
-              <span>Stream Order</span>
+              <div className="toggle-row-left">
+                <span>Stream Order</span>
+                <span className="overlay-desc-btn" data-tooltip="A numerical hierarchy defining the relative size and connectivity of river segments, from headwater tributaries to major drainage systems.">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+              </div>
               <label className="toggle-switch">
                 <input
                   type="checkbox"
@@ -197,8 +222,12 @@ export default function OverlayPanel() {
           {/* Slope Section */}
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
-              <span>Slope</span>
-              {slopeLoading && <span className="overlay-spinner" />}
+              <div className="toggle-row-left">
+                <span>Slope</span>
+                <span className="overlay-desc-btn" data-tooltip="A critical terrain factor determining water velocity and erosion potential, essential for land-use planning and hazard assessment.">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+              </div>
               <label className="toggle-switch" style={{ opacity: slopeLoading ? 0.5 : 1 }}>
                 <input
                   type="checkbox"
@@ -240,13 +269,6 @@ export default function OverlayPanel() {
                     Apply &amp; Fetch
                   </button>
                 </div>
-              </div>
-            )}
-
-            {slopeLoading && (
-              <div className="overlay-loading-row">
-                <div className="overlay-loading-bar" />
-                <span className="overlay-loading-label">Loading slope data…</span>
               </div>
             )}
 
@@ -300,8 +322,12 @@ export default function OverlayPanel() {
           {/* LCM Section */}
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
-              <span>Land Cover (LCM)</span>
-              {lcmLoading && <span className="overlay-spinner" />}
+              <div className="toggle-row-left">
+                <span>Land Cover (LCM)</span>
+                <span className="overlay-desc-btn" data-tooltip="Classified surface data representing forests, urban areas, and water bodies, used to monitor environmental health and ecosystem changes.">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+              </div>
               <label className="toggle-switch" style={{ opacity: lcmLoading ? 0.5 : 1 }}>
                 <input
                   type="checkbox"
@@ -326,6 +352,27 @@ export default function OverlayPanel() {
                 <div className="overlay-confirm-text">
                   The land cover overlay requires fetching data from Supabase. This may take a moment.
                 </div>
+                <div className="lcm-class-toggles" style={{ margin: '8px 0', padding: '0' }}>
+                  <div className="lcm-class-header">
+                    <b style={{ fontSize: '11px' }}>Select classes to fetch:</b>
+                    <span className="lcm-class-actions">
+                      <a href="#" onClick={(e) => { e.preventDefault(); APP._lcmShowAll(); }} style={{ fontSize: '11px', cursor: 'pointer' }}>All</a>
+                      <span style={{ color: '#ccc', margin: '0 2px' }}>|</span>
+                      <a href="#" onClick={(e) => { e.preventDefault(); APP._lcmHideAll(); }} style={{ fontSize: '11px', cursor: 'pointer' }}>None</a>
+                    </span>
+                  </div>
+                  {LCM_CLASSES.map((c) => (
+                    <label key={c.name} className="lcm-class-row">
+                      <input
+                        type="checkbox"
+                        checked={APP.lcm.isClassVisible(c.name)}
+                        onChange={() => APP._toggleLCMClass(c.name)}
+                      />
+                      <span className="lcm-class-swatch" style={{ background: c.color }}></span>
+                      <span className="lcm-class-label">{c.name}</span>
+                    </label>
+                  ))}
+                </div>
                 <div className="overlay-confirm-actions">
                   <button
                     className="overlay-confirm-btn overlay-confirm-cancel"
@@ -338,18 +385,12 @@ export default function OverlayPanel() {
                     onClick={() => {
                       useMapStore.setState({ lcmConfirmPending: false });
                       APP._toggleLCM();
+                      APP._refetchLCMWithClasses();
                     }}
                   >
                     Apply &amp; Fetch
                   </button>
                 </div>
-              </div>
-            )}
-
-            {lcmLoading && (
-              <div className="overlay-loading-row">
-                <div className="overlay-loading-bar" />
-                <span className="overlay-loading-label">Loading land cover data…</span>
               </div>
             )}
 
@@ -369,6 +410,15 @@ export default function OverlayPanel() {
               id="lcm-controls"
               style={{ display: showLCM ? 'block' : 'none', marginTop: '8px' }}
             >
+              {showLCM && !lcmLoading && (
+                <button
+                  className="overlay-confirm-btn overlay-confirm-apply"
+                  style={{ width: '100%', marginBottom: '8px', fontSize: '12px', padding: '5px 10px' }}
+                  onClick={() => APP._refetchLCMWithClasses()}
+                >
+                  Apply &amp; Fetch
+                </button>
+              )}
               <div className="overlay-slider-row">
                 <label>Opacity</label>
                 <input

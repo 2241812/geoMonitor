@@ -1,6 +1,15 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
 import { useMapStore } from '../store/useMapStore.js';
+import {
+  extractOuterRings,
+  buildClipPath,
+  bindOverlayEvents,
+  unbindOverlayEvents,
+  showLoadProgress,
+  hideLoadProgress,
+  ensurePane,
+} from './overlay-utils.js';
 
 /**
  * slope-manager.js
@@ -18,62 +27,9 @@ import { useMapStore } from '../store/useMapStore.js';
  *  - hide()/show() methods for drill transitions without destroying the layer
  */
 
-const COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
+export const SLOPE_COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
 
-/**
- * Extract all outer rings from a GeoJSON geometry, handling both
- * Polygon and MultiPolygon types.
- * Returns an array of coordinate rings (each ring is [[lng,lat], ...]).
- */
-function _extractOuterRings(geometry) {
-  if (!geometry) return [];
-  if (geometry.type === 'Polygon') {
-    return geometry.coordinates[0] ? [geometry.coordinates[0]] : [];
-  }
-  if (geometry.type === 'MultiPolygon') {
-    return geometry.coordinates
-      .map(poly => poly[0])
-      .filter(Boolean);
-  }
-  return [];
-}
-
-/**
- * Build a CSS polygon() clip-path string from an array of coordinate
- * rings projected through the map's latLngToLayerPoint.
- *
- * For a single ring  → polygon(x1 y1, x2 y2, ...)
- * For multiple rings → uses the first ring only (CSS clip-path doesn't
- *   support multi-polygon natively); falls back to the bounding hull.
- *
- * Uses layerPoint coordinates (relative to tile pane origin) so the
- * clip tracks the pane's CSS transform automatically — no per-frame
- * container-coordinate jitter.
- */
-function _buildClipPath(map, rings) {
-  if (!rings.length) return '';
-  /* Use the largest ring (by point count) as a reasonable approximation
-     when there are multiple disjoint polygons. CSS clip-path can only
-     express a single polygon, so this is the best we can do without
-     switching to SVG or Canvas clipping. */
-  let ring = rings[0];
-  if (rings.length > 1) {
-    ring = rings.reduce((a, b) => a.length >= b.length ? a : b);
-  }
-  try {
-    const points = ring.map(c => {
-      const p = map.latLngToLayerPoint([c[1], c[0]]);
-      if (!isFinite(p.x) || !isFinite(p.y)) return null;
-      return `${Math.round(p.x)}px ${Math.round(p.y)}px`;
-    }).filter(Boolean).join(',');
-    if (!points) return '';
-    return `polygon(${points})`;
-  } catch (_) {
-    return '';
-  }
-}
-
-/* Module-level bound handler — same reference for on() and off(),
+/* Module-level bound handlers — same references for on() and off(),
    preventing listener leaks regardless of how toggle/destroy are called. */
 function _onMapMove() {
   APP.slope.reapplyClip();
@@ -132,7 +88,7 @@ APP.slope = {
         this._ensurePane();
 
         const styleFn = (f) => ({
-          fillColor: COLORS[f.properties.gridcode] || '#cccccc',
+          fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
           fillOpacity: 0.65,
           stroke: false,
           weight: 0,
@@ -213,49 +169,24 @@ APP.slope = {
   },
 
   _showLoadProgress(pct, label) {
-    const el = document.getElementById('slope-load-progress');
-    if (!el) return;
-    el.style.display = 'block';
-    el.querySelector('.slope-load-fill').style.width = pct + '%';
-    el.querySelector('.slope-load-label').textContent = label || '';
+    showLoadProgress('slope-load-progress', pct, label);
   },
 
   _hideLoadProgress() {
-    const el = document.getElementById('slope-load-progress');
-    if (el) {
-      el.style.display = 'none';
-      el.querySelector('.slope-load-fill').style.width = '0%';
-      el.querySelector('.slope-load-label').textContent = '';
-    }
+    hideLoadProgress('slope-load-progress');
   },
 
   _ensurePane() {
-    const map = APP.state.map;
-    if (!map) return;
-    if (!map.getPane('slopePane')) {
-      map.createPane('slopePane');
-      const pane = map.getPane('slopePane');
-      pane.style.zIndex = 250;
-      pane.style.transition = 'opacity 0.15s ease-out';
-    }
+    ensurePane(APP.state.map, 'slopePane', 250);
   },
 
-  /** Bind move/zoom events using the module-level handler. */
   _bindMapEvents(map) {
-    map.off('move', _onMapMove);
-    map.off('moveend', _onMapMove);
-    map.off('zoomanim', _onMapMove);
-    map.off('zoomend', _onMapMove);
-    map.off('zoomstart', _onZoomStart);
-    map.on('move', _onMapMove);
-    map.on('moveend', _onMapMove);
-    map.on('zoomanim', _onMapMove);
-    map.on('zoomend', _onMapMove);
-    map.on('zoomstart', _onZoomStart);
-    map.on('zoomend', _onZoomEnd);
-
-    map.off('zoomend', this._onZoomSwap, this);
-    map.on('zoomend', this._onZoomSwap, this);
+    bindOverlayEvents(map, {
+      onMapMove: _onMapMove,
+      onZoomStart: _onZoomStart,
+      onZoomEnd: _onZoomEnd,
+      onZoomSwap: this._onZoomSwap,
+    }, this);
   },
 
   _onZoomSwap() {
@@ -275,13 +206,12 @@ APP.slope = {
   },
 
   _unbindMapEvents(map) {
-    map.off('move', _onMapMove);
-    map.off('moveend', _onMapMove);
-    map.off('zoomanim', _onMapMove);
-    map.off('zoomend', _onMapMove);
-    map.off('zoomstart', _onZoomStart);
-    map.off('zoomend', _onZoomEnd);
-    map.off('zoomend', this._onZoomSwap, this);
+    unbindOverlayEvents(map, {
+      onMapMove: _onMapMove,
+      onZoomStart: _onZoomStart,
+      onZoomEnd: _onZoomEnd,
+      onZoomSwap: this._onZoomSwap,
+    }, this);
   },
 
   /** Clip slope layer to a feature's geometry via CSS clip-path on the pane. */
@@ -298,13 +228,13 @@ APP.slope = {
 
     this._clipFeature = feature;
 
-    const rings = _extractOuterRings(feature.geometry);
+    const rings = extractOuterRings(feature.geometry);
     if (!rings.length) {
       pane.style.clipPath = '';
       return;
     }
 
-    const clipPath = _buildClipPath(map, rings);
+    const clipPath = buildClipPath(map, rings);
     if (clipPath) {
       pane.style.clipPath = clipPath;
     }
@@ -411,7 +341,7 @@ APP.slope = {
       ? { 1: '#1a9850', 2: '#66bd63', 3: '#a6d96a', 4: '#d9ef8b', 5: '#fee08b' }
       : scheme === 'heat'
       ? { 1: '#2b83ba', 2: '#abdda4', 3: '#ffffbf', 4: '#fdae61', 5: '#d7191c' }
-      : COLORS;
+      : SLOPE_COLORS;
     [this._layerSimplified, this._layerFull].forEach((layer) => {
       if (!layer || !layer.eachLayer) return;
       layer.eachLayer((l) => {
@@ -422,15 +352,4 @@ APP.slope = {
       });
     });
   },
-};
-
-/* Safety polyfill: _toggleSlope() was historically called from the
-   watershed panel inline HTML but never defined. This delegates to the
-   correct method and warns, so stale HTML or accidental future usage
-   doesn't silently break the slope toggle again. */
-APP._toggleSlope = function _toggleSlope() {
-  if (typeof APP.slope !== 'undefined' && typeof APP.slope.toggle === 'function') {
-    console.warn('APP._toggleSlope() is deprecated — use APP.slope.toggle()');
-    APP.slope.toggle();
-  }
 };

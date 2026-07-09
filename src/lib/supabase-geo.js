@@ -99,7 +99,12 @@ export async function fetchAllLCMFromSupabase(onProgress, classes) {
     const code = BASIN_CODES[i];
     try {
       const estimate = BASIN_FEATURE_COUNTS[code] || 5000;
-      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null, estimate, classes);
+      const basinStart = 10 + Math.round((i / BASIN_CODES.length) * 80);
+      const basinEnd = 10 + Math.round(((i + 1) / BASIN_CODES.length) * 80);
+      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, (pct, msg) => {
+        const mapped = basinStart + Math.round(((pct || 0) / 100) * (basinEnd - basinStart));
+        if (onProgress) onProgress(mapped, `${code}: ${msg}`);
+      }, estimate, classes);
       data.forEach(row => {
         const props = { LCM_CLASS: row.lcm_class };
         if (row.properties) {

@@ -29,6 +29,17 @@ export default function MapPage() {
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
         </button>
+        <button 
+          className="map-guide-btn map-icon-btn" 
+          title="Map Guide"
+          onClick={() => window.APP?._openGuide()}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </button>
         <button className="map-fullscreen-btn map-icon-btn" title="Enter fullscreen">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
@@ -81,6 +92,12 @@ export default function MapPage() {
           </div>
         </div>
 
+      </div>
+
+      <div id="hydro-legend" className="hydro-legend"></div>
+
+      <div id="guide-overlay" className="guide-overlay" onClick={(e) => { if (e.target === e.currentTarget) window.APP?._closeGuide(); }}>
+        <div className="guide-modal" id="guide-modal"></div>
       </div>
     </div>
   );

@@ -928,6 +928,7 @@ Object.assign(APP, {
     this._updateBreadcrumb();
     this._showBasinPickerPanel();
     this._updateHydroLabels();
+    this._updateHydroLegend();
     if (this.state.showSlope) APP.slope.show();
   },
 
@@ -1144,68 +1145,10 @@ Object.assign(APP, {
       <div class="panel-section basin-picker-section">
         ${groupHtml}
       </div>
-      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
-        <div class="panel-section-title">Map Overlays</div>
-        <div class="toggle-row">
-          <span>Slope</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div id="slope-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
-          <div class="slope-load-bar"><div class="slope-load-fill"></div></div>
-          <span class="slope-load-label"></span>
-        </div>
-        <div class="overlay-controls" id="slope-controls" style="display:${this.state.showSlope ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.slopeOpacity}" oninput="APP.state.slopeOpacity=parseFloat(this.value);APP.slope._setOpacity(parseFloat(this.value))">
-          </div>
-          <div class="overlay-color-row">
-            <label>Color Scheme</label>
-            <select onchange="APP.state.slopeColorScheme=this.value;APP.slope._setColorScheme(this.value)">
-              <option value="default" ${this.state.slopeColorScheme === 'default' ? 'selected' : ''}>Default</option>
-              <option value="terrain" ${this.state.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
-              <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
-            </select>
-          </div>
-        </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Land Cover (LCM)</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button id="lcm-fetch-btn" class="lcm-fetch-btn-inline" onclick="APP._refetchLCMWithClasses()" style="display:${this.state.showLCM ? 'block' : 'none'}">Apply & Fetch</button>
-            <label class="toggle-switch">
-              <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
-              <span class="toggle-knob"></span>
-            </label>
-          </div>
-        </div>
-        <div id="lcm-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
-          <div class="lcm-load-bar"><div class="lcm-load-fill"></div></div>
-          <span class="lcm-load-label"></span>
-        </div>
-        <div class="overlay-controls" id="lcm-controls" style="display:${this.state.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.lcmOpacity}" oninput="APP.state.lcmOpacity=parseFloat(this.value);APP.lcm._setOpacity(parseFloat(this.value))">
-          </div>
-          ${this.state.showLCM ? APP._renderLCMClassToggles() : ''}
-        </div>
-      </div>`;
+      ${APP._renderMapOverlaysHTML({ showSubWatersheds: false, showStreamOrder: false, showProgressBars: false })}`;
 
     content.innerHTML = html;
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded');
-    panel.classList.remove('open', 'closed', 'peek');
-    if (window.innerWidth <= 640) {
-      panel.classList.add('peek');
-      this.state.panelState = 'peek';
-    } else {
-      panel.classList.add('open');
-      this.state.panelState = 'open';
-    }
+    this._openPanelState();
     this._updatePanelToggleIcon();
   },
 
@@ -1294,96 +1237,7 @@ Object.assign(APP, {
           </div>` : ''}
         </div>
       </div>
-      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
-        <div class="panel-section-title">Map Overlays</div>
-        <div class="toggle-row">
-          <span>Sub-watersheds</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showSubWatersheds ? 'checked' : ''} onchange="APP._toggleSubWatersheds()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div class="overlay-controls" id="sw-controls" style="display:${this.state.showSubWatersheds ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Fill Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.selectedFillOpacity ?? 0.3}" oninput="APP.state.selectedFillOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
-          </div>
-          <div class="overlay-slider-row">
-            <label>Outline Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.subWatershedOutlineOpacity}" oninput="APP.state.subWatershedOutlineOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Fill Color</label>
-            <input type="color" value="${this.state.subWatershedFillColor}" onchange="APP.state.subWatershedFillColor=this.value;APP._updateSubWatershedStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Outline Color</label>
-            <input type="color" value="${this.state.subWatershedOutlineColor}" onchange="APP.state.subWatershedOutlineColor=this.value;APP._updateSubWatershedStyles()">
-          </div>
-        </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Stream Order</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div class="overlay-controls" id="so-controls" style="display:${this.state.showStreamOrder ? 'block' : 'none'}; margin-top: 0;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.streamOrderOpacity}" oninput="APP.state.streamOrderOpacity=parseFloat(this.value);APP._updateStreamOrderStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Color</label>
-            <input type="color" value="${this.state.streamOrderColor}" onchange="APP.state.streamOrderColor=this.value;APP._updateStreamOrderStyles()">
-          </div>
-        </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Slope</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div id="slope-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
-          <div class="slope-load-bar"><div class="slope-load-fill"></div></div>
-          <span class="slope-load-label"></span>
-        </div>
-        <div class="overlay-controls" id="slope-controls" style="display:${this.state.showSlope ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.slopeOpacity}" oninput="APP.state.slopeOpacity=parseFloat(this.value);APP.slope._setOpacity(parseFloat(this.value))">
-          </div>
-          <div class="overlay-color-row">
-            <label>Color Scheme</label>
-            <select onchange="APP.state.slopeColorScheme=this.value;APP.slope._setColorScheme(this.value)">
-              <option value="default" ${this.state.slopeColorScheme === 'default' ? 'selected' : ''}>Default</option>
-              <option value="terrain" ${this.state.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
-              <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
-            </select>
-        </div>
-        <div class="toggle-row" style="margin-top: 12px;">
-          <span>Land Cover (LCM)</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button id="lcm-fetch-btn" class="lcm-fetch-btn-inline" onclick="APP._refetchLCMWithClasses()" style="display:${this.state.showLCM ? 'block' : 'none'}">Apply & Fetch</button>
-            <label class="toggle-switch">
-              <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
-              <span class="toggle-knob"></span>
-            </label>
-          </div>
-        </div>
-        <div id="lcm-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
-          <div class="lcm-load-bar"><div class="lcm-load-fill"></div></div>
-          <span class="lcm-load-label"></span>
-        </div>
-        <div class="overlay-controls" id="lcm-controls" style="display:${this.state.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${this.state.lcmOpacity}" oninput="APP.state.lcmOpacity=parseFloat(this.value);APP.lcm._setOpacity(parseFloat(this.value))">
-          </div>
-          ${this.state.showLCM ? APP._renderLCMClassToggles() : ''}
-        </div>
-      </div>
+      ${APP._renderMapOverlaysHTML()}
       ${spansHTML}`;
 
     content.innerHTML = html;
@@ -1400,11 +1254,7 @@ Object.assign(APP, {
       setTimeout(() => { content.scrollTop = scrollTop; }, 0);
     }
 
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded', 'open', 'closed', 'peek');
-    if (window.innerWidth <= 640) { panel.classList.add('peek'); this.state.panelState = 'peek'; }
-    else { panel.classList.add('open'); this.state.panelState = 'open'; }
+    this._openPanelState();
   },
 
   /* Back button from sub-watershed panel → return to basin detail panel */

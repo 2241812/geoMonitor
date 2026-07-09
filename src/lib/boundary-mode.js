@@ -873,17 +873,7 @@ Object.assign(APP, {
       </div>`;
 
     content.innerHTML = html;
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded', 'open', 'closed', 'peek');
-    
-    if (window.innerWidth <= 640) {
-      panel.classList.add('peek');
-      this.state.panelState = 'peek';
-    } else {
-      panel.classList.add('open');
-      this.state.panelState = 'open';
-    }
+    this._openPanelState();
     this._updatePanelToggleIcon();
   },
 

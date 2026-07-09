@@ -1,6 +1,15 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
 import { invalidateLCMCache } from './supabase-geo.js';
+import {
+  extractOuterRings,
+  buildClipPath,
+  bindOverlayEvents,
+  unbindOverlayEvents,
+  showLoadProgress,
+  hideLoadProgress,
+  ensurePane,
+} from './overlay-utils.js';
 
 export const LCM_CLASSES = [
   { name: 'Closed Forest',   color: '#006400' },
@@ -22,36 +31,6 @@ LCM_CLASSES.forEach(c => { LCM_COLORS[c.name] = c.color; });
 
 const PANE_NAME = 'lcmPane';
 const LOD_ZOOM = 10;
-
-function _extractOuterRings(geometry) {
-  if (!geometry) return [];
-  if (geometry.type === 'Polygon') {
-    return geometry.coordinates[0] ? [geometry.coordinates[0]] : [];
-  }
-  if (geometry.type === 'MultiPolygon') {
-    return geometry.coordinates
-      .map(poly => poly[0])
-      .filter(Boolean);
-  }
-  return [];
-}
-
-function _buildClipPath(map, rings) {
-  if (!rings.length) return '';
-  let ring = rings[0];
-  if (rings.length > 1) {
-    ring = rings.reduce((a, b) => a.length >= b.length ? a : b);
-  }
-  try {
-    const points = ring.map(c => {
-      const p = map.latLngToLayerPoint([c[1], c[0]]);
-      return `${Math.round(p.x)}px ${Math.round(p.y)}px`;
-    }).join(',');
-    return `polygon(${points})`;
-  } catch (_) {
-    return '';
-  }
-}
 
 function _lcmOnMapMove() { APP.lcm.reapplyClip(); }
 
@@ -200,58 +179,33 @@ APP.lcm = {
   },
 
   _showLoadProgress(pct, label) {
-    const el = document.getElementById('lcm-load-progress');
-    if (!el) return;
-    el.style.display = 'block';
-    el.querySelector('.lcm-load-fill').style.width = pct + '%';
-    el.querySelector('.lcm-load-label').textContent = label || '';
+    showLoadProgress('lcm-load-progress', pct, label);
   },
 
   _hideLoadProgress() {
-    const el = document.getElementById('lcm-load-progress');
-    if (el) {
-      el.style.display = 'none';
-      el.querySelector('.lcm-load-fill').style.width = '0%';
-      el.querySelector('.lcm-load-label').textContent = '';
-    }
+    hideLoadProgress('lcm-load-progress');
   },
 
   _ensurePane() {
-    const map = APP.state.map;
-    if (!map) return;
-    if (!map.getPane(PANE_NAME)) {
-      map.createPane(PANE_NAME);
-      const pane = map.getPane(PANE_NAME);
-      pane.style.zIndex = 260;
-      pane.style.transition = 'opacity 0.15s ease-out';
-    }
+    ensurePane(APP.state.map, PANE_NAME, 260);
   },
 
   _bindMapEvents(map) {
-    map.off('move', _lcmOnMapMove);
-    map.off('moveend', _lcmOnMapMove);
-    map.off('zoomanim', _lcmOnMapMove);
-    map.off('zoomend', _lcmOnMapMove);
-    map.off('zoomstart', _lcmOnZoomStart);
-    map.off('zoomend', _lcmOnZoomEnd);
-    map.on('move', _lcmOnMapMove);
-    map.on('moveend', _lcmOnMapMove);
-    map.on('zoomanim', _lcmOnMapMove);
-    map.on('zoomend', _lcmOnMapMove);
-    map.on('zoomstart', _lcmOnZoomStart);
-    map.on('zoomend', _lcmOnZoomEnd);
-    map.off('zoomend', this._onZoomSwap, this);
-    map.on('zoomend', this._onZoomSwap, this);
+    bindOverlayEvents(map, {
+      onMapMove: _lcmOnMapMove,
+      onZoomStart: _lcmOnZoomStart,
+      onZoomEnd: _lcmOnZoomEnd,
+      onZoomSwap: this._onZoomSwap,
+    }, this);
   },
 
   _unbindMapEvents(map) {
-    map.off('move', _lcmOnMapMove);
-    map.off('moveend', _lcmOnMapMove);
-    map.off('zoomanim', _lcmOnMapMove);
-    map.off('zoomend', _lcmOnMapMove);
-    map.off('zoomstart', _lcmOnZoomStart);
-    map.off('zoomend', _lcmOnZoomEnd);
-    map.off('zoomend', this._onZoomSwap, this);
+    unbindOverlayEvents(map, {
+      onMapMove: _lcmOnMapMove,
+      onZoomStart: _lcmOnZoomStart,
+      onZoomEnd: _lcmOnZoomEnd,
+      onZoomSwap: this._onZoomSwap,
+    }, this);
   },
 
   _onZoomSwap() {
@@ -280,9 +234,9 @@ APP.lcm = {
       return;
     }
     this._clipFeature = feature;
-    const rings = _extractOuterRings(feature.geometry);
+    const rings = extractOuterRings(feature.geometry);
     if (!rings.length) { pane.style.clipPath = ''; return; }
-    const clipPath = _buildClipPath(map, rings);
+    const clipPath = buildClipPath(map, rings);
     if (clipPath) pane.style.clipPath = clipPath;
   },
 
