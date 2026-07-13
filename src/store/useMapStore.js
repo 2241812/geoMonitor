@@ -36,6 +36,8 @@ export const useMapStore = create((set, get) => ({
   watershedIntersections: null,
   zoneIntersections: null,
 
+  boundaryOverlayStyle: null,
+
   // ═══════════ ACTIONS ═══════════
   setViewMode: (mode) => set({ viewMode: mode, hydroDrillLevel: 0, currentLevel: 0, selectedPath: [] }),
   setActiveBasemap: (basemap) => set({ activeBasemap: basemap }),

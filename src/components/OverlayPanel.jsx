@@ -6,7 +6,7 @@ import { LCM_CLASSES } from '../lib/lcm-manager.js';
 /**
  * OverlayPanel — right-side panel for map overlay controls.
  * Hidden by default, toggled via the overlay-toggle button.
- * Hides when drilling into a basin (level 1).
+ * Shows watershed overlays in watersheds mode, boundary style controls in boundaries mode.
  */
 
 export default function OverlayPanel() {
@@ -21,28 +21,33 @@ export default function OverlayPanel() {
   const lcmLoading = useMapStore((s) => s.lcmLoading);
   const slopeConfirmPending = useMapStore((s) => s.slopeConfirmPending);
   const lcmConfirmPending = useMapStore((s) => s.lcmConfirmPending);
+  const viewMode = useMapStore((s) => s.viewMode);
+  const currentLevel = useMapStore((s) => s.currentLevel);
   const isLevel0 = hydroDrillLevel === 0;
+  const isWatersheds = viewMode === 'watersheds';
+  const isBoundaries = viewMode === 'boundaries';
+
+  const boStyle = APP.state.boundaryOverlayStyle || (APP.boundaryOverlay && APP.boundaryOverlay._getDefaults()) || {};
 
   useEffect(() => {
-    if (!isLevel0 && isOpen) {
+    if (isOpen && !isWatersheds && !isBoundaries) {
       setIsOpen(false);
     }
-  }, [isLevel0]);
+  }, [isWatersheds, isBoundaries]);
 
   useEffect(() => {
     const el = panelRef.current;
     if (!el) return;
-    const mapApp = el.closest('.map-app');
-    if (isOpen && isLevel0) {
+    if (isOpen && (isWatersheds || isBoundaries)) {
       el.classList.add('overlay-panel-visible');
       el.classList.remove('overlay-panel-hidden');
-      if (mapApp) mapApp.classList.add('overlay-panel-open');
     } else {
       el.classList.remove('overlay-panel-visible');
       el.classList.add('overlay-panel-hidden');
-      if (mapApp) mapApp.classList.remove('overlay-panel-open');
     }
-  }, [isOpen, isLevel0]);
+  }, [isOpen, isWatersheds, isBoundaries]);
+
+  const canShow = (isWatersheds && isLevel0) || isBoundaries;
 
   return (
     <>
@@ -50,18 +55,12 @@ export default function OverlayPanel() {
         className="overlay-toggle-btn"
         onClick={() => setIsOpen(!isOpen)}
         title="Toggle overlay controls"
-        style={{ display: isLevel0 ? 'flex' : 'none' }}
+        style={{ display: canShow ? 'flex' : 'none' }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="4" y1="21" x2="4" y2="14"></line>
-          <line x1="4" y1="10" x2="4" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12" y2="3"></line>
-          <line x1="20" y1="21" x2="20" y2="16"></line>
-          <line x1="20" y1="12" x2="20" y2="3"></line>
-          <line x1="1" y1="14" x2="7" y2="14"></line>
-          <line x1="9" y1="8" x2="15" y2="8"></line>
-          <line x1="17" y1="16" x2="23" y2="16"></line>
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 12 12 17 22 12"></polyline>
+          <polyline points="2 17 12 22 22 17"></polyline>
         </svg>
       </button>
 
@@ -72,15 +71,9 @@ export default function OverlayPanel() {
       >
         <div className="overlay-panel-header">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="21" x2="4" y2="14"></line>
-            <line x1="4" y1="10" x2="4" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12" y2="3"></line>
-            <line x1="20" y1="21" x2="20" y2="16"></line>
-            <line x1="20" y1="12" x2="20" y2="3"></line>
-            <line x1="1" y1="14" x2="7" y2="14"></line>
-            <line x1="9" y1="8" x2="15" y2="8"></line>
-            <line x1="17" y1="16" x2="23" y2="16"></line>
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 12 12 17 22 12"></polyline>
+            <polyline points="2 17 12 22 22 17"></polyline>
           </svg>
           <span>Overlays</span>
           <button className="overlay-close-btn" onClick={() => setIsOpen(false)} title="Close">
@@ -92,15 +85,11 @@ export default function OverlayPanel() {
         </div>
 
         <div className="overlay-panel-content">
+          {isWatersheds && (<>
           {/* Sub-watersheds Section */}
           <div className="overlay-section">
             <div className="toggle-row">
-              <div className="toggle-row-left">
-                <span>Sub-watersheds</span>
-                <span className="overlay-desc-btn" data-tooltip="The fundamental unit of hydrological management, representing localized catchments used for detailed environmental and runoff analysis.">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </span>
-              </div>
+              <span>Sub-watersheds</span>
               <label className="toggle-switch">
                 <input
                   type="checkbox"
@@ -171,12 +160,7 @@ export default function OverlayPanel() {
           {/* Stream Order Section */}
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
-              <div className="toggle-row-left">
-                <span>Stream Order</span>
-                <span className="overlay-desc-btn" data-tooltip="A numerical hierarchy defining the relative size and connectivity of river segments, from headwater tributaries to major drainage systems.">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </span>
-              </div>
+              <span>Stream Order</span>
               <label className="toggle-switch">
                 <input
                   type="checkbox"
@@ -222,12 +206,8 @@ export default function OverlayPanel() {
           {/* Slope Section */}
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
-              <div className="toggle-row-left">
-                <span>Slope</span>
-                <span className="overlay-desc-btn" data-tooltip="A critical terrain factor determining water velocity and erosion potential, essential for land-use planning and hazard assessment.">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </span>
-              </div>
+              <span>Slope</span>
+              {slopeLoading && <span className="overlay-spinner" />}
               <label className="toggle-switch" style={{ opacity: slopeLoading ? 0.5 : 1 }}>
                 <input
                   type="checkbox"
@@ -269,6 +249,13 @@ export default function OverlayPanel() {
                     Apply &amp; Fetch
                   </button>
                 </div>
+              </div>
+            )}
+
+            {slopeLoading && (
+              <div className="overlay-loading-row">
+                <div className="overlay-loading-bar" />
+                <span className="overlay-loading-label">Loading slope data…</span>
               </div>
             )}
 
@@ -322,12 +309,8 @@ export default function OverlayPanel() {
           {/* LCM Section */}
           <div className="overlay-section" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '12px', marginTop: '12px' }}>
             <div className="toggle-row">
-              <div className="toggle-row-left">
-                <span>Land Cover (LCM)</span>
-                <span className="overlay-desc-btn" data-tooltip="Classified surface data representing forests, urban areas, and water bodies, used to monitor environmental health and ecosystem changes.">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </span>
-              </div>
+              <span>Land Cover (LCM)</span>
+              {lcmLoading && <span className="overlay-spinner" />}
               <label className="toggle-switch" style={{ opacity: lcmLoading ? 0.5 : 1 }}>
                 <input
                   type="checkbox"
@@ -352,27 +335,6 @@ export default function OverlayPanel() {
                 <div className="overlay-confirm-text">
                   The land cover overlay requires fetching data from Supabase. This may take a moment.
                 </div>
-                <div className="lcm-class-toggles" style={{ margin: '8px 0', padding: '0' }}>
-                  <div className="lcm-class-header">
-                    <b style={{ fontSize: '11px' }}>Select classes to fetch:</b>
-                    <span className="lcm-class-actions">
-                      <a href="#" onClick={(e) => { e.preventDefault(); APP._lcmShowAll(); }} style={{ fontSize: '11px', cursor: 'pointer' }}>All</a>
-                      <span style={{ color: '#ccc', margin: '0 2px' }}>|</span>
-                      <a href="#" onClick={(e) => { e.preventDefault(); APP._lcmHideAll(); }} style={{ fontSize: '11px', cursor: 'pointer' }}>None</a>
-                    </span>
-                  </div>
-                  {LCM_CLASSES.map((c) => (
-                    <label key={c.name} className="lcm-class-row">
-                      <input
-                        type="checkbox"
-                        checked={APP.lcm.isClassVisible(c.name)}
-                        onChange={() => APP._toggleLCMClass(c.name)}
-                      />
-                      <span className="lcm-class-swatch" style={{ background: c.color }}></span>
-                      <span className="lcm-class-label">{c.name}</span>
-                    </label>
-                  ))}
-                </div>
                 <div className="overlay-confirm-actions">
                   <button
                     className="overlay-confirm-btn overlay-confirm-cancel"
@@ -385,12 +347,18 @@ export default function OverlayPanel() {
                     onClick={() => {
                       useMapStore.setState({ lcmConfirmPending: false });
                       APP._toggleLCM();
-                      APP._refetchLCMWithClasses();
                     }}
                   >
                     Apply &amp; Fetch
                   </button>
                 </div>
+              </div>
+            )}
+
+            {lcmLoading && (
+              <div className="overlay-loading-row">
+                <div className="overlay-loading-bar" />
+                <span className="overlay-loading-label">Loading land cover data…</span>
               </div>
             )}
 
@@ -410,15 +378,6 @@ export default function OverlayPanel() {
               id="lcm-controls"
               style={{ display: showLCM ? 'block' : 'none', marginTop: '8px' }}
             >
-              {showLCM && !lcmLoading && (
-                <button
-                  className="overlay-confirm-btn overlay-confirm-apply"
-                  style={{ width: '100%', marginBottom: '8px', fontSize: '12px', padding: '5px 10px' }}
-                  onClick={() => APP._refetchLCMWithClasses()}
-                >
-                  Apply &amp; Fetch
-                </button>
-              )}
               <div className="overlay-slider-row">
                 <label>Opacity</label>
                 <input
@@ -514,7 +473,90 @@ export default function OverlayPanel() {
                 }}
               />
             </div>
+            <button
+              className="overlay-confirm-btn overlay-confirm-cancel"
+              style={{ marginTop: '8px', width: '100%' }}
+              onClick={() => {
+                APP.state.basinFillColor = '#d1d5db';
+                APP.state.basinFillOpacity = 0.15;
+                APP.state.basinOutlineColor = '#000000';
+                APP.state.basinOutlineOpacity = 0.9;
+                APP._updateBasinStyles();
+                /* Force React re-render to sync input values */
+                useMapStore.setState({ _basinStyleTick: Date.now() });
+              }}
+            >
+              Reset to Default
+            </button>
           </div>
+          </>)}
+
+          {isBoundaries && (<>
+          {/* Boundary Style Section */}
+          <div className="overlay-section">
+            <div className="toggle-row">
+              <span>Boundary Styles</span>
+            </div>
+            <div className="overlay-controls" style={{ marginTop: '8px' }}>
+              <div className="overlay-slider-row">
+                <label>Fill Opacity</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  defaultValue={boStyle.fillOpacity ?? 0}
+                  onInput={(e) => APP.boundaryOverlay.setFillOpacity(parseFloat(e.target.value))}
+                />
+              </div>
+              <div className="overlay-slider-row">
+                <label>Outline Opacity</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  defaultValue={boStyle.outlineOpacity ?? 0.9}
+                  onInput={(e) => APP.boundaryOverlay.setOutlineOpacity(parseFloat(e.target.value))}
+                />
+              </div>
+              <div className="overlay-slider-row">
+                <label>Outline Weight</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="6"
+                  step="0.5"
+                  defaultValue={boStyle.outlineWeight ?? 2.5}
+                  onInput={(e) => APP.boundaryOverlay.setOutlineWeight(parseFloat(e.target.value))}
+                />
+              </div>
+              <div className="overlay-color-row">
+                <label>Fill Color</label>
+                <input
+                  type="color"
+                  defaultValue={boStyle.fillColor ?? '#d1d5db'}
+                  onChange={(e) => APP.boundaryOverlay.setFillColor(e.target.value)}
+                />
+              </div>
+              <div className="overlay-color-row">
+                <label>Outline Color</label>
+                <input
+                  type="color"
+                  defaultValue={boStyle.outlineColor ?? '#1e293b'}
+                  onChange={(e) => APP.boundaryOverlay.setOutlineColor(e.target.value)}
+                />
+              </div>
+              <button
+                className="overlay-confirm-btn overlay-confirm-cancel"
+                style={{ marginTop: '8px', width: '100%' }}
+                onClick={() => APP.boundaryOverlay.reset()}
+              >
+                Reset to Default
+              </button>
+            </div>
+          </div>
+          </>)}
         </div>
       </div>
     </>

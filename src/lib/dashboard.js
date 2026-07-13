@@ -47,6 +47,48 @@ Object.assign(APP, {
 
     html += `</div></div>`;
 
+    let id = p._id;
+    if (!id && level >= 1) {
+      const nameLower = this._featureName(feature, level).toLowerCase().replace(/\s+/g, '-');
+      if (level === 1) {
+        id = nameLower;
+      } else if (level === 2) {
+        const prov = (p.Province || p.PROVINCE || '').toLowerCase().replace(/\s+/g, '-');
+        id = prov ? `${prov}:${nameLower}` : nameLower;
+      }
+    } else if (level === 0) {
+      id = 'CAR';
+    }
+
+    if (level < this._src().maxLevel && this.state.hierarchy && this.state.hierarchy.children && id && this.state.hierarchy.children[id]) {
+      const childrenIds = this.state.hierarchy.children[id];
+      if (childrenIds.length > 0) {
+        const childLevelName = this._src().levelNames[level + 1];
+        const pluralName = childLevelName === 'Municipality' ? 'Municipalities' : `${childLevelName}s`;
+        html += `<div class="panel-section">
+          <div class="span-group collapsed">
+            <div class="span-group-label" onclick="this.parentElement.classList.toggle('collapsed')">
+              ${pluralName}
+              <span class="span-count-badge">${childrenIds.length}</span>
+            </div>
+            <div class="span-group-wrapper">
+              <div class="span-group-content">
+                <div class="span-group-enclosed province-accordion-list">
+                  ${childrenIds.map(childId => {
+                    const childName = this.state.hierarchy.names[childId] || childId;
+                    return `<button class="span-chip" onclick="APP._highlightSidebarSelection('${this._escHtml(childName)}', ${level + 1}, this)">
+                      ${this._escHtml(this._toTitleCase(childName))}
+                    </button>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="span-hint">Tap an item to explore its boundaries.</p>
+        </div>`;
+      }
+    }
+
     const chartData = this._resolveChartData(p);
     if (chartData.values.length > 0) {
       html += `<div class="panel-section">
@@ -66,8 +108,6 @@ Object.assign(APP, {
       </div>
     </div>`;
 
-    /* Watershed summary — always visible for level 0 (region) and level 1+ with intersections */
-    const id = p._id;
     let intersectingWs = null;
     if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
       intersectingWs = this.state.watershedIntersections[id];
@@ -81,29 +121,35 @@ Object.assign(APP, {
     if (intersectingWs && intersectingWs.length > 0) {
       html += `<div class="panel-section">
         <div class="panel-section-title">Watersheds <span style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; vertical-align: middle;">${intersectingWs.length}</span></div>
-        <div class="watershed-summary-list">
-          ${intersectingWs.slice(0, 5).map(ws => {
-            let areaText = '';
-            let outflowText = '';
-            if (this.state.rawData['watershed']) {
-              const wsFeature = this.state.rawData['watershed'].features.find(f => {
-                const n = f.properties.Name || f.properties.Old_Name || '';
-                return n === ws;
-              });
-              if (wsFeature && wsFeature.properties.Area_Ha) {
-                areaText = `<span class="ws-area">${wsFeature.properties.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:0})} Ha</span>`;
-              }
-              outflowText = this.config.watershedConnections[ws] || '';
-            }
-            return `<div class="watershed-summary-item">
-              <div class="ws-summary-name">${this._escHtml(ws)}</div>
-              <div class="ws-summary-meta">${areaText}${outflowText ? `<span class="ws-outflow-inline">→ ${this._escHtml(outflowText)}</span>` : ''}</div>
-            </div>`;
+        <div class="watershed-compact-list">
+          ${intersectingWs.slice(0, 6).map(ws => {
+            return `<div class="watershed-compact-item">${this._escHtml(ws)}</div>`;
           }).join('')}
-          ${intersectingWs.length > 5 ? `<div class="watershed-summary-more">+ ${intersectingWs.length - 5} more watersheds</div>` : ''}
+          ${intersectingWs.length > 6 ? `<div class="watershed-compact-more">+ ${intersectingWs.length - 6} more</div>` : ''}
         </div>
       </div>`;
     }
+
+    const overviewTitle = `${this._src().levelNames[level]} Overview`;
+    const overviewTexts = {
+      'cordillera administrative region': 'The Cordillera Administrative Region (CAR) is the only landlocked region in the Philippines, nestled in the mountainous northern part of Luzon. Established in 1987, it encompasses six provinces — Abra, Apayao, Benguet, Ifugao, Kalinga, and Mountain Province — and is home to the country\'s highest peak, Mount Apo, as well as the UNESCO World Heritage Rice Terraces of the Philippine Cordilleras. The region is a major watershed hub, feeding major river systems that flow into both the South China Sea and the Philippine Sea.',
+      'abra': 'Abra is a landlocked province in the western part of CAR, bordered by Ilocos Norte and Apayao to the north, Mountain Province to the east, and Ilocos Sur to the south. Known for its rolling terrain and the Abra River — one of the longest river systems in the region — the province is a mix of lowland valleys and upland communities with a predominantly Ilocano and Tingguian population.',
+      'apayao': 'Apayao is the northernmost province of CAR, sharing a boundary with Kalinga to the south and Cagayan to the east. The province is known for its dense forests, the Apayao River, and the Ambuklao watershed area. It is home to the Isneg people and remains one of the most forested and least densely populated provinces in the region.',
+      'benguet': 'Benguet is a landlocked province in the southern part of CAR, known as the "Salad Bowl of the Philippines" for its extensive vegetable farming industry. It hosts Baguio City — the region\'s commercial center — and is home to the Ibaloi and Kankanaey peoples. The province is traversed by the Agno River system and contains major watershed areas feeding the Agno and Ambuklao basins.',
+      'ifugao': 'Ifugao is a landlocked province in the eastern part of CAR, most famous for the Banaue Rice Terraces — a UNESCO World Heritage Site often called the "Eighth Wonder of the World." Carved into the mountains over 2,000 years ago by the Ifugao people, the terraces are a testament to ancient engineering and sustainable agriculture. The province is traversed by the Magat and Ibulao river systems.',
+      'kalinga': 'Kalinga is a landlocked province in the northeastern part of CAR, bordered by Apayao to the north, Mountain Province to the south, and Cagayan to the east. The province is known for its well-preserved indigenous culture, particularly among the Kalinga people, and the Chico River system that runs through its valleys. It is one of the most culturally distinct provinces in the Philippines.',
+      'mountain province': 'Mountain Province is a landlocked province in the central part of CAR, known for its rugged terrain, caves, and hanging coffins — an ancient burial tradition of the Igorot people. The province is traversed by major river systems and contains significant watershed areas that feed the Agno and Chico river basins. It is one of the original seven provinces of the old Mountain Province established during the American colonial period.',
+    };
+    let overviewKey = (id || '').toLowerCase().replace(/-/g, ' ').replace(/^namria:/, '').replace(/^cad:/, '');
+    if (overviewKey === 'car') overviewKey = 'cordillera administrative region';
+    const overviewFallback = `${this._toTitleCase(name)} is a ${this._src().levelNames[level].toLowerCase()} in the Cordillera Administrative Region (CAR), Philippines — the country's only landlocked region in northern Luzon.`;
+    const overviewBody = overviewTexts[overviewKey] || overviewFallback;
+    html += `<div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
+      <div class="panel-section-title">${overviewTitle}</div>
+      <p style="font-size: 0.85rem; color: #374151; line-height: 1.6; margin-bottom: 0;">
+        ${overviewBody}
+      </p>
+    </div>`;
 
     /* Add Show More Button and Expanded Content — for drilling into specific admin boundaries */
     let expandedHtml = '';
@@ -350,22 +396,38 @@ Object.assign(APP, {
         }
       } else if (level === 1) {
         d['Province'] = props.PROVINCE || props.Province || name;
-        if (props.REGION) d['Region'] = props.REGION;
+        d['Region'] = 'Cordillera Administrative Region';
         const cc = childCount(props._id);
         if (cc !== null) d['Municipalities'] = String(cc);
       } else {
         d['Region'] = props.Region || 'Cordillera Administrative Region';
+        d['Island Group'] = 'Luzon';
         const cc = childCount(props._id);
         if (cc !== null) d['Provinces'] = String(cc);
       }
     }
     
     const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
-    if (sqMeters > 0) d['Square Meters'] = sqMeters.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    
     let hectares = parseFloat(props.Hectares || props.Area || 0);
     if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
-    if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    
+    if (hectares > 0) {
+      d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      let sizeCategory = '';
+      if (level === 2) {
+        if (hectares < 10000) sizeCategory = 'Small';
+        else if (hectares <= 50000) sizeCategory = 'Medium';
+        else sizeCategory = 'Large';
+        d['Size'] = `${sizeCategory} sized municipality`;
+      } else if (level === 1) {
+        if (hectares < 100000) sizeCategory = 'Small';
+        else if (hectares <= 300000) sizeCategory = 'Medium';
+        else sizeCategory = 'Large';
+        d['Size'] = `${sizeCategory} sized province`;
+      } else {
+        d['Size'] = 'Large sized region';
+      }
+    }
     
     const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
     if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -467,6 +529,12 @@ Object.assign(APP, {
     if (panelType === 'subwatershed') {
       extentOptions.splice(2, 0, { id: 'dr-extent-zone', value: 'Selected Zone', label: self.state.hydroSelectedZone ? (self.state.hydroSelectedZone.name || 'Selected Zone') : 'Selected Zone', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>' });
     }
+    if (panelType === 'boundary') {
+      var boundaryItem = this.state.selectedPath && this.state.selectedPath[this.state.selectedPath.length - 1];
+      if (boundaryItem && boundaryItem.name) {
+        extentOptions.splice(1, 0, { id: 'dr-extent-boundary', value: 'Selected ' + (this.state.currentLevel === 1 ? 'Province' : 'Municipality'), label: boundaryItem.name, icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' });
+      }
+    }
 
     var extentHtml = extentOptions.map(function(opt, i) {
       return '<label class="dr-radio-card" for="' + opt.id + '">' +
@@ -501,12 +569,16 @@ Object.assign(APP, {
       '<div class="dr-section">',
         '<div class="dr-section-title">Data Layers <span class="dr-required">*</span></div>',
         '<div class="dr-chip-grid">',
-          self._drChip('dr-layer-watershed', 'Watershed Boundaries', 'Watershed Boundaries', true),
-          self._drChip('dr-layer-subwatershed', 'Sub-watershed Zones', 'Sub-watershed Zones', true),
-          self._drChip('dr-layer-stream', 'Stream Order', 'Stream Order', true),
-          self._drChip('dr-layer-slope', 'Slope Data', 'Slope Data', true),
-          self._drChip('dr-layer-lcm', 'Land Cover (LCM)', 'Land Cover (LCM)', true),
-          self._drChip('dr-layer-admin', 'Administrative Boundaries', 'Administrative Boundaries', false),
+          panelType === 'boundary'
+            ? self._drChip('dr-layer-admin', 'Administrative Boundaries', 'Administrative Boundaries', true) +
+              self._drChip('dr-layer-slope', 'Slope Data', 'Slope Data', false) +
+              self._drChip('dr-layer-lcm', 'Land Cover (LCM)', 'Land Cover (LCM)', false)
+            : self._drChip('dr-layer-watershed', 'Watershed Boundaries', 'Watershed Boundaries', true) +
+              self._drChip('dr-layer-subwatershed', 'Sub-watershed Zones', 'Sub-watershed Zones', true) +
+              self._drChip('dr-layer-stream', 'Stream Order', 'Stream Order', true) +
+              self._drChip('dr-layer-slope', 'Slope Data', 'Slope Data', true) +
+              self._drChip('dr-layer-lcm', 'Land Cover (LCM)', 'Land Cover (LCM)', true) +
+              self._drChip('dr-layer-admin', 'Administrative Boundaries', 'Administrative Boundaries', false),
         '</div>',
       '</div>',
 
@@ -787,3 +859,8 @@ Object.assign(APP, {
     }
   }
 });
+
+// Legacy shims
+function initDashboard() {}
+function updateDashboard(feature) { if (feature && APP) APP.openPanel(feature, APP.state.currentLevel); }
+function clearDashboard() { APP.closePanel(); }

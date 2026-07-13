@@ -104,9 +104,6 @@ Object.assign(APP, {
 
   /* ── Hydro Mode: enter, render basins ── */
   async _enterHydroMode() {
-    const outlineToggles = document.getElementById('outline-toggles');
-    if (outlineToggles) outlineToggles.innerHTML = '';
-
     /* Defensive cleanup: ensure no residual admin boundary layers remain */
     for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
       if (this.state.layers[lvl]) {
@@ -114,12 +111,6 @@ Object.assign(APP, {
         this.state.layers[lvl] = null;
       }
     }
-    Object.values(this.state.outlineLayers).forEach(l => {
-      if (l) this.state.map.removeLayer(l);
-    });
-    this.state.outlineLayers = {};
-    this.state.activeOutline = null;
-    this.state._outlineHighlight = null;
     this.state.selectedPath = [];
     this.state.currentLevel = 0;
 
@@ -329,6 +320,13 @@ Object.assign(APP, {
         const idx = self._hydroBasinIndex(feature);
         const basinColor = colors[idx] || '#6b7280';
         leafletLayer._labelText = labelName;
+
+        leafletLayer.bindTooltip(labelName, {
+          permanent: true,
+          direction: 'center',
+          className: 'basin-label',
+        });
+        leafletLayer._labelBound = true;
 
         leafletLayer.on('mouseover', function(e) {
           if (self.state.hydroDrillLevel !== 0) return;
@@ -754,6 +752,16 @@ Object.assign(APP, {
     });
   },
 
+  _resetSubWatershedDefaults() {
+    this.state.selectedFillOpacity = 0.3;
+    this.state.subWatershedOutlineOpacity = 0.8;
+    this.state.subWatershedFillColor = '#3b82f6';
+    this.state.subWatershedOutlineColor = '#000000';
+    this._updateSubWatershedStyles();
+    /* Re-render the side panel to sync slider/color values */
+    if (typeof this._openZonePanel === 'function') this._openZonePanel();
+  },
+
   _updateBasinStyles() {
     const layer = this.state.hydroLayers[0];
     if (!layer) return;
@@ -1036,7 +1044,7 @@ Object.assign(APP, {
         lf.bindTooltip(lf._labelText || 'Unknown', {
           permanent: true,
           direction: 'center',
-          className: 'watershed-label',
+          className: 'basin-label',
         });
         lf._labelBound = true;
       } else if (!show && lf._labelBound) {
@@ -1144,8 +1152,7 @@ Object.assign(APP, {
     const html = `
       <div class="panel-section basin-picker-section">
         ${groupHtml}
-      </div>
-      ${APP._renderMapOverlaysHTML({ showSubWatersheds: false, showStreamOrder: false, showProgressBars: false })}`;
+      </div>`;
 
     content.innerHTML = html;
     this._openPanelState();

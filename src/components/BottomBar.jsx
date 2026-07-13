@@ -6,7 +6,7 @@ import '../assets/css/bottom-bar.css';
  * BottomBar — Bottom-center controls bar.
  *
  * Three visual groups (separated by spacing, no labels):
- *   VIEW:      [Watersheds|Boundaries] [+ Explore|Boundary in boundaries mode]
+ *   VIEW:      [Watersheds|Boundaries]
  *   SOURCE:    [NAMRIA|CAD]
  *   NAVIGATION: breadcrumb container (filled by APP._updateBreadcrumb) + reset button
  *

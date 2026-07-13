@@ -174,92 +174,6 @@ button, input, select, textarea {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* =============================================
-   BOUNDARY CONTROLS — Hydrohub-style floating panel
-   ============================================= */
-
-.outline-toggles {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 500;
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-body.mode-explore .outline-toggles {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) translateY(-10px);
-}
-
-.boundary-controls {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 24px;
-  padding: 4px;
-  gap: 3px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
-}
-
-.boundary-header {
-  display: none;
-}
-
-.boundary-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border: none;
-  background: transparent;
-  border-radius: 20px;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #6b7280;
-  transition: all 0.18s ease;
-  white-space: nowrap;
-}
-
-.boundary-option:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: #374151;
-}
-
-.boundary-option.active {
-  color: #065f46;
-  background: #ecfdf5;
-  font-weight: 600;
-  box-shadow: 0 1px 4px rgba(5, 150, 105, 0.15);
-}
-
-.boundary-radio-dot {
-  display: none;
-}
-
-.boundary-option:hover .boundary-radio-dot {
-  border-color: #9ca3af;
-}
-
-.boundary-option.active .boundary-radio-dot {
-  border-color: #065f46;
-}
-
-.boundary-option.active .boundary-radio-dot::after {
-  content: '';
-  width: 10px;
-  height: 10px;
-  background: #065f46;
-  border-radius: 50%;
-}
-
-/* =============================================
    BACK BUTTON — top-left (uses .map-icon-btn)
    ============================================= */
 
@@ -1032,6 +946,11 @@ body.panel-open .bottom-left-controls {
   margin-bottom: 2px;
 }
 
+/* ── Ensure tooltip pane renders above Canvas overlay ── */
+.leaflet-tooltip-pane {
+  z-index: 1000 !important;
+}
+
 /* ── Permanent boundary labels ── */
 .boundary-label {
   background: rgba(255, 255, 255, 0.85) !important;
@@ -1049,21 +968,21 @@ body.panel-open .bottom-left-controls {
   display: none !important;
 }
 
-/* ── Watershed labels (no background, text-shadow for basemap contrast) ── */
-.watershed-label {
+/* ── Basin labels on the map (text-only, no background) ── */
+.basin-label {
   background: none !important;
   border: none !important;
   box-shadow: none !important;
-  font-size: 12px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
-  text-shadow: 0 0 6px rgba(0,0,0,0.92), 0 0 3px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.9) !important;
+  color: #1e293b !important;
+  text-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 2px rgba(255,255,255,1), 0 1px 3px rgba(0,0,0,0.15) !important;
   pointer-events: none !important;
   white-space: nowrap !important;
   padding: 0 !important;
   border-radius: 0 !important;
 }
-.watershed-label::before {
+.basin-label::before {
   display: none !important;
 }
 
@@ -1846,37 +1765,6 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
     font-size: 18px !important;
   }
 
-  .outline-toggles {
-    top: 56px;
-    right: 12px;
-  }
-
-  .boundary-controls {
-    min-width: 110px;
-    padding: 3px;
-  }
-
-  .boundary-header {
-    font-size: 9px;
-    padding: 5px 10px 1px;
-  }
-
-  .boundary-option {
-    font-size: 11px;
-    padding: 7px 10px;
-    gap: 8px;
-  }
-
-  .boundary-radio-dot {
-    width: 16px;
-    height: 16px;
-  }
-
-  .boundary-option.active .boundary-radio-dot::after {
-    width: 8px;
-    height: 8px;
-  }
-
 }
 
 /* =============================================
@@ -1928,6 +1816,30 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 
 .watershed-summary-more {
   text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  padding: 4px 0;
+}
+
+.watershed-compact-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.watershed-compact-item {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #0c4a6e;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.watershed-compact-more {
   font-size: 0.75rem;
   font-weight: 600;
   color: #9ca3af;
@@ -3091,12 +3003,15 @@ body.panel-open .map-app:not(.overlay-panel-open) .hydro-legend {
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
-  width: 100%;
-  max-width: 480px;
+  width: 550px;
+  height: 550px;
+  max-width: 90vw;
   max-height: 90vh;
+  max-height: 95vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-top: 4px solid #10b981;
   transform: translateY(20px) scale(0.98);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -3228,3 +3143,287 @@ body.panel-open .map-app:not(.overlay-panel-open) .hydro-legend {
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   pointer-events: none;
 }
+
+/* =============================================
+   GUIDE CAROUSEL
+   ============================================= */
+.guide-body.carousel-mode {
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  flex: 1;
+}
+.guide-slide-placeholder {
+  width: 100%;
+  flex: none;
+  height: 270px;
+  position: relative;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+.guide-slide-placeholder.special-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+.guide-slide-placeholder.hero-placeholder {
+  aspect-ratio: 16 / 9;
+  height: auto;
+  background: #dcfce7;
+  color: #166534;
+  font-weight: bold;
+  border-bottom: none;
+}
+.guide-slide-placeholder.success-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1e40af;
+  font-weight: bold;
+  border: none;
+  margin: 0 auto;
+}
+.guide-body.welcome-mode {
+  padding: 40px 32px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+.welcome-content h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: #111827;
+  margin-bottom: 12px;
+}
+.welcome-content p {
+  font-family: var(--font-sans);
+  color: #4b5563;
+  line-height: 1.5;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+.tour-start-btn {
+  padding: 10px 24px;
+  font-size: 15px;
+  border-radius: 8px;
+  background: #059669;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tour-start-btn:hover {
+  background: #047857;
+}
+.guide-header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.guide-header.premium-header {
+  padding: 16px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: none;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+.guide-header-text {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  width: 100%;
+}
+.guide-title-sleek {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 900;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  background: linear-gradient(to right, #065f46 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.guide-section.carousel-section {
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin: 12px 16px;
+  border: 1px solid #e2e8f0;
+}
+.guide-section.carousel-section.no-box {
+  background: transparent;
+  border: none;
+  margin: 0;
+  padding: 0 16px;
+}
+.guide-section-content {
+  overflow-y: auto;
+}
+.guide-section-content p {
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.guide-footer {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+.guide-nav-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.guide-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.guide-nav-dot.active {
+  width: 24px;
+  border-radius: 12px;
+  background: #10b981;
+}
+.guide-nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.guide-btn-back {
+  background: #059669;
+  border: none;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: background 0.2s;
+}
+.guide-btn-back:hover {
+  background: #047857;
+  color: #fff;
+}
+.guide-btn-next {
+  background: #059669;
+  border: none;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.guide-btn-next:hover {
+  background: #047857;
+  color: #fff;
+}
+.guide-btn-next.primary {
+  background: #059669;
+  color: #fff;
+}
+.guide-btn-next.primary:hover {
+  background: #047857;
+}
+.guide-btn-spacer {
+  width: 60px;
+}
+.guide-subtitle {
+  color: #6b7280;
+  font-size: 13px;
+  display: block;
+  margin-top: 4px;
+}
+.badge {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.guide-list {
+  padding-left: 20px;
+  margin-top: 8px;
+  list-style-type: none;
+}
+.guide-list li {
+  margin-bottom: 6px;
+  position: relative;
+  color: #334155;
+}
+.guide-list li::before {
+  content: "•";
+  color: #10b981;
+  position: absolute;
+  left: -16px;
+  font-weight: bold;
+}
+.guide-hero-label {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.guide-close {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 50%;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.guide-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+

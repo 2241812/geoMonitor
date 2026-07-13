@@ -4,6 +4,7 @@ window.L = L;
 import './config.js';
 import './dashboard.js';
 import './boundary-mode.js';
+import './boundary-overlay-manager.js';
 import './slope-manager.js';
 import './lcm-manager.js';
 import './hydro-mode.js';

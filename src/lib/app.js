@@ -13,8 +13,6 @@ export const APP = {
     lastViewed: null,
     _drilling: false,
     _chart: null,
-    outlineLayers: {},
-    activeOutline: null,
     _outlineHighlight: null,
     activeWatershedIds: [],
     watershedIntersections: null,
@@ -211,36 +209,6 @@ export const APP = {
     window.addEventListener('load', () => {
       if (this.state.map) this.state.map.invalidateSize();
     });
-
-    let _descTip = null;
-    document.addEventListener('mouseover', (e) => {
-      const btn = e.target.closest('.overlay-desc-btn');
-      if (!btn) return;
-      if (_descTip) _descTip.remove();
-      const text = btn.dataset.tooltip;
-      if (!text) return;
-      const tip = document.createElement('div');
-      tip.className = 'overlay-desc-tooltip';
-      tip.textContent = text;
-      document.body.appendChild(tip);
-      _descTip = tip;
-      const rect = btn.getBoundingClientRect();
-      let left = rect.left;
-      let top = rect.top - tip.offsetHeight - 8;
-      if (top < 8) top = rect.bottom + 8;
-      if (left + tip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - tip.offsetWidth - 8;
-      if (left < 8) left = 8;
-      tip.style.left = left + 'px';
-      tip.style.top = top + 'px';
-    });
-
-    document.addEventListener('mouseout', (e) => {
-      const btn = e.target.closest('.overlay-desc-btn');
-      if (!btn) return;
-      const related = e.relatedTarget;
-      if (related && related.closest && related.closest('.overlay-desc-btn')) return;
-      if (_descTip) { _descTip.remove(); _descTip = null; }
-    });
   },
 
   _loadHierarchy() {
@@ -299,12 +267,6 @@ export const APP = {
     this.state.rawData = {};
     this.state.selectedPath = [];
     this.state.currentLevel = 0;
-    this.state.activeOutline = null;
-    this.state._outlineHighlight = null;
-    Object.values(this.state.outlineLayers).forEach(l => {
-      if (l) this.state.map.removeLayer(l);
-    });
-    this.state.outlineLayers = {};
     const wasOpen = this.state.panelState === 'open' || this.state.panelState === 'peek';
 
     this._resetWatershedState();
@@ -591,15 +553,13 @@ export const APP = {
   },
 
   _updateHydroLegend() {
-    const el = document.getElementById('hydro-legend');
-    if (!el) return;
+    if (!this.state.map) return;
+    const old = this.state._legendCtrl;
+    if (old) { this.state.map.removeControl(old); this.state._legendCtrl = null; }
 
     const showSlope = !!this.state.showSlope;
     const showLCM = !!this.state.showLCM;
-    if (!showSlope && !showLCM) {
-      el.innerHTML = '';
-      return;
-    }
+    if (!showSlope && !showLCM) return;
 
     const slopeColors = [
       ['0–8%', '#50A823'], ['8–18%', '#8BD100'],
@@ -627,7 +587,14 @@ export const APP = {
       html += `<div style="margin-top:6px;margin-bottom:4px"><b>Land Cover</b><table>${getItems(lcmColors)}</table></div>`;
     }
 
-    el.innerHTML = html;
+    const ctrl = L.control({ position: 'bottomright' });
+    ctrl.onAdd = () => {
+      const el = L.DomUtil.create('div', 'legend hydro-legend');
+      el.innerHTML = html;
+      return el;
+    };
+    ctrl.addTo(this.state.map);
+    this.state._legendCtrl = ctrl;
   },
   toggleFullscreen() {
     const btn = document.getElementById('map-fullscreen-btn');
@@ -778,159 +745,6 @@ export const APP = {
     }
   },
 
-  _openPanelState() {
-    const panel = document.getElementById('info-panel');
-    if (!panel) return;
-    document.body.classList.add('panel-open');
-    document.body.classList.remove('panel-expanded');
-    panel.classList.remove('expanded', 'open', 'closed', 'peek');
-    if (window.innerWidth <= 640) {
-      panel.classList.add('peek');
-      this.state.panelState = 'peek';
-    } else {
-      panel.classList.add('open');
-      this.state.panelState = 'open';
-    }
-  },
-
-  _renderMapOverlaysHTML(opts = {}) {
-    const { showSubWatersheds = true, showStreamOrder = true, showSlope = true, showLCM = true, showProgressBars = true } = opts;
-    const s = this.state;
-
-    const overlayDescriptions = {
-      subWatersheds: 'The fundamental unit of hydrological management, representing localized catchments used for detailed environmental and runoff analysis.',
-      streamOrder: 'A numerical hierarchy defining the relative size and connectivity of river segments, from headwater tributaries to major drainage systems.',
-      slope: 'A critical terrain factor determining water velocity and erosion potential, essential for land-use planning and hazard assessment.',
-      landCover: 'Classified surface data representing forests, urban areas, and water bodies, used to monitor environmental health and ecosystem changes.',
-    };
-
-    const descBtn = (label) => `<span class="overlay-desc-btn" data-tooltip="${label.replace(/"/g, '&quot;')}">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    </span>`;
-
-    let html = `<div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
-      <div class="panel-section-title">Map Overlays</div>`;
-
-    if (showSubWatersheds) {
-      html += `
-        <div class="toggle-row">
-          <div class="toggle-row-left">
-            <span>Sub-watersheds</span>
-            ${descBtn(overlayDescriptions.subWatersheds)}
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" ${s.showSubWatersheds ? 'checked' : ''} onchange="APP._toggleSubWatersheds()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div class="overlay-controls" id="sw-controls" style="display:${s.showSubWatersheds ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Fill Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${s.selectedFillOpacity ?? 0.3}" oninput="APP.state.selectedFillOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
-          </div>
-          <div class="overlay-slider-row">
-            <label>Outline Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${s.subWatershedOutlineOpacity}" oninput="APP.state.subWatershedOutlineOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Fill Color</label>
-            <input type="color" value="${s.subWatershedFillColor}" onchange="APP.state.subWatershedFillColor=this.value;APP._updateSubWatershedStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Outline Color</label>
-            <input type="color" value="${s.subWatershedOutlineColor}" onchange="APP.state.subWatershedOutlineColor=this.value;APP._updateSubWatershedStyles()">
-          </div>
-        </div>`;
-    }
-
-    if (showStreamOrder) {
-      html += `
-        <div class="toggle-row" style="margin-top: 12px;">
-          <div class="toggle-row-left">
-            <span>Stream Order</span>
-            ${descBtn(overlayDescriptions.streamOrder)}
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" ${s.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        <div class="overlay-controls" id="so-controls" style="display:${s.showStreamOrder ? 'block' : 'none'}; margin-top: 0;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${s.streamOrderOpacity}" oninput="APP.state.streamOrderOpacity=parseFloat(this.value);APP._updateStreamOrderStyles()">
-          </div>
-          <div class="overlay-color-row">
-            <label>Color</label>
-            <input type="color" value="${s.streamOrderColor}" onchange="APP.state.streamOrderColor=this.value;APP._updateStreamOrderStyles()">
-          </div>
-        </div>`;
-    }
-
-    if (showSlope) {
-      html += `
-        <div class="toggle-row" style="margin-top: 12px;">
-          <div class="toggle-row-left">
-            <span>Slope</span>
-            ${descBtn(overlayDescriptions.slope)}
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" ${s.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
-            <span class="toggle-knob"></span>
-          </label>
-        </div>
-        ${showProgressBars ? `<div id="slope-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
-          <div class="slope-load-bar"><div class="slope-load-fill"></div></div>
-          <span class="slope-load-label"></span>
-        </div>` : ''}
-        <div class="overlay-controls" id="slope-controls" style="display:${s.showSlope ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${s.slopeOpacity}" oninput="APP.state.slopeOpacity=parseFloat(this.value);APP.slope._setOpacity(parseFloat(this.value))">
-          </div>
-          <div class="overlay-color-row">
-            <label>Color Scheme</label>
-            <select onchange="APP.state.slopeColorScheme=this.value;APP.slope._setColorScheme(this.value)">
-              <option value="default" ${s.slopeColorScheme === 'default' ? 'selected' : ''}>Default</option>
-              <option value="terrain" ${s.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
-              <option value="heat" ${s.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
-            </select>
-          </div>
-        </div>`;
-    }
-
-    if (showLCM) {
-      html += `
-        <div class="toggle-row" style="margin-top: 12px;">
-          <div class="toggle-row-left">
-            <span>Land Cover (LCM)</span>
-            ${descBtn(overlayDescriptions.landCover)}
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button id="lcm-fetch-btn" class="lcm-fetch-btn-inline" onclick="APP._refetchLCMWithClasses()" style="display:${s.showLCM ? 'block' : 'none'}">Apply & Fetch</button>
-            <label class="toggle-switch">
-              <input type="checkbox" ${s.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
-              <span class="toggle-knob"></span>
-            </label>
-          </div>
-        </div>
-        ${showProgressBars ? `<div id="lcm-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
-          <div class="lcm-load-bar"><div class="lcm-load-fill"></div></div>
-          <span class="lcm-load-label"></span>
-        </div>` : ''}
-        <div class="overlay-controls" id="lcm-controls" style="display:${s.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
-          <div class="overlay-slider-row">
-            <label>Opacity</label>
-            <input type="range" min="0" max="1" step="0.05" value="${s.lcmOpacity}" oninput="APP.state.lcmOpacity=parseFloat(this.value);APP.lcm._setOpacity(parseFloat(this.value))">
-          </div>
-          ${s.showLCM ? APP._renderLCMClassToggles() : ''}
-        </div>`;
-    }
-
-    html += `</div>`;
-    return html;
-  },
-
   _openWatershedPanel(feature) {
     const p = feature.properties;
     const name = p.Name || p.Old_Name || 'Unknown Watershed';
@@ -989,6 +803,10 @@ export const APP = {
         <p class="panel-subtitle">Hydrological Boundary</p>`;
     }
 
+    const areaHa = p.Area_Ha ? p.Area_Ha.toLocaleString(undefined, {maximumFractionDigits: 2}) : null;
+    const perimeterKm = p.Shape_Length ? (p.Shape_Length / 1000).toLocaleString(undefined, {maximumFractionDigits: 2}) : null;
+    const regionSpanned = p.Region || null;
+
     const html = `
       <div class="panel-section">
         <div class="panel-section-title">Connectivity</div>
@@ -1000,30 +818,115 @@ export const APP = {
         </div>
       </div>
 
-      ${spansHTML}
-
-      ${this.state.hydroDrillLevel === 1 ? this._renderMapOverlaysHTML() : ''}
-
-      <div class="panel-section">
+      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
         <div class="panel-section-title">Details</div>
         <div class="stat-grid">
-          <div class="stat-box">
-            <div class="stat-label">Area (Ha)</div>
-            <div class="stat-value">${p.Area_Ha ? p.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:2}) : 'N/A'}</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Size Category</div>
-            <div class="stat-value" style="font-size: 0.85rem; line-height: 1.2;">${this._escHtml(p.SIZE_W || 'N/A')}</div>
-          </div>
-        </div>
-        <div style="margin-top: 12px; font-size: 0.9rem; color: #4b5563;">
-          <strong>Regions Spanned:</strong> ${this._escHtml(p.Region || 'N/A')}
+          ${areaHa ? `<div class="stat-box"><div class="stat-label">Area (Ha)</div><div class="stat-value">${areaHa}</div></div>` : ''}
+          ${perimeterKm ? `<div class="stat-box"><div class="stat-label">Perimeter (km)</div><div class="stat-value">${perimeterKm}</div></div>` : ''}
+          <div class="stat-box"><div class="stat-label">Size Category</div><div class="stat-value" style="font-size: 0.85rem; line-height: 1.2;">${this._escHtml(p.SIZE_W || 'N/A')}</div></div>
+          ${regionSpanned ? `<div class="stat-box"><div class="stat-label">Regions Spanned</div><div class="stat-value" style="font-size: 0.85rem; line-height: 1.2;">${this._escHtml(regionSpanned)}</div></div>` : ''}
         </div>
       </div>
-      
-      <div class="panel-section" style="font-size: 0.95rem; color: #374151; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+
+      ${spansHTML}
+
+      ${this.state.hydroDrillLevel === 1 ? `
+      <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
+        <div class="panel-section-title">Map Overlays</div>
+        <div class="toggle-row">
+          <span>Sub-watersheds</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showSubWatersheds ? 'checked' : ''} onchange="APP._toggleSubWatersheds()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="overlay-controls" id="sw-controls" style="display:${this.state.showSubWatersheds ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
+          <div class="overlay-slider-row">
+            <label>Fill Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.selectedFillOpacity ?? 0.3}" oninput="APP.state.selectedFillOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
+          </div>
+          <div class="overlay-slider-row">
+            <label>Outline Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.subWatershedOutlineOpacity}" oninput="APP.state.subWatershedOutlineOpacity=parseFloat(this.value);APP._updateSubWatershedStyles()">
+          </div>
+          <div class="overlay-color-row">
+            <label>Fill Color</label>
+            <input type="color" value="${this.state.subWatershedFillColor}" onchange="APP.state.subWatershedFillColor=this.value;APP._updateSubWatershedStyles()">
+          </div>
+          <div class="overlay-color-row">
+            <label>Outline Color</label>
+            <input type="color" value="${this.state.subWatershedOutlineColor}" onchange="APP.state.subWatershedOutlineColor=this.value;APP._updateSubWatershedStyles()">
+          </div>
+          <button class="overlay-confirm-btn overlay-confirm-cancel" style="margin-top: 8px; width: 100%;" onclick="APP._resetSubWatershedDefaults()">Reset to Default</button>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Stream Order</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showStreamOrder ? 'checked' : ''} onchange="APP._toggleStreamOrder()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div class="overlay-controls" id="so-controls" style="display:${this.state.showStreamOrder ? 'block' : 'none'}; margin-top: 0;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.streamOrderOpacity}" oninput="APP.state.streamOrderOpacity=parseFloat(this.value);APP._updateStreamOrderStyles()">
+          </div>
+          <div class="overlay-color-row">
+            <label>Color</label>
+            <input type="color" value="${this.state.streamOrderColor}" onchange="APP.state.streamOrderColor=this.value;APP._updateStreamOrderStyles()">
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Slope</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+        <div id="slope-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
+          <div class="slope-load-bar"><div class="slope-load-fill"></div></div>
+          <span class="slope-load-label"></span>
+        </div>
+        <div class="overlay-controls" id="slope-controls" style="display:${this.state.showSlope ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.slopeOpacity}" oninput="APP.state.slopeOpacity=parseFloat(this.value);APP.slope._setOpacity(parseFloat(this.value))">
+          </div>
+          <div class="overlay-color-row">
+            <label>Color Scheme</label>
+            <select onchange="APP.state.slopeColorScheme=this.value;APP.slope._setColorScheme(this.value)">
+              <option value="default" ${this.state.slopeColorScheme === 'default' ? 'selected' : ''}>Default</option>
+              <option value="terrain" ${this.state.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
+              <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
+            </select>
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-top: 12px;">
+          <span>Land Cover (LCM)</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button id="lcm-fetch-btn" class="lcm-fetch-btn-inline" onclick="APP._refetchLCMWithClasses()" style="display:${this.state.showLCM ? 'block' : 'none'}">Apply & Fetch</button>
+            <label class="toggle-switch">
+              <input type="checkbox" ${this.state.showLCM ? 'checked' : ''} onchange="APP._toggleLCM()">
+              <span class="toggle-knob"></span>
+            </label>
+          </div>
+        </div>
+        <div id="lcm-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
+          <div class="lcm-load-bar"><div class="lcm-load-fill"></div></div>
+          <span class="lcm-load-label"></span>
+        </div>
+        <div class="overlay-controls" id="lcm-controls" style="display:${this.state.showLCM ? 'block' : 'none'}; margin-top: 8px; padding-left: 4px;">
+          <div class="overlay-slider-row">
+            <label>Opacity</label>
+            <input type="range" min="0" max="1" step="0.05" value="${this.state.lcmOpacity}" oninput="APP.state.lcmOpacity=parseFloat(this.value);APP.lcm._setOpacity(parseFloat(this.value))">
+          </div>
+          ${this.state.showLCM ? APP._renderLCMClassToggles() : ''}
+        </div>
+      </div>` : ''}
+
+      <div class="panel-section" style="font-size: 0.95rem; color: #374151; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
         <div class="panel-section-title">Basin Overview</div>
-        <p>${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
+        <p style="margin-bottom: 0;">${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
       </div>
     `;
 
@@ -1046,6 +949,7 @@ export const APP = {
   },
 
   _openGuide() {
+    this.state.guideSlideIndex = 0;
     const overlay = document.getElementById('guide-overlay');
     const modal = document.getElementById('guide-modal');
     if (modal) modal.innerHTML = this._renderGuideHTML();
@@ -1057,81 +961,229 @@ export const APP = {
     if (el) el.classList.remove('show');
   },
 
+  _setGuideSlide(index) {
+    this.state.guideSlideIndex = index;
+    const modal = document.getElementById('guide-modal');
+    if (modal) modal.innerHTML = this._renderGuideHTML();
+  },
+
   _renderGuideHTML() {
+    const slides = [
+      {
+        title: "Welcome to GeoCradle!",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+        content: `
+          <p>Your smart portal for exploring watersheds, river networks, and administrative boundaries across the Cordillera region. Let's take a quick look around so you can start mapping with confidence.</p>
+        `
+      },
+      {
+        title: "Navigating the Map",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
+        content: `
+          <p>Click and drag to pan across the Cordillera region. Scroll to zoom in or out. Click any empty space to reset your selection.</p>
+        `
+      },
+      {
+        title: "Selecting Features",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
+        content: `
+          <p>The map defaults to the <span class="badge">Watersheds</span> view. Click on any highlighted river basin or boundary polygon to drill down into its specific data.</p>
+        `
+      },
+      {
+        title: "The Left Side Panel",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>`,
+        content: `
+          <p>Once a region is selected, the Left Side Panel instantly updates. Use it to view total area sizes, perimeters, and intersecting networks.</p>
+        `
+      },
+      {
+        title: "Switching Modes",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>`,
+        content: `
+          <p>Need administrative context? Use the floating switch at the bottom to flip between <span class="badge">Watersheds</span> and <span class="badge">Boundaries</span> modes.</p>
+        `
+      },
+      {
+        title: "Comparing Baselines",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`,
+        content: `
+          <p>Territorial lines can vary. Use the <span class="badge">NAMRIA</span> and <span class="badge">CAD</span> toggles at the top of the screen to compare different government data sources.</p>
+        `
+      },
+      {
+        title: "Overlays & Exporting",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
+        content: `
+          <p>Use the <span class="badge">Layers Menu</span> to project topography or stream orders onto the map. Click the <span class="badge">Download Icon</span> to export the raw data of your current view.</p>
+        `
+      },
+      {
+        title: "You're ready to explore!",
+        icon: ``,
+        content: `
+          <p>Thank you for using the GeoCradle Portal. You now have the tools to analyze and monitor the region's vital watersheds and boundaries. Dive in and start mapping!</p>
+        `
+      }
+    ];
+
+    const currentSlide = this.state.guideSlideIndex || 0;
+    const slide = slides[currentSlide];
+    const isWelcome = currentSlide === 0;
+    const isOutro = currentSlide === slides.length - 1;
+    const isSpecialSlide = isWelcome || isOutro;
+
+    let dotsHtml = slides.map((s, i) => {
+      const activeClass = i === currentSlide ? 'active' : '';
+      return `<div class="guide-nav-dot ${activeClass}" onclick="APP._setGuideSlide(${i})"></div>`;
+    }).join('');
+
+    let buttonsHtml = '';
+    if (isOutro) {
+      buttonsHtml = `<button class="guide-btn-next primary tour-start-btn" onclick="APP._closeGuide()">Start Mapping</button>`;
+    } else {
+      if (currentSlide > 0) {
+        buttonsHtml += `<button class="guide-btn-back" onclick="APP._setGuideSlide(${currentSlide - 1})">Back</button>`;
+      } else {
+        buttonsHtml += `<div class="guide-btn-spacer" style="display:none;"></div>`;
+      }
+      
+      if (isWelcome) {
+        buttonsHtml += `<button class="guide-btn-next primary tour-start-btn" onclick="APP._setGuideSlide(1)">Take the Tour</button>`;
+      } else {
+        buttonsHtml += `<button class="guide-btn-next" onclick="APP._setGuideSlide(${currentSlide + 1})">Next</button>`;
+      }
+    }
+
+    let placeholderHtml = '';
+    if (isWelcome) {
+      placeholderHtml = `
+        <div class="guide-slide-placeholder special-placeholder" style="height: 120px; background: transparent; border: none;">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+        </div>
+      `;
+    } else if (isOutro) {
+      placeholderHtml = `
+        <div class="guide-slide-placeholder special-placeholder" style="height: 80px; background: transparent; border: none; margin-bottom: 8px;">
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+      `;
+    } else {
+      placeholderHtml = `
+        <div class="guide-slide-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+      `;
+    }
+    
+    let modeClass = isSpecialSlide ? 'welcome-mode' : 'carousel-mode';
+    let noBoxClass = isSpecialSlide ? 'no-box' : '';
+    
+    // We don't render the icon on special slides
+    let iconHtml = isSpecialSlide ? '' : `
+          <div class="guide-section-icon">
+            ${slide.icon}
+          </div>
+    `;
+    
+    let titleHtml = isSpecialSlide ? `<h2 style="color: #059669; margin-bottom: 12px;">${slide.title}</h2>` : `<h4>${slide.title}</h4>`;
+
     return `
-      <div class="guide-header">
-        <div>
-          <h3>Map Guide</h3>
-          <small>How to use the geoMonitor map</small>
+      <div class="guide-header premium-header">
+        <div class="guide-header-text">
+          <h3 class="guide-title-sleek">GeoCradle</h3>
         </div>
         <button class="guide-close" onclick="APP._closeGuide()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="guide-body">
-        <div class="guide-section">
-          <div class="guide-section-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
+      <div class="guide-body ${modeClass}">
+        ${placeholderHtml}
+        <div class="guide-section carousel-section ${noBoxClass}">
+          ${iconHtml}
           <div class="guide-section-content">
-            <h4>Navigation</h4>
-            <p><strong>Pan:</strong> Click and drag the map</p>
-            <p><strong>Zoom:</strong> Use the +/− buttons or scroll wheel</p>
-            <p><strong>Drill up:</strong> Click empty space to go back one level</p>
+            ${titleHtml}
+            ${slide.content}
           </div>
         </div>
-
-        <div class="guide-section">
-          <div class="guide-section-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-          </div>
-          <div class="guide-section-content">
-            <h4>View Modes</h4>
-            <p><strong>Watersheds:</strong> Explore the 14 major river basins of CAR</p>
-            <p><strong>Boundaries:</strong> Navigate administrative boundaries (Region → Province → Municipality)</p>
-            <p><strong>Source:</strong> Switch between NAMRIA and CAD data sources</p>
-          </div>
+      </div>
+      <div class="guide-footer">
+        <div class="guide-nav-dots">
+          ${dotsHtml}
         </div>
-
-        <div class="guide-section">
-          <div class="guide-section-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-          </div>
-          <div class="guide-section-content">
-            <h4>Drill-down</h4>
-            <p><strong>Watersheds mode:</strong> Click a basin → view sub-watersheds & stream order</p>
-            <p><strong>Boundaries mode:</strong> Click a region → province → municipality</p>
-            <p><strong>Zone isolation:</strong> Click a sub-watershed to focus on it</p>
-            <p><strong>Breadcrumb:</strong> Track your navigation path at the bottom</p>
-          </div>
-        </div>
-
-        <div class="guide-section">
-          <div class="guide-section-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <div class="guide-section-content">
-            <h4>Overlays</h4>
-            <p><strong>Slope:</strong> Toggle slope overlay with color schemes (Default, Terrain, Heat)</p>
-            <p><strong>Land Cover:</strong> Toggle LCM overlay with class filters</p>
-            <p><strong>Stream Order:</strong> Show stream networks inside basins</p>
-            <p><strong>Opacity:</strong> Adjust overlay transparency with sliders</p>
-          </div>
-        </div>
-
-        <div class="guide-section">
-          <div class="guide-section-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          </div>
-          <div class="guide-section-content">
-            <h4>Info Panel</h4>
-            <p><strong>Details:</strong> View area, size category, and connectivity</p>
-            <p><strong>Spans:</strong> See which administrative boundaries intersect the watershed</p>
-            <p><strong>Overlays:</strong> Toggle slope, LCM, stream order from the panel</p>
-            <p><strong>Request Data:</strong> Use the download button to request raw data</p>
-          </div>
+        <div class="guide-nav-buttons" ${(isWelcome || isOutro) ? 'style="justify-content: center;"' : ''}>
+          ${buttonsHtml}
         </div>
       </div>
     `;
   },
+
+  _openPanelState() {
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded');
+    panel.classList.remove('open', 'closed', 'peek');
+    
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
+  },
 };
+
+const EVENTS = {
+  FEATURE_SELECT: 'feature:select',
+  FEATURE_CLEAR: 'feature:clear',
+};
+
+// ==========================================
+// SECURITY FEATURES
+// ==========================================
+
+// Prevent common screenshot shortcuts
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'PrintScreen') {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText('');
+    }
+    alert('Screenshots and screen recording are disabled on this page due to sensitive data.');
+  }
+});
+
+// Prevent Print (Ctrl+P, Cmd+P) and Save (Ctrl+S, Cmd+S)
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+    e.preventDefault();
+    alert('Printing is disabled on this page.');
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+  }
+  
+  // Mac screenshot shortcuts (Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5)
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
+    e.preventDefault();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText('');
+    }
+  }
+});
+
+// Blur the application when it loses focus (mitigates background screen recording)
+window.addEventListener('blur', () => {
+  const mapApp = document.querySelector('.map-app');
+  if (mapApp) {
+    mapApp.style.filter = 'blur(10px)';
+    mapApp.style.transition = 'filter 0.2s';
+  }
+});
+
+window.addEventListener('focus', () => {
+  const mapApp = document.querySelector('.map-app');
+  if (mapApp) {
+    mapApp.style.filter = 'none';
+  }
+});

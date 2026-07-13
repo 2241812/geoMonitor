@@ -40,9 +40,8 @@ export default function MapContainer() {
       </div>
 
       {/*
-        The legacy dashboard and outline-toggles UI injects DOM dynamically into these containers
+        The legacy dashboard UI injects DOM dynamically into these containers
       */}
-      <div className="outline-toggles" id="outline-toggles"></div>
       <div id="map-dashboard" className="map-dashboard closed"></div>
 
       <div className="map-hover-label" id="map-hover-label"></div>

@@ -55,19 +55,16 @@ Object.assign(APP, {
 
       this._updateBreadcrumb();
 
-      if (leafletLayer && leafletLayer.getBounds) {
+      if (currentLevel >= 1 && leafletLayer && leafletLayer.getBounds) {
         this.state.map.flyToBounds(leafletLayer.getBounds(), {
           ...this._getPaddingOpts(),
           duration: 0.45,
           easeLinearity: 0.25,
         });
-        /* Delayed child reveal: render children after zoom starts settling */
         await new Promise(r => setTimeout(r, 450));
       }
 
       await this._showLevel(nextLevel, feature, currentLevel);
-
-      this._updateOutlines();
     } finally {
       this.state._drilling = false;
     }
@@ -117,7 +114,6 @@ Object.assign(APP, {
           });
         }
         this._updateBreadcrumb();
-        this._updateOutlines();
         return;
       }
 
@@ -214,7 +210,6 @@ Object.assign(APP, {
       }
 
       this._updateBreadcrumb();
-      this._updateOutlines();
     } finally {
       this.state._drilling = false;
     }
@@ -282,7 +277,6 @@ Object.assign(APP, {
           leafletLayer.on('mouseover', function (e) {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
-            if (self.state.activeOutline === level) return;
             
             if (level >= 1) leafletLayer.unbindTooltip();
             
@@ -297,7 +291,6 @@ Object.assign(APP, {
           leafletLayer.on('mouseout', function (e) {
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) return;
-            if (self.state.activeOutline === level) return;
 
             if (level >= 1) {
               leafletLayer.bindTooltip(self._featureName(feature, level), {
@@ -336,7 +329,6 @@ Object.assign(APP, {
             }
             
             if (self.state.activeWatershedIds && self.state.activeWatershedIds.length > 0) return;
-            if (self.state.activeOutline === level) return;
             /* Clicked on a parent level → drill up to it */
             if (level < self.state.currentLevel) {
               self.drillUp(level);
@@ -425,6 +417,45 @@ Object.assign(APP, {
     this.closePanel();
   },
 
+  _highlightSidebarSelection(childName, childLevel, chipEl) {
+    if (chipEl && chipEl.parentNode) {
+      chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
+    }
+    if (chipEl) chipEl.classList.add('active');
+
+    const childData = this.state.rawData[childLevel];
+    if (!childData || !childName) return;
+    const lookup = childName.toLowerCase();
+    const childFeature = childData.features.find(f => this._featureName(f, childLevel).toLowerCase() === lookup);
+    if (!childFeature) return;
+    
+    const layer = this.state.layers[childLevel];
+    if (!layer) return;
+
+    this._resetLevelStyle(childLevel);
+    layer.eachLayer(lf => {
+      if (lf.feature === childFeature) {
+        lf.setStyle({ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2, weight: 2, opacity: 1, dashArray: null });
+        lf.bringToFront();
+        if (lf.getBounds) {
+          this.state.map.flyToBounds(lf.getBounds(), { padding: [50, 50], maxZoom: 12, duration: 0.8 });
+        }
+      }
+    });
+
+    if (childLevel === 2 && this.state.selectedPath && this.state.selectedPath.length > 0) {
+      const parentNode = this.state.selectedPath.find(p => p.level === 1);
+      if (parentNode && this.state.layers[1]) {
+        this.state.layers[1].eachLayer(lf => {
+          if (lf.feature === parentNode.feature) {
+            lf.bringToFront();
+            if (lf._path) lf._path.style.pointerEvents = 'none';
+          }
+        });
+      }
+    }
+  },
+
   _resetLevelStyle(level) {
     const layer = this.state.layers[level];
     if (!layer) return;
@@ -437,29 +468,6 @@ Object.assign(APP, {
         weight: cfg.weight,
         opacity: 0.9,
         fillOpacity: 0.25,
-      });
-    });
-  },
-  _dimDrillLayer(level) {
-    const layer = this.state.layers[level];
-    if (!layer) return;
-    const cfg = this.config.colors[level];
-    layer.eachLayer(l => {
-      l.setStyle({ fillColor: cfg.fill, fillOpacity: 0, opacity: 0.35, weight: 1.2 });
-    });
-  },
-  _restoreDrillLayer(level) {
-    const layer = this.state.layers[level];
-    if (!layer) return;
-    const cfg = this.config.colors[level];
-    const fillOpacity = 0;
-    layer.eachLayer(l => {
-      l.setStyle({
-        fillColor: cfg.fill,
-        fillOpacity: fillOpacity,
-        color: cfg.stroke,
-        weight: cfg.weight,
-        opacity: 0.9,
       });
     });
   },
@@ -512,7 +520,6 @@ Object.assign(APP, {
       }
     }
     this._updateBreadcrumb();
-    this._updateOutlines();
   },
 
   /* ── Mode switch ──────────────────────────── */
@@ -525,13 +532,6 @@ Object.assign(APP, {
     
     this._clearSelection();
     this.closePanel();
-
-    if (this.state.activeOutline !== null) {
-      this._hideOutline(this.state.activeOutline);
-      this._restoreDrillLayer(this.state.activeOutline);
-    }
-    this.state.activeOutline = null;
-    this.state._outlineHighlight = null;
 
     this.state.activeMode = mode;
     if (mode === 'boundary') {
@@ -553,120 +553,6 @@ Object.assign(APP, {
       this.state.currentLevel = 0;
     }
     this._updateBreadcrumb();
-  },
-
-  /* ── Breadcrumb ───────────────────────────── */
-  _renderOutlineToggles() {
-    const container = document.getElementById('outline-toggles');
-    if (!container) return;
-
-    const src = this._src();
-    const active = this.state.activeOutline;
-
-    const items = [
-      { mode: null, label: 'None', icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' },
-    ];
-    if (src.maxLevel >= 1) {
-      items.push({ mode: 1, label: src.levelNames[1], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' });
-    }
-    if (src.maxLevel >= 2) {
-      items.push({ mode: 2, label: src.levelNames[2], icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 6l4-4 4 4"/></svg>' });
-    }
-
-    container.innerHTML =
-      '<div class="boundary-controls">' +
-      items.map(({ mode, label, icon }) =>
-        `<button class="boundary-option${active === mode ? ' active' : ''}" onclick="APP._setBoundaryMode(${mode === null ? 'null' : mode})">${icon}<span>${this._escHtml(label)}</span></button>`
-      ).join('') +
-      '</div>';
-  },
-  _setBoundaryMode(level) {
-    const src = this._src();
-    const max = src.maxLevel;
-    if (level !== null && (level < 1 || level > max)) return;
-    if (this.state.activeOutline === level) level = null;
-    if (this.state.activeOutline !== null) {
-      this._hideOutline(this.state.activeOutline);
-      this._restoreDrillLayer(this.state.activeOutline);
-    }
-    this.state._outlineHighlight = null;
-    this.state.activeOutline = level;
-    if (level !== null) {
-      this._showOutline(level);
-      this._dimDrillLayer(level);
-    }
-    this._renderOutlineToggles();
-  },
-  _showOutline(level) {
-    const map = this.state.map;
-    if (!map) return;
-    if (this.state.outlineLayers[level]) {
-      map.removeLayer(this.state.outlineLayers[level]);
-      this.state.outlineLayers[level] = null;
-    }
-    const raw = this.state.rawData[level];
-    if (!raw) return;
-    const self = this;
-
-    this.state.outlineLayers[level] = L.geoJSON(raw, {
-      interactive: level >= this.state.currentLevel,
-      style: { color: '#1e293b', weight: 1.5, opacity: 0.6, fillOpacity: 0 },
-      onEachFeature(feature, layer) {
-        const name = self._featureName(feature, level);
-        
-        layer.on('mouseover', function () {
-          if (level < self.state.currentLevel) return;
-          self._showHoverLabel(feature, level);
-        });
-
-        layer.on('mouseout', function () {
-          if (level < self.state.currentLevel) return;
-          self._hideHoverLabel();
-        });
-
-        layer.on('click', function (e) {
-          L.DomEvent.stopPropagation(e);
-          if (self.state._drilling) return;
-          if (self.state._outlineHighlight) {
-            self.state.outlineLayers[level].resetStyle(self.state._outlineHighlight);
-          }
-          const cfg = self.config.colors[level];
-          layer.setStyle({ fillColor: cfg.fill, fillOpacity: 0.35, color: '#000000', weight: 3, opacity: 1 });
-          layer.bringToFront();
-          self.state._outlineHighlight = layer;
-          self.openPanel(feature, level);
-          if (self.state.activeMode === 'boundary' && level === self.state.currentLevel) {
-            if (level < self._src().maxLevel) {
-              self.drillDown(feature, layer);
-            } else {
-              self._highlightAndDim(feature, layer, level);
-            }
-          } else if (layer && layer.getBounds) {
-            self.state.map.flyToBounds(layer.getBounds(), {
-              padding: [40, 40],
-              duration: 0.45,
-              easeLinearity: 0.25,
-            });
-          }
-        });
-      },
-    }).addTo(map);
-  },
-  _hideOutline(level) {
-    if (this.state.outlineLayers[level]) {
-      this.state.map.removeLayer(this.state.outlineLayers[level]);
-      this.state.outlineLayers[level] = null;
-    }
-  },
-  _updateOutlines() {
-    this.state._outlineHighlight = null;
-    if (this.state.activeOutline !== null) {
-      this._showOutline(this.state.activeOutline);
-      /* Don't dim drill layer at the same level — let both coexist for full visibility */
-      if (this.state.activeOutline !== this.state.currentLevel) {
-        this._dimDrillLayer(this.state.activeOutline);
-      }
-    }
   },
 
   _toggleBoundaryMenu() {
@@ -862,18 +748,53 @@ Object.assign(APP, {
     const hero = document.getElementById('panel-hero');
     if (hero) {
       hero.className = 'panel-hero basin-picker-hero';
-      hero.innerHTML = `<div class="panel-level-badge">Administrative Boundaries</div>
+      hero.innerHTML = `<div class="panel-level-badge">Region</div>
         <h2 class="panel-title">Cordillera Administrative Region</h2>
-        <p class="panel-subtitle">Tap a province or municipality to explore boundaries and regional data</p>`;
+        <p class="panel-subtitle">Administrative Boundary</p>`;
     }
 
+    const carFeature = this.state.rawData[0]?.features?.[0];
+    const carProps = carFeature?.properties || {};
+    const carSqM = parseFloat(carProps.Shape_Area || carProps.AREA || 0);
+    let carHa = parseFloat(carProps.Hectares || carProps.Area || 0);
+    if (carHa <= 0 && carSqM > 0) carHa = carSqM / 10000;
+    const carPerimeter = parseFloat(carProps.Shape_Length || carProps.PERIMETER || 0);
+
+    let detailsHtml = `<div class="panel-section">
+      <div class="panel-section-title">Details</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Island Group</div><div class="stat-value">Luzon</div></div>
+        <div class="stat-box"><div class="stat-label">Size</div><div class="stat-value">Large sized region</div></div>`;
+    if (carHa > 0) detailsHtml += `<div class="stat-box"><div class="stat-label">Area (Ha)</div><div class="stat-value">${carHa.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div></div>`;
+    if (carPerimeter > 0) detailsHtml += `<div class="stat-box"><div class="stat-label">Perimeter (km)</div><div class="stat-value">${carPerimeter.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div></div>`;
+    detailsHtml += `</div></div>`;
+
+    let overviewHtml = `<div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
+      <div class="panel-section-title">Region Overview</div>
+      <p style="font-size: 0.85rem; color: #374151; line-height: 1.6; margin-bottom: 0;">
+        The Cordillera Administrative Region (CAR) is the only landlocked region in the Philippines, nestled in the mountainous northern part of Luzon. Established in 1987, it encompasses six provinces — Abra, Apayao, Benguet, Ifugao, Kalinga, and Mountain Province — and is home to the country's highest peak, Mount Apo, as well as the UNESCO World Heritage Rice Terraces of the Philippine Cordilleras. The region is a major watershed hub, feeding major river systems that flow into both the South China Sea and the Philippine Sea.
+      </p>
+    </div>`;
+
     const html = `
+      ${detailsHtml}
       <div class="panel-section basin-picker-section">
         ${groupHtml}
-      </div>`;
+      </div>
+      ${overviewHtml}`;
 
     content.innerHTML = html;
-    this._openPanelState();
+    document.body.classList.add('panel-open');
+    document.body.classList.remove('panel-expanded');
+    panel.classList.remove('expanded', 'open', 'closed', 'peek');
+    
+    if (window.innerWidth <= 640) {
+      panel.classList.add('peek');
+      this.state.panelState = 'peek';
+    } else {
+      panel.classList.add('open');
+      this.state.panelState = 'open';
+    }
     this._updatePanelToggleIcon();
   },
 
