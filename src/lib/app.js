@@ -1119,6 +1119,8 @@ export const APP = {
   },
 
   _openPanelState() {
+    const panel = document.getElementById('info-panel');
+    if (!panel) return;
     document.body.classList.add('panel-open');
     document.body.classList.remove('panel-expanded');
     panel.classList.remove('expanded');
