@@ -2,6 +2,11 @@
    MAP APP LAYOUT
    ============================================= */
 
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -918,18 +923,20 @@ body.panel-open .bottom-left-controls {
   z-index: 800;
   background: rgba(255, 255, 255, 0.97);
   color: #111827;
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
   font-weight: 500;
-  padding: 6px 10px;
-  border-radius: 7px;
+  padding: 6px 12px;
+  border-radius: 8px;
   pointer-events: none;
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.12s;
-  backdrop-filter: blur(4px);
-  max-width: 260px;
+  transition: opacity 0.15s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  max-width: 280px;
   line-height: 1.5;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04);
 }
 
 .map-hover-label.visible {
@@ -937,10 +944,11 @@ body.panel-open .bottom-left-controls {
 }
 
 .map-hover-label .label-level {
-  font-size: 10px;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: #10b981;
   display: block;
   margin-bottom: 2px;
@@ -951,36 +959,83 @@ body.panel-open .bottom-left-controls {
   z-index: 1000 !important;
 }
 
-/* ── Permanent boundary labels ── */
-.boundary-label {
-  background: rgba(255, 255, 255, 0.85) !important;
+/* ── Fix Leaflet tooltip positioning offsets for centered permanent labels ── */
+.leaflet-tooltip-center.boundary-label,
+.leaflet-tooltip-center.boundary-label-province,
+.leaflet-tooltip-center.boundary-label-municipality,
+.leaflet-tooltip-center.basin-label {
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  transform: translate(-50%, -50%);
+}
+
+/* ── Permanent boundary labels — shared base ── */
+.boundary-label,
+.boundary-label-province,
+.boundary-label-municipality {
+  font-family: var(--font-sans) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   border: none !important;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.12) !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: #374151 !important;
-  padding: 3px 8px !important;
-  border-radius: 5px !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04) !important;
+  color: #1e293b !important;
+  padding: 3px 10px !important;
+  border-radius: 6px !important;
   white-space: nowrap !important;
   pointer-events: none !important;
+  line-height: 1.4 !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  transition: opacity 0.2s ease !important;
 }
-.boundary-label::before {
+.boundary-label::before,
+.boundary-label-province::before,
+.boundary-label-municipality::before {
   display: none !important;
 }
 
-/* ── Basin labels on the map (text-only, no background) ── */
-.basin-label {
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  font-size: 11px !important;
+/* Province level — larger, bolder for visual hierarchy */
+.boundary-label-province {
+  font-size: 13px !important;
   font-weight: 700 !important;
-  color: #1e293b !important;
-  text-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 2px rgba(255,255,255,1), 0 1px 3px rgba(0,0,0,0.15) !important;
+  letter-spacing: -0.01em !important;
+  padding: 4px 12px !important;
+}
+
+/* Municipality level — smaller, lighter weight */
+.boundary-label-municipality {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  padding: 2px 8px !important;
+  border-radius: 5px !important;
+}
+
+/* Fallback for generic boundary-label (used in drillUp rebind) */
+.boundary-label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* ── Basin labels on the map — modern pill style ── */
+.basin-label {
+  font-family: var(--font-display) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: none !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.01em !important;
   pointer-events: none !important;
   white-space: nowrap !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
+  padding: 3px 10px !important;
+  border-radius: 6px !important;
+  line-height: 1.4 !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  text-shadow: none !important;
+  transition: opacity 0.2s ease !important;
 }
 .basin-label::before {
   display: none !important;

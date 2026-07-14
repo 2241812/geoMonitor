@@ -9,6 +9,28 @@
 import { APP } from './app.js';
 
 Object.assign(APP, {
+  /* Resolve the CSS class for a boundary label based on admin level.
+     NAMRIA: 1=Province 2=Municipality · CAD: 1=Municipality */
+  _boundaryLabelClass(level) {
+    const src = this._src();
+    // For NAMRIA (maxLevel 2): level 1 → province, level 2 → municipality
+    // For CAD   (maxLevel 1): level 1 → municipality
+    if (src.maxLevel === 2) {
+      return level === 1 ? 'boundary-label-province' : 'boundary-label-municipality';
+    }
+    return 'boundary-label-municipality';
+  },
+
+  /* Strip all permanent tooltips from every feature in a Leaflet GeoJSON layer.
+     Called when a layer transitions from "active" to "context outline" on drill-down,
+     so its labels don't bleed through onto the deeper level. */
+  _stripLayerTooltips(layer) {
+    if (!layer) return;
+    layer.eachLayer(lf => {
+      try { lf.unbindTooltip(); } catch (_) {}
+    });
+  },
+
   /* ── Drill DOWN ──────────────────────────────── */
   async drillDown(feature, leafletLayer) {
     if (this.state._drilling) return;
@@ -40,9 +62,14 @@ Object.assign(APP, {
         }
         
         const cfg = this.config.colors[currentLevel];
+        /* Strip labels from the parent layer — they would otherwise float
+           over the child level and confuse the user. */
+        this._stripLayerTooltips(this.state.layers[currentLevel]);
+
         this.state.layers[currentLevel].eachLayer(function(lf) {
           if (lf.feature === feature) {
-            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
+            /* Dotted outline = "you drilled from here" context indicator */
+            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2, opacity: 0.55, dashArray: '4 7' });
             lf.bringToFront();
           } else {
             lf.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
@@ -142,7 +169,7 @@ Object.assign(APP, {
           lf.bindTooltip(this._featureName(lf.feature, targetLevel), {
             permanent: true,
             direction: 'center',
-            className: 'boundary-label',
+            className: this._boundaryLabelClass(targetLevel),
           });
         });
       }
@@ -202,7 +229,8 @@ Object.assign(APP, {
           layer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
               this.state._selectedLeafletLayer = lf;
-              lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.7, dashArray: '8 4' });
+              /* Solid outline = this IS the currently-selected parent context */
+              lf.setStyle({ fillOpacity: 0.08, color: cfg.fill, weight: 2.5, opacity: 0.9, dashArray: null });
               lf.bringToFront();
             }
           });
@@ -269,7 +297,7 @@ Object.assign(APP, {
           leafletLayer.bindTooltip(labelName, {
             permanent: true,
             direction: 'center',
-            className: 'boundary-label',
+            className: self._boundaryLabelClass(level),
           });
         }
 
@@ -296,7 +324,7 @@ Object.assign(APP, {
               leafletLayer.bindTooltip(self._featureName(feature, level), {
                 permanent: true,
                 direction: 'center',
-                className: 'boundary-label',
+                className: self._boundaryLabelClass(level),
               });
             }
             
@@ -387,12 +415,12 @@ Object.assign(APP, {
     this.state._selectedLevel = level;
     this.state._selectedLeafletLayer = leafletLayer;
 
-    /* Zoom to selected feature (gentler, capped zoom with smooth animation) */
+    /* Zoom to selected feature — use panel-aware padding and a reasonable maxZoom */
     if (leafletLayer && leafletLayer.getBounds) {
       this.state.map.flyToBounds(leafletLayer.getBounds(), {
-        padding: [150, 150],
-        maxZoom: 10,
-        duration: 0.45,
+        ...this._getPaddingOpts(),
+        maxZoom: 11,
+        duration: 0.5,
         easeLinearity: 0.25,
       });
     }

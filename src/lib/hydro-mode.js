@@ -1045,7 +1045,7 @@ Object.assign(APP, {
   _updateHydroLabels() {
     const layer = this.state.hydroLayers[0];
     if (!layer || !this.state.map) return;
-    const show = this.state.map.getZoom() >= 8;
+    const show = this.state.map.getZoom() >= 9;
     layer.eachLayer(lf => {
       if (show && !lf._labelBound) {
         lf.bindTooltip(lf._labelText || 'Unknown', {
