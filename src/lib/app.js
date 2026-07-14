@@ -97,6 +97,8 @@ export const APP = {
       this.state.basemapLayers[key] = L.tileLayer(cfg.url, {
         maxZoom: this.config.maxZoom,
         attribution: cfg.attr,
+        keepBuffer: 8,
+        updateWhenIdle: false,
       });
     });
     this.state.basemapLayers.topo.addTo(map);

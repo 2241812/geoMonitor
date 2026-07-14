@@ -529,10 +529,9 @@ Object.assign(APP, {
     this._showLevel(0);
     this.state.currentLevel = 0;
     if (!skipFly && this.state.layers[0]) {
-      this.state.map.flyToBounds(this.state.layers[0].getBounds(), {
-        ...this._getPaddingOpts(),
-        duration: 0.45,
-        easeLinearity: 0.25,
+      this.state.map.setView(this.config.mapCenter, this.config.mapZoom, {
+        animate: true,
+        duration: 0.45
       });
     }
     /* Show admin picker in boundaries mode, CAR info otherwise */

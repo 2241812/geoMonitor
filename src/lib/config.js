@@ -8,9 +8,9 @@ Object.assign(APP, {
   config: {
     mapCenter: [17.3, 120.75],
     mapZoom: 8.5,
-    minZoom: 5,
+    minZoom: 8,
     maxZoom: 18,
-    maxBounds: [[4.0, 116.0], [21.5, 128.0]],
+    maxBounds: [[15.0, 119.0], [19.5, 122.5]], // Tightly bound to Northern Luzon
 
     sources: {
       namria: {
