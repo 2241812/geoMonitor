@@ -160,6 +160,17 @@
 /* =============================================
    SOURCE TOGGLE CONTROL (NAMRIA/CAD) — top-right
    ============================================= */
+.top-center-controls {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .source-toggle-control {
   display: flex;
   background: rgba(255, 255, 255, 0.95);

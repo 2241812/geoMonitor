@@ -2,15 +2,48 @@ import BottomBar from './BottomBar';
 import { Link } from 'react-router-dom';
 import MapContainer from './MapContainer';
 import OverlayPanel from './OverlayPanel';
+import { useMapStore } from '../store/useMapStore';
 import '../assets/css/style.css';
 import '../assets/css/map.css';
 import 'leaflet/dist/leaflet.css';
 
 export default function MapPage() {
+  const activeSource = useMapStore((s) => s.activeSource);
+  const setActiveSource = useMapStore((s) => s.setActiveSource);
+  const viewMode = useMapStore((s) => s.viewMode);
+
+  function handleSource(name) {
+    setActiveSource(name);
+    if (window.APP?.switchSource) window.APP.switchSource(name);
+  }
+
   return (
     <div className="map-app">
       <MapContainer />
       <OverlayPanel />
+      
+      {/* ── SOURCE group (top-center) ── */}
+      {viewMode === 'boundaries' && (
+        <div className="top-center-controls">
+          <div className="source-toggle-control" id="source-toggle-control">
+            <button
+              className={`source-toggle-btn ${activeSource === 'namria' ? 'active' : ''}`}
+              id="btn-namria"
+              onClick={() => handleSource('namria')}
+            >
+              NAMRIA
+            </button>
+            <button
+              className={`source-toggle-btn ${activeSource === 'cad' ? 'active' : ''}`}
+              id="btn-cad"
+              onClick={() => handleSource('cad')}
+            >
+              CAD
+            </button>
+          </div>
+        </div>
+      )}
+
 
       <Link className="map-back-btn map-icon-btn" to="/" title="Home">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>

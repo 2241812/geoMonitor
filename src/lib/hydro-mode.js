@@ -35,25 +35,32 @@ Object.assign(APP, {
         this.state.map.setView(this.config.mapCenter, this.config.mapZoom);
       }
     } else {
-      document.body.classList.add('boundaries-mode');
-      document.body.classList.remove('watersheds-mode');
+      document.body.classList.add('boundaries-mode', 'mode-boundary');
+      document.body.classList.remove('watersheds-mode', 'mode-explore');
       this._updatePanelHeader();
 
       this._clearHydroState();
       
-      /* Only restore if returning to boundaries mode after initial load */
-      if (this.state.currentLevel === null && this.state.rawData[0]) {
-        this._showLevel(0);
-      } else {
-        this._showLevel(this.state.currentLevel);
-      }
+      this.state.activeMode = 'boundary';
+      this.state.currentLevel = 0;
       
-      if (this.state.currentLevel === 0 || this.state.currentLevel === null) {
-        const carData = this.state.rawData[0];
-        if (carData && carData.features && carData.features[0]) {
-          this.openPanel(carData.features[0], 0);
+      Promise.all([
+        this._prefetchLevel(0),
+        this._prefetchLevel(1)
+      ]).then(async () => {
+        if (this.state.currentLevel === null) {
+          this.state.currentLevel = 0;
         }
-      }
+        await this._showLevel(this.state.currentLevel);
+        
+        if (this.state.currentLevel === 0) {
+          const carData = this.state.rawData[0];
+          if (carData && carData.features && carData.features[0]) {
+            this.openPanel(carData.features[0], 0);
+          }
+        }
+      }).catch(console.error);
+      
       if (this.state.map) {
         this.state.map.setView(this.config.mapCenter, this.config.mapZoom);
       }

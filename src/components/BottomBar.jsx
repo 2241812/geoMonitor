@@ -23,25 +23,11 @@ import '../assets/css/bottom-bar.css';
 export default function BottomBar() {
   const viewMode = useMapStore((s) => s.viewMode);
   const setViewModeStore = useMapStore((s) => s.setViewMode);
-  const activeSource = useMapStore((s) => s.activeSource);
-  const setActiveSource = useMapStore((s) => s.setActiveSource);
-  const activeMode = useMapStore((s) => s.activeMode);
-  const setActiveMode = useMapStore((s) => s.setActiveMode);
 
   /* ── Event handlers ── */
   function handleViewMode(mode) {
     setViewModeStore(mode);
     if (APP._setViewMode) APP._setViewMode(mode);
-  }
-
-  function handleSource(name) {
-    setActiveSource(name);
-    if (APP.switchSource) APP.switchSource(name);
-  }
-
-  function handleSubMode(mode) {
-    setActiveMode(mode);
-    if (APP._setMode) APP._setMode(mode);
   }
 
   function handleReset() {
@@ -66,44 +52,6 @@ export default function BottomBar() {
             onClick={() => handleViewMode('boundaries')}
           >
             Boundaries
-          </button>
-        </div>
-
-        {/* Explore/Boundary sub-mode toggles — only in boundaries mode */}
-        {viewMode === 'boundaries' && (
-          <div className="mode-toggle-group">
-            <button
-              className={`mode-toggle ${activeMode === 'explore' ? 'active' : ''}`}
-              onClick={() => handleSubMode('explore')}
-              title="Explore mode — click to select, map click deselects"
-            >
-              Explore
-            </button>
-            <button
-              className={`mode-toggle ${activeMode === 'boundary' ? 'active' : ''}`}
-              onClick={() => handleSubMode('boundary')}
-              title="Boundary mode — click to drill down through hierarchy"
-            >
-              Boundary
-            </button>
-          </div>
-        )}
-
-        {/* ── SOURCE group ── */}
-        <div className="source-toggle-control" id="source-toggle-control">
-          <button
-            className={`source-toggle-btn ${activeSource === 'namria' ? 'active' : ''}`}
-            id="btn-namria"
-            onClick={() => handleSource('namria')}
-          >
-            NAMRIA
-          </button>
-          <button
-            className={`source-toggle-btn ${activeSource === 'cad' ? 'active' : ''}`}
-            id="btn-cad"
-            onClick={() => handleSource('cad')}
-          >
-            CAD
           </button>
         </div>
       </div>

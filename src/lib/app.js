@@ -527,7 +527,6 @@ export const APP = {
     });
 
     bc.innerHTML = html;
-    this._renderOutlineToggles();
   },
 
   _toastTimer: null,

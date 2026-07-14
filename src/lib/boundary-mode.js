@@ -522,38 +522,7 @@ Object.assign(APP, {
     this._updateBreadcrumb();
   },
 
-  /* ── Mode switch ──────────────────────────── */
-  /* ── Mode switch ──────────────────────────── */
-  _setMode(mode) {
-    if (mode === this.state.activeMode) return;
-    
-    document.body.classList.remove('mode-explore', 'mode-boundary');
-    document.body.classList.add('mode-' + mode);
-    
-    this._clearSelection();
-    this.closePanel();
 
-    this.state.activeMode = mode;
-    if (mode === 'boundary') {
-      this._resetLevelStyle(0);
-      if (this.state.layers[1]) this._resetLevelStyle(1);
-      this.state.currentLevel = 0;
-      this.state.selectedPath = [];
-      this.drillUp(0);
-    } else {
-      this.state.currentLevel = 0;
-      for (let lvl = this._src().maxLevel; lvl >= 0; lvl--) {
-        if (this.state.layers[lvl]) {
-          this.state.map.removeLayer(this.state.layers[lvl]);
-          this.state.layers[lvl] = null;
-        }
-      }
-      this.state.selectedPath = [];
-      this._showLevel(0);
-      this.state.currentLevel = 0;
-    }
-    this._updateBreadcrumb();
-  },
 
   _toggleBoundaryMenu() {
     const baseOpts = document.getElementById('basemap-options');
