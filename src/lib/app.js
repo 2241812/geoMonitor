@@ -810,8 +810,8 @@ export const APP = {
         <p class="panel-subtitle">Hydrological Boundary</p>`;
     }
 
-    const areaHa = p.Area_Ha ? p.Area_Ha.toLocaleString(undefined, {maximumFractionDigits: 2}) : null;
-    const perimeterKm = p.Shape_Length ? (p.Shape_Length / 1000).toLocaleString(undefined, {maximumFractionDigits: 2}) : null;
+    const areaHa = p.Area_Ha ? p.Area_Ha.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : null;
+    const perimeterKm = p.Shape_Length ? (p.Shape_Length / 1000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : null;
     const regionSpanned = p.Region || null;
 
     const html = `

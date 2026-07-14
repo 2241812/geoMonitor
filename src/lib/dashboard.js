@@ -411,12 +411,12 @@ Object.assign(APP, {
       }
     }
     
-    const sqMeters = parseFloat(props.Shape_Area || props.AREA || 0);
-    let hectares = parseFloat(props.Hectares || props.Area || 0);
+    const sqMeters = parseFloat(props.Shape_Area || 0);
+    let hectares = parseFloat(props.Hectares || props.Area || props.AREA || 0);
     if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
     
     if (hectares > 0) {
-      d['Area (Ha)'] = hectares.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      d['Area (Ha)'] = hectares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       let sizeCategory = '';
       if (level === 2) {
         if (hectares < 10000) sizeCategory = 'Small';
@@ -433,8 +433,9 @@ Object.assign(APP, {
       }
     }
     
-    const perimeter = parseFloat(props.Shape_Length || props.PERIMETER || 0);
-    if (perimeter > 0) d['Perimeter'] = perimeter.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    let perimeter = parseFloat(props.PERIMETER || props.Perimeter || 0);
+    if (perimeter <= 0 && props.Shape_Length) perimeter = parseFloat(props.Shape_Length) / 1000;
+    if (perimeter > 0) d['Perimeter (km)'] = perimeter.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     return d;
   },
@@ -464,7 +465,7 @@ Object.assign(APP, {
       typeLabel = 'Watershed Basin';
       name = p.Name || p.Old_Name || 'Unknown Watershed';
       if (p.WSID) details.push('ID: ' + p.WSID);
-      if (p.Area_Ha) details.push('Area: ' + p.Area_Ha.toLocaleString(undefined, {maximumFractionDigits:2}) + ' Ha');
+      if (p.Area_Ha) details.push('Area: ' + p.Area_Ha.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Ha');
       if (p.SIZE_W) details.push('Size: ' + p.SIZE_W);
       const outflow = this.config.watershedConnections[name];
       if (outflow) details.push('Outflow: ' + outflow);
@@ -476,7 +477,7 @@ Object.assign(APP, {
         details.push('Basin: ' + this.state.hydroSelectedBasin.name);
       }
       const areaM2 = parseFloat(p.Shape_Area || 0);
-      if (areaM2 > 0) details.push('Area: ' + (areaM2 / 10000).toLocaleString(undefined, {maximumFractionDigits:2}) + ' Ha');
+      if (areaM2 > 0) details.push('Area: ' + (areaM2 / 10000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Ha');
       if (gc != null) details.push('Zone Code: ' + gc);
     } else if (panelType === 'general') {
       typeLabel = 'General Map Data';
@@ -487,10 +488,10 @@ Object.assign(APP, {
       name = this._toTitleCase(this._featureName(feature, level));
       details.push('Source: ' + src.label);
       details.push('Data Level: ' + src.levelNames[level]);
-      const areaM2 = parseFloat(p.Shape_Area || p.AREA || 0);
-      if (areaM2 > 0) details.push('Area: ' + (areaM2 / 10000).toLocaleString(undefined, {maximumFractionDigits:2}) + ' Ha');
-      const hectares = parseFloat(p.Hectares || p.Area || 0);
-      if (hectares > 0) details.push('Area (Ha): ' + hectares.toLocaleString(undefined, {maximumFractionDigits:2}));
+      const areaM2 = parseFloat(p.Shape_Area || 0);
+      if (areaM2 > 0) details.push('Area: ' + (areaM2 / 10000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Ha');
+      const hectares = parseFloat(p.Hectares || p.Area || p.AREA || 0);
+      if (hectares > 0) details.push('Area (Ha): ' + hectares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       if (p._id) details.push('Reference ID: ' + p._id);
     }
 

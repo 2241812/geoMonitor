@@ -1134,7 +1134,7 @@ Object.assign(APP, {
             size = f.properties.SIZE_W || '';
           }
         }
-        const areaStr = areaHa ? (areaHa / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+        const areaStr = areaHa ? (areaHa / 100).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
         itemsHtml += `
           <button class="basin-picker-item" onclick="APP._hydroDrillDownByName('${this._escHtml(name)}')">
             <div class="basin-picker-info">
@@ -1253,7 +1253,7 @@ Object.assign(APP, {
           </div>
           ${areaHa > 0 ? `<div class="stat-box">
             <div class="stat-label">Area (Ha)</div>
-            <div class="stat-value">${areaHa.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            <div class="stat-value">${areaHa.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>` : ''}
         </div>
       </div>

@@ -1346,11 +1346,11 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   background: #f9fafb;
   border: 1px solid #f3f4f6;
   border-radius: 8px;
-  padding: 12px;
+  padding: 0.75rem 1rem;
 }
 
 .stat-label {
-  font-size: 10px;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1360,7 +1360,7 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 
 .stat-value {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #111827;
   line-height: 1.2;

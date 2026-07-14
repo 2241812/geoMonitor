@@ -692,7 +692,9 @@ Object.assign(APP, {
         const id = f.properties._id;
         const muniCount = this.state.hierarchy?.children?.[id]?.length || 0;
         const areaM2 = parseFloat(f.properties.Shape_Area || 0);
-        const areaStr = areaM2 > 0 ? (areaM2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+        let hectares = parseFloat(f.properties.Hectares || f.properties.Area || f.properties.AREA || 0);
+        if (hectares <= 0 && areaM2 > 0) hectares = areaM2 / 10000;
+        const areaStr = hectares > 0 ? (hectares / 100).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
         itemsHtml += `
           <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
             <div class="basin-picker-info">
@@ -729,10 +731,15 @@ Object.assign(APP, {
         let itemsHtml = '';
         byProvince[provName].forEach(f => {
           const name = this._toTitleCase(this._featureName(f, 1));
+          const areaM2 = parseFloat(f.properties.Shape_Area || 0);
+          let hectares = parseFloat(f.properties.Hectares || f.properties.Area || f.properties.AREA || 0);
+          if (hectares <= 0 && areaM2 > 0) hectares = areaM2 / 10000;
+          const areaStr = hectares > 0 ? (hectares / 100).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
           itemsHtml += `
             <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
               <div class="basin-picker-info">
                 <span class="basin-picker-name">${this._escHtml(name)}</span>
+                ${areaStr ? `<span class="basin-picker-meta"><span class="basin-area">${areaStr}</span></span>` : ''}
               </div>
               <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
@@ -755,18 +762,19 @@ Object.assign(APP, {
 
     const carFeature = this.state.rawData[0]?.features?.[0];
     const carProps = carFeature?.properties || {};
-    const carSqM = parseFloat(carProps.Shape_Area || carProps.AREA || 0);
-    let carHa = parseFloat(carProps.Hectares || carProps.Area || 0);
+    const carSqM = parseFloat(carProps.Shape_Area || 0);
+    let carHa = parseFloat(carProps.Hectares || carProps.Area || carProps.AREA || 0);
     if (carHa <= 0 && carSqM > 0) carHa = carSqM / 10000;
-    const carPerimeter = parseFloat(carProps.Shape_Length || carProps.PERIMETER || 0);
+    let carPerimeter = parseFloat(carProps.PERIMETER || carProps.Perimeter || 0);
+    if (carPerimeter <= 0 && carProps.Shape_Length) carPerimeter = parseFloat(carProps.Shape_Length) / 1000;
 
     let detailsHtml = `<div class="panel-section">
       <div class="panel-section-title">Details</div>
       <div class="stat-grid">
         <div class="stat-box"><div class="stat-label">Island Group</div><div class="stat-value">Luzon</div></div>
         <div class="stat-box"><div class="stat-label">Size</div><div class="stat-value">Large sized region</div></div>`;
-    if (carHa > 0) detailsHtml += `<div class="stat-box"><div class="stat-label">Area (Ha)</div><div class="stat-value">${carHa.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div></div>`;
-    if (carPerimeter > 0) detailsHtml += `<div class="stat-box"><div class="stat-label">Perimeter (km)</div><div class="stat-value">${carPerimeter.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div></div>`;
+    if (carHa > 0) detailsHtml += `<div class="stat-box"><div class="stat-label">Area (Ha)</div><div class="stat-value">${carHa.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>`;
+    if (carPerimeter > 0) detailsHtml += `<div class="stat-box"><div class="stat-label">Perimeter (km)</div><div class="stat-value">${carPerimeter.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>`;
     detailsHtml += `</div></div>`;
 
     let overviewHtml = `<div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
