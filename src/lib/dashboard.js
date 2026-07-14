@@ -381,57 +381,64 @@ Object.assign(APP, {
       return kids ? kids.length : null;
     };
 
+    // Pre-calculate size category
+    const sqMeters = parseFloat(props.Shape_Area || 0);
+    let hectares = parseFloat(props.Hectares || props.Area || props.AREA || 0);
+    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
+    
+    let sizeCategory = '';
+    if (hectares > 0) {
+      if (level === 2 || (this.state.activeSource === 'cad' && level === 1)) {
+        if (hectares < 10000) sizeCategory = 'Small';
+        else if (hectares <= 50000) sizeCategory = 'Medium';
+        else sizeCategory = 'Large';
+        sizeCategory = `${sizeCategory} sized municipality`;
+      } else if (level === 1) {
+        if (hectares < 100000) sizeCategory = 'Small';
+        else if (hectares <= 300000) sizeCategory = 'Medium';
+        else sizeCategory = 'Large';
+        sizeCategory = `${sizeCategory} sized province`;
+      } else {
+        sizeCategory = 'Large sized region';
+      }
+    }
+
+    // Build properties dictionary sequentially to strictly enforce layout order
     if (this.state.activeSource === 'cad') {
       if (level === 1) {
-        d['Municipality/City'] = props.Muni_City || name;
+        // Municipality
         if (props.Province) d['Province'] = props.Province;
+        if (sizeCategory) d['Size'] = sizeCategory;
+        if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
       } else {
-        d['Region'] = props.Region || 'Cordillera Administrative Region';
+        // Region
+        d['Region'] = props.Region || props.REGION || 'Cordillera Administrative Region';
+        if (sizeCategory) d['Size'] = sizeCategory;
+        if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
       }
-      if (props.Region || props.REGION) d['Region'] = props.Region || props.REGION;
-      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
       if (level === 2) {
-        d['Municipality/City'] = props.Municipali || name;
+        // Municipality
         if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
+        if (sizeCategory) d['Size'] = sizeCategory;
         if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
         if (props.X_Coord && props.Y_Coord) {
           d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
         }
       } else if (level === 1) {
-        d['Province'] = props.PROVINCE || props.Province || name;
+        // Province
         d['Region'] = 'Cordillera Administrative Region';
-        const cc = childCount(props._id);
-        if (cc !== null) d['Municipalities'] = String(cc);
+        if (sizeCategory) d['Size'] = sizeCategory;
       } else {
-        d['Region'] = props.Region || 'Cordillera Administrative Region';
+        // Region
         d['Island Group'] = 'Luzon';
+        if (sizeCategory) d['Size'] = sizeCategory;
         const cc = childCount(props._id);
         if (cc !== null) d['Provinces'] = String(cc);
       }
     }
     
-    const sqMeters = parseFloat(props.Shape_Area || 0);
-    let hectares = parseFloat(props.Hectares || props.Area || props.AREA || 0);
-    if (hectares <= 0 && sqMeters > 0) hectares = sqMeters / 10000;
-    
-    if (hectares > 0) {
-      d['Area (Ha)'] = hectares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      let sizeCategory = '';
-      if (level === 2) {
-        if (hectares < 10000) sizeCategory = 'Small';
-        else if (hectares <= 50000) sizeCategory = 'Medium';
-        else sizeCategory = 'Large';
-        d['Size'] = `${sizeCategory} sized municipality`;
-      } else if (level === 1) {
-        if (hectares < 100000) sizeCategory = 'Small';
-        else if (hectares <= 300000) sizeCategory = 'Medium';
-        else sizeCategory = 'Large';
-        d['Size'] = `${sizeCategory} sized province`;
-      } else {
-        d['Size'] = 'Large sized region';
-      }
-    }
+    if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     let perimeter = parseFloat(props.PERIMETER || props.Perimeter || 0);
     if (perimeter <= 0 && props.Shape_Length) perimeter = parseFloat(props.Shape_Length) / 1000;

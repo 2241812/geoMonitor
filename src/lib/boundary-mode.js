@@ -780,7 +780,7 @@ Object.assign(APP, {
     let overviewHtml = `<div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
       <div class="panel-section-title">Region Overview</div>
       <p style="font-size: 0.85rem; color: #374151; line-height: 1.6; margin-bottom: 0;">
-        The Cordillera Administrative Region (CAR) is the only landlocked region in the Philippines, nestled in the mountainous northern part of Luzon. Established in 1987, it encompasses six provinces — Abra, Apayao, Benguet, Ifugao, Kalinga, and Mountain Province — and is home to the country's highest peak, Mount Apo, as well as the UNESCO World Heritage Rice Terraces of the Philippine Cordilleras. The region is a major watershed hub, feeding major river systems that flow into both the South China Sea and the Philippine Sea.
+      The Cordillera Administrative Region (CAR) is a landlocked region located in the north-central part of Luzon, Philippines. It encompasses the Cordillera Central mountains and is composed of six provinces—Abra, Apayao, Benguet, Ifugao, Kalinga, and Mountain Province—along with the highly urbanized Baguio City, which serves as the regional center.
       </p>
     </div>`;
 
