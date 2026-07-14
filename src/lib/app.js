@@ -984,49 +984,51 @@ export const APP = {
         `
       },
       {
-        title: "Navigating the Map",
-        image: "/assets/images/guide-1.png",
+        title: "Exploring Watersheds",
+        image: "/assets/images/guide-1.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
         content: `
-          <p>Click and drag to pan across the Cordillera region. Scroll to zoom in or out. Click any empty space to reset your selection.</p>
+          <p>By default, the map displays regional watersheds. Click any watershed polygon to zoom in and view its details, including its provincial and municipal span, in the Left Side Panel.</p>
         `
       },
       {
-        title: "Selecting Features",
-        image: "/assets/images/guide-2.png",
+        title: "Watershed Map Overlays",
+        image: "/assets/images/guide-2.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
         content: `
-          <p>The map defaults to the <span class="badge">Watersheds</span> view. Click on any highlighted river basin or boundary polygon to drill down into its specific data.</p>
+          <p>Once selected, customize your view by toggling specific overlays like sub-watersheds, stream orders, slope, or land cover. You can also fine-tune the colors and opacity of these layers.</p>
         `
       },
       {
-        title: "The Left Side Panel",
-        image: "/assets/images/guide-3.png",
+        title: "Administrative Boundaries",
+        image: "/assets/images/guide-3.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>`,
         content: `
-          <p>Once a region is selected, the Left Side Panel instantly updates. Use it to view total area sizes, perimeters, and intersecting networks.</p>
-        `
-      },
-      {
-        title: "Switching Modes",
-        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>`,
-        content: `
-          <p>Need administrative context? Use the floating switch at the bottom to flip between <span class="badge">Watersheds</span> and <span class="badge">Boundaries</span> modes.</p>
+          <p>Switch to Boundaries mode to see the CAR outline. Click on the region to drill down into provinces, and click again to see municipalities. The Side Panel automatically syncs to your selection.</p>
         `
       },
       {
         title: "Comparing Baselines",
-        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`,
+        image: "/assets/images/guide-4.gif",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>`,
         content: `
-          <p>Territorial lines can vary. Use the <span class="badge">NAMRIA</span> and <span class="badge">CAD</span> toggles at the top of the screen to compare different government data sources.</p>
+          <p>While exploring boundaries, use the top toggle switch to instantly compare official NAMRIA administrative boundaries against CAD dataset baselines.</p>
         `
       },
       {
-        title: "Overlays & Exporting",
-        image: "/assets/images/guide-6.png",
+        title: "Map Tools & Global Overlays",
+        image: "/assets/images/guide-5.gif",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`,
+        content: `
+          <p>Use the bottom-left tools to switch basemaps, toggle overlays, or filter basins. Use the right-center menu to apply global overlays that affect the entire map layout.</p>
+        `
+      },
+      {
+        title: "Exporting Data",
+        image: "/assets/images/guide-6.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
         content: `
-          <p>Use the <span class="badge">Layers Menu</span> to project topography or stream orders onto the map. Click the <span class="badge">Download Icon</span> to export the raw data of your current view.</p>
+          <p>Ready to take your analysis offline? Use the export button in the top-right corner to request and download raw data and shapefiles for your selected region.</p>
         `
       },
       {
@@ -1083,7 +1085,7 @@ export const APP = {
       if (slide.image) {
         placeholderHtml = `
           <div class="guide-slide-placeholder">
-            <img src="${slide.image}" class="guide-slide-image" alt="${slide.title}" />
+            <img src="${slide.image}" class="guide-slide-image" alt="${slide.title}" style="width: 100%; height: 100%; object-fit: cover;" />
           </div>
         `;
       } else {
