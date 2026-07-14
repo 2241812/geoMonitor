@@ -793,38 +793,42 @@ Object.assign(APP, {
     var submitBtn = document.querySelector('.data-request-footer .btn-primary');
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
 
-    Promise.all([
-      submitDataRequest(payload).then(function(result) {
-        if (result.error) throw result.error;
-        return result;
-      }),
+    var fsBody = new URLSearchParams();
+    fsBody.set('_subject', 'Data Request: ' + objectName + ' — DENR CAR GeoPortal');
+    fsBody.set('_cc', 'ddsalvador@denr.gov.ph');
+    fsBody.set('_template', 'box');
+    fsBody.set('name', payload.name);
+    fsBody.set('email', payload.email);
+    fsBody.set('organization', payload.organization || 'Not specified');
+    fsBody.set('contact_number', payload.contactNumber || 'Not specified');
+    fsBody.set('object_name', objectName);
+    fsBody.set('object_meta', objectMeta);
+    fsBody.set('data_layers', layers.join(', '));
+    fsBody.set('format', format);
+    fsBody.set('extent', extent);
+    fsBody.set('purpose', payload.purpose);
+    fsBody.set('notes', payload.notes || 'None');
+    fsBody.set('source_url', payload.sourceUrl);
+
+    Promise.allSettled([
+      submitDataRequest(payload),
       fetch('https://formsubmit.co/ajax/renzojav156@gmail.com', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          _subject: 'Data Request: ' + objectName + ' — DENR CAR GeoPortal',
-          _cc: 'ddsalvador@denr.gov.ph',
-          _template: 'box',
-          name: payload.name,
-          email: payload.email,
-          organization: payload.organization || 'Not specified',
-          contact_number: payload.contactNumber || 'Not specified',
-          object_name: objectName,
-          object_meta: objectMeta,
-          data_layers: layers.join(', '),
-          format: format,
-          extent: extent,
-          purpose: payload.purpose,
-          notes: payload.notes || 'None',
-          source_url: payload.sourceUrl,
-        }),
+        body: fsBody,
       }),
-    ]).then(function() {
-      alert('Request submitted! A confirmation will be sent to ' + payload.email + '.');
-      APP._closeDataRequest();
-    }).catch(function(err) {
-      console.error('Data request submission failed:', err);
-      alert('Request saved! Thank you.');
+    ]).then(function(results) {
+      var emailOk = results[1].status === 'fulfilled' && results[1].value && results[1].value.ok;
+      if (!emailOk) {
+        console.error('FormSubmit failed:', results[1].status === 'fulfilled' ? results[1].value.status + ' ' + results[1].value.statusText : results[1].reason);
+      }
+      if (results[0].status === 'rejected') {
+        console.error('Supabase insert failed:', results[0].reason);
+      }
+      if (emailOk) {
+        alert('Request submitted! A confirmation will be sent to ' + payload.email + '.');
+      } else {
+        alert('Request saved in database. Email notification may not have been sent — we will review your request manually.');
+      }
       APP._closeDataRequest();
     });
   },
