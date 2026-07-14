@@ -985,7 +985,7 @@ export const APP = {
       },
       {
         title: "Exploring Watersheds",
-        image: "/assets/images/guide-1.gif",
+        image: "assets/images/guide-1.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
         content: `
           <p>By default, the map displays regional watersheds. Click any watershed polygon to zoom in and view its details, including its provincial and municipal span, in the Left Side Panel.</p>
@@ -993,7 +993,7 @@ export const APP = {
       },
       {
         title: "Watershed Map Overlays",
-        image: "/assets/images/guide-2.gif",
+        image: "assets/images/guide-2.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
         content: `
           <p>Once selected, customize your view by toggling specific overlays like sub-watersheds, stream orders, slope, or land cover. You can also fine-tune the colors and opacity of these layers.</p>
@@ -1001,7 +1001,7 @@ export const APP = {
       },
       {
         title: "Administrative Boundaries",
-        image: "/assets/images/guide-3.gif",
+        image: "assets/images/guide-3.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>`,
         content: `
           <p>Switch to Boundaries mode to see the CAR outline. Click on the region to drill down into provinces, and click again to see municipalities. The Side Panel automatically syncs to your selection.</p>
@@ -1009,7 +1009,7 @@ export const APP = {
       },
       {
         title: "Comparing Baselines",
-        image: "/assets/images/guide-4.gif",
+        image: "assets/images/guide-4.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>`,
         content: `
           <p>While exploring boundaries, use the top toggle switch to instantly compare official NAMRIA administrative boundaries against CAD dataset baselines.</p>
@@ -1017,7 +1017,7 @@ export const APP = {
       },
       {
         title: "Map Tools & Global Overlays",
-        image: "/assets/images/guide-5.gif",
+        image: "assets/images/guide-5.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`,
         content: `
           <p>Use the bottom-left tools to switch basemaps, toggle overlays, or filter basins. Use the right-center menu to apply global overlays that affect the entire map layout.</p>
@@ -1025,7 +1025,7 @@ export const APP = {
       },
       {
         title: "Exporting Data",
-        image: "/assets/images/guide-6.gif",
+        image: "assets/images/guide-6.gif",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
         content: `
           <p>Ready to take your analysis offline? Use the export button in the top-right corner to request and download raw data and shapefiles for your selected region.</p>
