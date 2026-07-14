@@ -978,6 +978,7 @@ export const APP = {
       },
       {
         title: "Navigating the Map",
+        image: "/assets/images/guide-1.png",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
         content: `
           <p>Click and drag to pan across the Cordillera region. Scroll to zoom in or out. Click any empty space to reset your selection.</p>
@@ -985,6 +986,7 @@ export const APP = {
       },
       {
         title: "Selecting Features",
+        image: "/assets/images/guide-2.png",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
         content: `
           <p>The map defaults to the <span class="badge">Watersheds</span> view. Click on any highlighted river basin or boundary polygon to drill down into its specific data.</p>
@@ -992,6 +994,7 @@ export const APP = {
       },
       {
         title: "The Left Side Panel",
+        image: "/assets/images/guide-3.png",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>`,
         content: `
           <p>Once a region is selected, the Left Side Panel instantly updates. Use it to view total area sizes, perimeters, and intersecting networks.</p>
@@ -1013,6 +1016,7 @@ export const APP = {
       },
       {
         title: "Overlays & Exporting",
+        image: "/assets/images/guide-6.png",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
         content: `
           <p>Use the <span class="badge">Layers Menu</span> to project topography or stream orders onto the map. Click the <span class="badge">Download Icon</span> to export the raw data of your current view.</p>
@@ -1069,11 +1073,19 @@ export const APP = {
         </div>
       `;
     } else {
-      placeholderHtml = `
-        <div class="guide-slide-placeholder">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </div>
-      `;
+      if (slide.image) {
+        placeholderHtml = `
+          <div class="guide-slide-placeholder">
+            <img src="${slide.image}" class="guide-slide-image" alt="${slide.title}" />
+          </div>
+        `;
+      } else {
+        placeholderHtml = `
+          <div class="guide-slide-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+        `;
+      }
     }
     
     let modeClass = isSpecialSlide ? 'welcome-mode' : 'carousel-mode';
