@@ -445,20 +445,24 @@ export const APP = {
     const p = feature.properties;
     if (!p) return 'Unknown';
 
+    let rawName = 'Unknown';
+
     if (this.state.activeSource === 'cad') {
-      if (level === 1) return p.Muni_City || 'Unknown';
-      return 'Cordillera Administrative Region';
+      if (level === 1) rawName = p.Muni_City || 'Unknown';
+      else return 'Cordillera Administrative Region';
+    } else {
+      const candidates = [
+        p.NAME_3, p.NAME_2, p.NAME_1,
+        p.Municipali, p.PROVINCE, p.Province,
+        p.Region,
+      ].filter(Boolean);
+
+      if (level === 2) rawName = p.Municipali || p.NAME_2 || candidates[0] || 'Unknown';
+      else if (level === 1) rawName = p.PROVINCE || p.Province || p.NAME_1 || candidates[0] || 'Unknown';
+      else return 'Cordillera Administrative Region';
     }
-
-    const candidates = [
-      p.NAME_3, p.NAME_2, p.NAME_1,
-      p.Municipali, p.PROVINCE, p.Province,
-      p.Region,
-    ].filter(Boolean);
-
-    if (level === 2) return p.Municipali || p.NAME_2 || candidates[0] || 'Unknown';
-    if (level === 1) return p.PROVINCE || p.Province || p.NAME_1 || candidates[0] || 'Unknown';
-    return 'Cordillera Administrative Region';
+    
+    return this._toTitleCase(rawName);
   },
 
   /* ── Highlight selected layer ─────────────── */
