@@ -1,4 +1,5 @@
 import { APP } from './app.js';
+import { submitDataRequest } from './supabase-geo.js';
 /**
  * dashboard.js
  * The floating info panel and detail rendering methods.
@@ -789,58 +790,43 @@ Object.assign(APP, {
       sourceUrl: window.location.href
     };
 
-    var endpoint = this.config.dataRequestEndpoint;
+    var submitBtn = document.querySelector('.data-request-footer .btn-primary');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
 
-    if (endpoint) {
-      var submitBtn = document.querySelector('.data-request-footer .btn-primary');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
-
-      fetch(endpoint, {
+    Promise.all([
+      submitDataRequest(payload).then(function(result) {
+        if (result.error) throw result.error;
+        return result;
+      }),
+      fetch('https://formsubmit.co/ajax/renzojav156@gmail.com', {
         method: 'POST',
-        mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function() {
-        alert('Request submitted successfully! You will receive a confirmation at ' + payload.email + '.');
-        APP._closeDataRequest();
-      }).catch(function() {
-        alert('Request submitted. Thank you!');
-        APP._closeDataRequest();
-      });
-    } else {
-      /* Fallback: open mailto with structured body */
-      var subject = encodeURIComponent('Data Request: ' + objectName + ' \u2014 DENR CAR GeoPortal');
-      var bodyLines = [
-        'Good day,',
-        '',
-        'I would like to request geographic data from the DENR CAR Watershed Monitoring portal.',
-        '',
-        '--- Request Details ---',
-        'Requested Object: ' + objectName,
-        'Object Info: ' + objectMeta,
-        'Data Layers: ' + layers.join(', '),
-        'Format: ' + format,
-        'Spatial Extent: ' + extent,
-        '',
-        '--- Requestor Information ---',
-        'Name: ' + payload.name,
-        'Email: ' + payload.email,
-        'Organization: ' + (payload.organization || 'Not specified'),
-        'Contact: ' + (payload.contactNumber || 'Not specified'),
-        'Purpose: ' + payload.purpose,
-        '',
-        '--- Additional Notes ---',
-        (payload.notes || 'None'),
-        '',
-        '---',
-        'Submitted via DENR CAR Watershed Monitoring GeoPortal.',
-        'https://geo-monitor-ten.vercel.app',
-      ];
-      var body = encodeURIComponent(bodyLines.join('\n'));
-      var recipient = this.config.dataRequestEmail || 'renzoj156@gmail.com';
-      window.location.href = 'mailto:' + recipient + '?subject=' + subject + '&body=' + body;
-      this._closeDataRequest();
-    }
+        body: JSON.stringify({
+          _subject: 'Data Request: ' + objectName + ' — DENR CAR GeoPortal',
+          _cc: 'ddsalvador@denr.gov.ph',
+          _template: 'box',
+          name: payload.name,
+          email: payload.email,
+          organization: payload.organization || 'Not specified',
+          contact_number: payload.contactNumber || 'Not specified',
+          object_name: objectName,
+          object_meta: objectMeta,
+          data_layers: layers.join(', '),
+          format: format,
+          extent: extent,
+          purpose: payload.purpose,
+          notes: payload.notes || 'None',
+          source_url: payload.sourceUrl,
+        }),
+      }),
+    ]).then(function() {
+      alert('Request submitted! A confirmation will be sent to ' + payload.email + '.');
+      APP._closeDataRequest();
+    }).catch(function(err) {
+      console.error('Data request submission failed:', err);
+      alert('Request saved! Thank you.');
+      APP._closeDataRequest();
+    });
   },
 
   /* Force Zone A (the white header bar) to match the current global mode.

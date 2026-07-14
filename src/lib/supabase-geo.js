@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import { cacheGet, cacheSet, cacheDelete } from './db-cache.js';
 
 let _client = null;
+
+const CACHE_VERSION = 'v1';
+const CONCURRENCY = 4;
 
 const SUPABASE_URL = 'https://micsfokodqqqgwtlctca.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pY3Nmb2tvZHFxcWd3dGxjdGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NjExNjgsImV4cCI6MjA5ODUzNzE2OH0.zTrxYk4-QJ-nsM_SlcqiA1IR7XpZXpFmjCN2xBQgTY4';
@@ -12,6 +16,10 @@ let _cachedBasinLCM = {};
 
 function _cacheKey(basinCode, classes) {
   return basinCode + '::' + (classes || []).sort().join(',');
+}
+
+function _idbKey(basinCode, classes) {
+  return CACHE_VERSION + ':lcm:' + _cacheKey(basinCode, classes);
 }
 
 function getClient() {
@@ -64,14 +72,18 @@ function _buildLCMFeatures(rows) {
   });
 }
 
-/**
- * Fetch LCM features for a single basin from Supabase.
- */
 export async function fetchLCMFromSupabase(basinCode, onProgress, classes) {
   const key = _cacheKey(basinCode, classes);
   if (_cachedBasinLCM[key]) {
     if (onProgress) onProgress(100, `${basinCode} LCM loaded from cache`);
     return _cachedBasinLCM[key];
+  }
+  const idbKey = _idbKey(basinCode, classes);
+  const cached = await cacheGet(idbKey);
+  if (cached) {
+    _cachedBasinLCM[key] = cached;
+    if (onProgress) onProgress(100, `${basinCode} LCM loaded from cache`);
+    return cached;
   }
   if (onProgress) onProgress(0, `Fetching ${basinCode} LCM…`);
   const estimate = BASIN_FEATURE_COUNTS[basinCode] || 5000;
@@ -80,6 +92,7 @@ export async function fetchLCMFromSupabase(basinCode, onProgress, classes) {
   if (onProgress) onProgress(90, `Rebuilding GeoJSON (${data.length} features)…`);
   const geojson = { type: 'FeatureCollection', features: _buildLCMFeatures(data) };
   _cachedBasinLCM[key] = geojson;
+  cacheSet(idbKey, geojson);
   return geojson;
 }
 
@@ -89,33 +102,48 @@ export async function fetchAllLCMFromSupabase(onProgress, classes) {
     if (onProgress) onProgress(100, 'All basins LCM loaded from cache');
     return _cachedAllLCM;
   }
+  const idbKey = _idbKey('ALL', classes);
+  const cached = await cacheGet(idbKey);
+  if (cached) {
+    cached._key = key;
+    _cachedAllLCM = cached;
+    if (onProgress) onProgress(100, 'All basins LCM loaded from cache');
+    return cached;
+  }
   if (onProgress) onProgress(0, 'Fetching LCM for all basins…');
 
   const totalEstimate = BASIN_CODES.reduce((sum, c) => sum + (BASIN_FEATURE_COUNTS[c] || 5000), 0);
   let allFeatures = [];
-  let fetchedCount = 0;
+  let doneCount = 0;
 
-  for (let i = 0; i < BASIN_CODES.length; i++) {
-    const code = BASIN_CODES[i];
-    try {
-      const estimate = BASIN_FEATURE_COUNTS[code] || 5000;
-      const basinStart = 10 + Math.round((i / BASIN_CODES.length) * 80);
-      const basinEnd = 10 + Math.round(((i + 1) / BASIN_CODES.length) * 80);
-      const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, (pct, msg) => {
-        const mapped = basinStart + Math.round(((pct || 0) / 100) * (basinEnd - basinStart));
-        if (onProgress) onProgress(mapped, `${code}: ${msg}`);
-      }, estimate, classes);
-      data.forEach(row => {
-        const props = { LCM_CLASS: row.lcm_class };
-        if (row.properties) {
-          Object.assign(props, typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties);
+  for (let i = 0; i < BASIN_CODES.length; i += CONCURRENCY) {
+    const chunk = BASIN_CODES.slice(i, i + CONCURRENCY);
+    const results = await Promise.allSettled(
+      chunk.map(async (code) => {
+        const estimate = BASIN_FEATURE_COUNTS[code] || 5000;
+        const data = await _fetchPaginated('lcm', 'lcm_class, properties, geom', code, null, estimate, classes);
+        return { code, data };
+      })
+    );
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const { code, data } = result.value;
+        for (const row of data) {
+          const props = { LCM_CLASS: row.lcm_class };
+          if (row.properties) {
+            Object.assign(props, typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties);
+          }
+          allFeatures.push({ type: 'Feature', properties: props, geometry: row.geom });
         }
-        allFeatures.push({ type: 'Feature', properties: props, geometry: row.geom });
-      });
-      fetchedCount += data.length;
-      if (onProgress) onProgress(10 + Math.round(((i + 1) / BASIN_CODES.length) * 80), `Fetched ${code} (${data.length}) [${fetchedCount}/${totalEstimate}]…`);
-    } catch (e) {
-      console.warn(`LCM fetch failed for ${code}:`, e.message);
+        doneCount++;
+        if (onProgress) {
+          const pct = Math.round((doneCount / BASIN_CODES.length) * 90);
+          onProgress(pct, `Fetched ${code} (${data.length} features) [${doneCount}/${BASIN_CODES.length}]`);
+        }
+      } else {
+        console.warn('LCM fetch failed:', result.reason?.message);
+        doneCount++;
+      }
     }
   }
 
@@ -124,14 +152,35 @@ export async function fetchAllLCMFromSupabase(onProgress, classes) {
   const result = { type: 'FeatureCollection', features: allFeatures };
   result._key = key;
   _cachedAllLCM = result;
-  return _cachedAllLCM;
+  cacheSet(idbKey, result);
+  return result;
+}
+
+export async function submitDataRequest(payload) {
+  const supabase = getClient();
+  return supabase.from('data_requests').insert([{
+    name: payload.name,
+    email: payload.email,
+    organization: payload.organization || '',
+    contact_number: payload.contactNumber || '',
+    object_name: payload.objectName || '',
+    object_meta: payload.objectMeta || '',
+    data_layers: payload.dataLayers || [],
+    format: payload.format || 'GeoJSON',
+    extent: payload.extent || 'Entire CAR',
+    purpose: payload.purpose || '',
+    notes: payload.notes || '',
+    source_url: payload.sourceUrl || '',
+  }]);
 }
 
 export function invalidateLCMCache(basinCode) {
   if (basinCode) {
     delete _cachedBasinLCM[basinCode];
+    cacheDelete(_idbKey(basinCode, null));
   } else {
     _cachedAllLCM = null;
     _cachedBasinLCM = {};
+    cacheDelete(_idbKey('ALL', null));
   }
 }

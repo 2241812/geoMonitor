@@ -133,7 +133,7 @@ Object.assign(APP, {
     /* R3: Load merged watershed outline if not already cached */
     if (!this.state.rawData['watershedOutline']) {
       try {
-        const resp = await fetch('geoJSON/CAR Watersheds Outline.topojson');
+        const resp = await fetch('geoJSON/CAR Watersheds.topojson');
         this.state.rawData['watershedOutline'] = window.decodeGeo(await resp.json());
       } catch (_) {}
     }
@@ -1062,9 +1062,14 @@ Object.assign(APP, {
     });
   },
 
+  _zoomTimer: null,
   _onZoomChange() {
     if (this.state.viewMode !== 'watersheds' || this.state.hydroDrillLevel !== 0) return;
-    this._updateHydroLabels();
+    if (this._zoomTimer) cancelAnimationFrame(this._zoomTimer);
+    this._zoomTimer = requestAnimationFrame(() => {
+      this._zoomTimer = null;
+      this._updateHydroLabels();
+    });
   },
 
   /* ── Toggle CAR boundary outline in hydro mode ── */

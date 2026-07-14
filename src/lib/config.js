@@ -141,8 +141,7 @@ Object.assign(APP, {
       },
     },
 
-    dataRequestEmail: 'ddsalvador@denr.gov.ph',
-    dataRequestEndpoint: 'https://script.google.com/macros/s/AKfycbyLldQUH_cxEBWXg8B1mJPnI1DqSqNNHX42_q_WauGVF0nhJLzVXcsrCskuPu5RAa1MLw/exec',
+    dataRequestEmail: 'renzojav156@gmail.com',
 
     supabase: {
       url: 'https://micsfokodqqqgwtlctca.supabase.co',
