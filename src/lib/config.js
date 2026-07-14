@@ -6,7 +6,7 @@ import { APP } from './app.js';
 
 Object.assign(APP, {
   config: {
-    mapCenter: [17.3, 121.0],
+    mapCenter: [17.3, 120.75],
     mapZoom: 8.5,
     minZoom: 5,
     maxZoom: 18,
