@@ -793,34 +793,63 @@ Object.assign(APP, {
     var submitBtn = document.querySelector('.data-request-footer .btn-primary');
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
 
-    var fsBody = new URLSearchParams();
-    fsBody.set('_subject', 'Data Request: ' + objectName + ' — DENR CAR GeoPortal');
-    fsBody.set('_cc', 'ddsalvador@denr.gov.ph');
-    fsBody.set('_template', 'box');
-    fsBody.set('name', payload.name);
-    fsBody.set('email', payload.email);
-    fsBody.set('organization', payload.organization || 'Not specified');
-    fsBody.set('contact_number', payload.contactNumber || 'Not specified');
-    fsBody.set('object_name', objectName);
-    fsBody.set('object_meta', objectMeta);
-    fsBody.set('data_layers', layers.join(', '));
-    fsBody.set('format', format);
-    fsBody.set('extent', extent);
-    fsBody.set('purpose', payload.purpose);
-    fsBody.set('notes', payload.notes || 'None');
-    fsBody.set('source_url', payload.sourceUrl);
-
     Promise.allSettled([
       submitDataRequest(payload),
-      fetch('https://formsubmit.co/ajax/renzojav156@gmail.com', {
-        method: 'POST',
-        body: fsBody,
+      new Promise(function(resolve) {
+        /* Hidden iframe form submit — most reliable way with FormSubmit on static hosts */
+        var iframe = document.createElement('iframe');
+        iframe.name = 'fs-frame';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+
+        var form = document.createElement('form');
+        form.action = 'https://formsubmit.co/renzojav156@gmail.com';
+        form.method = 'POST';
+        form.target = 'fs-frame';
+        form.style.display = 'none';
+        form.acceptCharset = 'UTF-8';
+
+        var fields = {
+          _captcha: 'false',
+          _subject: 'Data Request: ' + objectName + ' — DENR CAR GeoPortal',
+          _cc: 'ddsalvador@denr.gov.ph',
+          name: payload.name,
+          email: payload.email,
+          organization: payload.organization || 'Not specified',
+          contact_number: payload.contactNumber || 'Not specified',
+          object_name: objectName,
+          object_meta: objectMeta,
+          data_layers: layers.join(', '),
+          format: format,
+          extent: extent,
+          purpose: payload.purpose,
+          notes: payload.notes || 'None',
+          source_url: payload.sourceUrl,
+        };
+
+        Object.keys(fields).forEach(function(k) {
+          var inp = document.createElement('input');
+          inp.type = 'hidden';
+          inp.name = k;
+          inp.value = fields[k];
+          form.appendChild(inp);
+        });
+
+        document.body.appendChild(form);
+
+        iframe.onload = function() {
+          resolve(true);
+          setTimeout(function() {
+            if (form.parentNode) form.parentNode.removeChild(form);
+            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+          }, 3000);
+        };
+        iframe.onerror = function() { resolve(false); };
+
+        form.submit();
       }),
     ]).then(function(results) {
-      var emailOk = results[1].status === 'fulfilled' && results[1].value && results[1].value.ok;
-      if (!emailOk) {
-        console.error('FormSubmit failed:', results[1].status === 'fulfilled' ? results[1].value.status + ' ' + results[1].value.statusText : results[1].reason);
-      }
+      var emailOk = results[1].status === 'fulfilled';
       if (results[0].status === 'rejected') {
         console.error('Supabase insert failed:', results[0].reason);
       }
