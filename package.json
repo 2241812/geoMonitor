@@ -12,6 +12,7 @@
     "postinstall": "node scripts/patch-vectorgrid.mjs"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@turf/turf": "^7.3.5",
     "dotenv": "^17.4.2",
     "geojson-vt": "^4.0.3",
