@@ -419,6 +419,9 @@ export const APP = {
       if (leafletLayer.feature !== selectedFeature) {
         leafletLayer._hiddenByIsolation = true;
         leafletLayer.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
+        if (leafletLayer.getTooltip && leafletLayer.getTooltip()) {
+          leafletLayer.getTooltip().setOpacity(0);
+        }
       } else {
         leafletLayer._hiddenByIsolation = false;
         leafletLayer.setStyle({
@@ -429,6 +432,9 @@ export const APP = {
           opacity: style.opacity || 1,
           dashArray: null,
         });
+        if (leafletLayer.getTooltip && leafletLayer.getTooltip()) {
+          leafletLayer.getTooltip().setOpacity(0.9);
+        }
         leafletLayer.bringToFront();
       }
     });

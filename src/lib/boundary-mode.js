@@ -62,17 +62,18 @@ Object.assign(APP, {
         }
         
         const cfg = this.config.colors[currentLevel];
-        /* Strip labels from the parent layer — they would otherwise float
-           over the child level and confuse the user. */
+
+        /* Strip ALL labels from the parent layer so they don't float over the children */
         this._stripLayerTooltips(this.state.layers[currentLevel]);
 
         this.state.layers[currentLevel].eachLayer(function(lf) {
           if (lf.feature === feature) {
-            /* Dotted outline = "you drilled from here" context indicator */
-            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2, opacity: 0.55, dashArray: '4 7' });
+            /* Selected parent: keep solid outline */
+            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.9, dashArray: null });
             lf.bringToFront();
           } else {
-            lf.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 });
+            /* Unselected siblings: dotted outline */
+            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 1.5, opacity: 0.5, dashArray: '4 7' });
           }
         });
         this.state.layers[currentLevel]._hiddenByDrill = true;
@@ -497,6 +498,9 @@ Object.assign(APP, {
         opacity: 0.9,
         fillOpacity: 0.25,
       });
+      if (leafletLayer.getTooltip && leafletLayer.getTooltip()) {
+        leafletLayer.getTooltip().setOpacity(0.9);
+      }
     });
   },
 
