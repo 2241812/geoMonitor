@@ -96,25 +96,6 @@ Object.assign(APP, {
       }
     }
 
-    const chartData = this._resolveChartData(p);
-    if (chartData.values.length > 0) {
-      html += `<div class="panel-section">
-        <div class="panel-section-title">Measurements</div>
-        <div class="chart-wrap"><canvas id="panel-chart"></canvas></div>
-      </div>`;
-    }
-
-    /* Add Map Legend to Side Panel */
-    html += `<div class="panel-section">
-      <div class="panel-section-title">Legend</div>
-      <div class="panel-legend">
-        <div class="legend-item"><span class="legend-dot region-dot"></span>Region</div>
-        <div class="legend-item"><span class="legend-dot province-dot"></span>Province</div>
-        <div class="legend-item"><span class="legend-dot muni-dot"></span>Municipality</div>
-        <div class="legend-item"><span class="legend-dot watershed-dot"></span>Watershed</div>
-      </div>
-    </div>`;
-
     let intersectingWs = null;
     if (level >= 1 && this.state.watershedIntersections && id && this.state.watershedIntersections[id]) {
       intersectingWs = this.state.watershedIntersections[id];
@@ -210,31 +191,9 @@ Object.assign(APP, {
     const tab = document.getElementById('panel-toggle-tab');
     if (tab) tab.classList.add('hidden');
 
-    if (chartData.values.length > 0) {
-      const ctx = document.getElementById('panel-chart');
-      if (ctx) {
-        if (this.state._chart) this.state._chart.destroy();
-        this.state._chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: chartData.labels,
-            datasets: [{
-              data: chartData.values,
-              backgroundColor: ['#059669', '#0d9488', '#0891b2', '#7c3aed'],
-              borderRadius: 5,
-            }],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              y: { type: 'logarithmic', ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-              x: { ticks: { font: { size: 10 }, color: '#6b7280' }, grid: { display: false } },
-            },
-          },
-        });
-      }
+    if (this.state._chart) {
+      this.state._chart.destroy();
+      this.state._chart = null;
     }
   },
 
