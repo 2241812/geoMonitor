@@ -55,7 +55,7 @@ echo    GeoMonitor - GUI Mode
 echo ========================================
 echo.
 start http://localhost:3479
-node deploy-gui/server.mjs
+node geoJSONUpdater/server.mjs
 pause
 exit /b 0
 

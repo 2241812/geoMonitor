@@ -10,5 +10,5 @@ timeout /t 1 /nobreak >nul
 
 echo Starting GeoMonitor Deploy GUI...
 echo.
-node deploy-gui/server.mjs
+node geoJSONUpdater/server.mjs
 pause

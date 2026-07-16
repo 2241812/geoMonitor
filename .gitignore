@@ -19,7 +19,7 @@ dist-ssr
 gis-drop/
 
 # Deploy GUI temp uploads
-deploy-gui/uploads/
+geoJSONUpdater/uploads/
 
 # Editor directories and files
 .vscode/*

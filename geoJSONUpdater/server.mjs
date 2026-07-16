@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * deploy-gui/server.mjs — GeoMonitor Deploy GUI
+ * geoJSONUpdater/server.mjs — GeoMonitor Deploy GUI
  *
  * Flow: auto-pull on open → drag-drop GeoJSON → one-click deploy to FTP.
  * Shows real-time logs + upload progress bar.
  *
- * Usage:  node deploy-gui/server.mjs
+ * Usage:  node geoJSONUpdater/server.mjs
  */
 
 import http from 'node:http';

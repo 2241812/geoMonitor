@@ -15,7 +15,7 @@
     "deploy:update": "node scripts/update-deploy.mjs",
     "deploy:watch": "node scripts/update-deploy.mjs --watch",
     "deploy:now": "node scripts/update-deploy.mjs --deploy-only",
-    "deploy-gui": "node deploy-gui/server.mjs"
+    "deploy-gui": "node geoJSONUpdater/server.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
