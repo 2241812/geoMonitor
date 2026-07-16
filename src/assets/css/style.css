@@ -1725,7 +1725,7 @@ img {
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
-.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-stopped { } /* overflow handled by JS on <body> — don't set on <html> or wheel events die */
 .lenis.lenis-smooth iframe { pointer-events: none; }
 
 
