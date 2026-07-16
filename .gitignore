@@ -41,3 +41,4 @@ supabase/
 
 # Local FTP test server artifacts
 test-ftp-root/
+.vercel
