@@ -15,6 +15,9 @@ dist-ssr
 # Environment variables
 .env
 
+# GeoJSON drop folder for update-deploy.mjs
+gis-drop/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -32,3 +35,9 @@ public/tiles/
 
 # Supabase CLI (local config, not part of app)
 supabase/
+
+# OpenCode agent session state
+.omo/
+
+# Local FTP test server artifacts
+test-ftp-root/

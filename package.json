@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "postinstall": "node scripts/patch-vectorgrid.mjs",
     "deploy": "node scripts/deploy-ftp.mjs",
-    "deploy:upload-only": "node scripts/deploy-ftp.mjs --skip-build"
+    "deploy:upload-only": "node scripts/deploy-ftp.mjs --skip-build",
+    "deploy:update": "node scripts/update-deploy.mjs",
+    "deploy:watch": "node scripts/update-deploy.mjs --watch",
+    "deploy:now": "node scripts/update-deploy.mjs --deploy-only"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -44,6 +47,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "express": "^5.2.1",
+    "ftp-srv": "^4.6.3",
     "globals": "^17.7.0",
     "oxlint": "^1.69.0",
     "pg": "^8.22.0",
