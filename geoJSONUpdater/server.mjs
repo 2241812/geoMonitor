@@ -203,6 +203,8 @@ async function doDeploy() {
     emit('info', '[2/2] Uploading via FTP...');
 
     await runProc('node', [`"${DEPLOY_SCRIPT}"`, '--skip-build'], { trackProgress: true });
+    deployProgress.phase = 'done';
+    deployProgress.current = deployProgress.total;
     emitProgress(100, 'Deploy complete');
 
     global.fileList = [];
