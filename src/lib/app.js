@@ -838,7 +838,34 @@ export const APP = {
 
       ${spansHTML}
 
-      ${this.state.hydroDrillLevel === 1 ? `
+      ${this.state.hydroDrillLevel === 1 ? this._renderMapOverlaysHTML() : ''}
+
+      <div class="panel-section" style="font-size: 0.95rem; color: #374151; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
+        <div class="panel-section-title">Basin Overview</div>
+        <p style="margin-bottom: 0;">${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
+      </div>
+    `;
+
+    content.innerHTML = html;
+    
+    if (wasSpansOpen) {
+      const newSpans = content.querySelector('.span-group');
+      if (newSpans) newSpans.classList.remove('collapsed');
+    }
+    openProvinces.forEach(slug => {
+      const acc = content.querySelector(`.province-accordion[data-province-slug="${slug}"]`);
+      if (acc) acc.classList.remove('collapsed');
+    });
+    if (scrollTop > 0) {
+      // Small timeout to ensure DOM is ready
+      setTimeout(() => { content.scrollTop = scrollTop; }, 0);
+    }
+
+    this._openPanelState();
+  },
+
+  _renderMapOverlaysHTML() {
+    return `
       <div class="panel-section" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
         <div class="panel-section-title">Map Overlays</div>
         <div class="toggle-row">
@@ -930,30 +957,7 @@ export const APP = {
           </div>
           ${this.state.showLCM ? APP._renderLCMClassToggles() : ''}
         </div>
-      </div>` : ''}
-
-      <div class="panel-section" style="font-size: 0.95rem; color: #374151; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
-        <div class="panel-section-title">Basin Overview</div>
-        <p style="margin-bottom: 0;">${this._escHtml(this.config.watershedDescriptions[name] || 'Detailed geographical information for this watershed is currently being compiled by the DENR-CAR mapping team.')}</p>
-      </div>
-    `;
-
-    content.innerHTML = html;
-    
-    if (wasSpansOpen) {
-      const newSpans = content.querySelector('.span-group');
-      if (newSpans) newSpans.classList.remove('collapsed');
-    }
-    openProvinces.forEach(slug => {
-      const acc = content.querySelector(`.province-accordion[data-province-slug="${slug}"]`);
-      if (acc) acc.classList.remove('collapsed');
-    });
-    if (scrollTop > 0) {
-      // Small timeout to ensure DOM is ready
-      setTimeout(() => { content.scrollTop = scrollTop; }, 0);
-    }
-
-    this._openPanelState();
+      </div>`;
   },
 
   _openGuide() {
