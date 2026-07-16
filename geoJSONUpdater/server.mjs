@@ -114,9 +114,9 @@ function runProc(cmd, args, opts = {}) {
         const scanMatch = text.match(/Scanning\s+(\d+)\s+files/);
         if (scanMatch) deployProgress.total = parseInt(scanMatch[1], 10);
 
-        /* Count upload completions by matching ✓ at line start with file paths
-           (filters out "✓ Connected to FTP server" and "✓ Deploy complete") */
-        const fileUploads = (text.match(/✓\s+[\w\/\.\-]+/g) || []).length;
+        /* Count upload completions — only match ✓ lines that contain a file path (has / or \) */
+        const cleanText = text.replace(/\x1b\[[0-9;]*m/g, '');
+        const fileUploads = (cleanText.match(/✓\s+[^\s]*[/\\][^\s]*/g) || []).length;
         if (fileUploads > 0) {
           deployProgress.current += fileUploads;
           const pct = Math.min(Math.round((deployProgress.current / deployProgress.total) * 100), 100);

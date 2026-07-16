@@ -679,6 +679,7 @@ Object.assign(APP, {
 
     var overlay = document.createElement('div');
     overlay.className = 'data-request-overlay';
+    overlay.setAttribute('data-lenis-prevent', '');
     overlay.innerHTML = html;
     document.body.appendChild(overlay);
     overlay.offsetHeight;

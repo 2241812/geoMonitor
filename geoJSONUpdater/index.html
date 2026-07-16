@@ -206,6 +206,17 @@
   ::-webkit-scrollbar{width:5px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+  @media (max-width:640px){
+    .top-section{flex-direction:column}
+    .drop-zone{min-width:100%;padding:16px}
+    .file-list{min-width:100%}
+    .deploy-area{width:100%}
+    .btn-deploy{width:100%;padding:12px}
+    .progress-wrap{height:8px}
+    .bottom-section{flex-direction:column}
+    .log-panel{min-height:200px}
+  }
 </style>
 </head>
 <body>
