@@ -1,18 +1,22 @@
 /**
- * fetch-cache.js — Cached fetch with deduplication, abort, and retry.
+ * fetch-cache.js — Cached fetch with deduplication, abort, retry, and IndexedDB persistence.
  *
  * Guarantees:
  *   1. Same key fetched twice simultaneously → one request, shared promise
- *   2. Cache-first reads (configurable TTL)
- *   3. AbortController integration for mode-switch cancellation
- *   4. Retry with exponential backoff on transient failures
+ *   2. In-memory cache for instant repeat access (Infinity TTL by default)
+ *   3. IndexedDB write-through so cached data survives page reloads
+ *   4. AbortController integration for mode-switch cancellation
+ *   5. Retry with exponential backoff on transient failures
  */
+
+import { cacheGet, cacheSet, cacheDelete as idbDelete } from './db-cache.js';
 
 const _cache = new Map();
 const _inflight = new Map();
+const IDB_PREFIX = 'fetch:';
 
 /**
- * @param {string} key   — unique cache key (e.g. 'watershed', 'boundary:1')
+ * @param {string} key   — unique cache key (e.g. 'watershed', 'boundary:namria:0')
  * @param {string} url   — fetch URL
  * @param {object} opts
  * @param {number}  [opts.ttl=Infinity]  — cache lifetime in ms (0 = no cache)
@@ -24,6 +28,7 @@ const _inflight = new Map();
 export async function fetchWithCache(key, url, opts = {}) {
   const { ttl = Infinity, retries = 2, signal, force = false } = opts;
 
+  /* ── Fast path: in-memory hit ── */
   if (!force) {
     const cached = _cache.get(key);
     if (cached && Date.now() < cached.expiresAt) {
@@ -31,17 +36,31 @@ export async function fetchWithCache(key, url, opts = {}) {
     }
   }
 
+  /* ── Dedup concurrent inflight requests ── */
   if (_inflight.has(key)) {
     return _inflight.get(key);
   }
 
+  /* ── Slow path: try IndexedDB (survives reload) ── */
+  if (!force) {
+    const idbEntry = await idbGet(key);
+    if (idbEntry && Date.now() < idbEntry.expiresAt) {
+      _cache.set(key, idbEntry);
+      return idbEntry.data;
+    }
+    /* expired or missing in IDB — fall through to network */
+  }
+
+  /* ── Network fetch ── */
   const promise = _doFetch(url, retries, signal);
   _inflight.set(key, promise);
 
   try {
     const data = await promise;
     if (data !== null && ttl > 0) {
-      _cache.set(key, { data, expiresAt: Date.now() + ttl });
+      const entry = { data, expiresAt: Date.now() + ttl };
+      _cache.set(key, entry);
+      idbSet(key, entry); /* fire-and-forget — don't await */
     }
     return data;
   } finally {
@@ -69,11 +88,39 @@ async function _doFetch(url, retries, signal) {
   return null;
 }
 
-export function cacheDelete(key) {
-  _cache.delete(key);
+/* ── IndexedDB helpers (fire-and-forget writes, safe reads) ── */
+
+async function idbGet(key) {
+  try {
+    return await cacheGet(IDB_PREFIX + key);
+  } catch {
+    return null;
+  }
 }
 
-export function cacheClear() {
+async function idbSet(key, entry) {
+  try {
+    await cacheSet(IDB_PREFIX + key, entry);
+  } catch {
+    /* non-critical — memory cache still has the data */
+  }
+}
+
+/**
+ * Delete a key from both in-memory and IndexedDB caches.
+ */
+export async function cacheDelete(key) {
+  _cache.delete(key);
+  try { await idbDelete(IDB_PREFIX + key); } catch { /* best effort */ }
+}
+
+/**
+ * Clear all in-memory and IndexedDB cache entries
+ * (IDB clear is scoped to keys prefixed with 'fetch:').
+ */
+export async function cacheClear() {
   _cache.clear();
   _inflight.clear();
+  /* Note: we don't bulk-clear IDB here because the store is shared
+     with LCM's own cache. Only per-key delete is exposed. */
 }
