@@ -407,7 +407,7 @@ Object.assign(APP, {
   _dimLevel(level, selectedFeature) {
     const cfg = this.config.colors[level];
     this._isolateFeature(this.state.layers[level], selectedFeature, {
-      fill: cfg.fill, fillOpacity: 0.65, stroke: '#000000', weight: 3, opacity: 1,
+      fill: '#ef4444', fillOpacity: 0.2, stroke: '#ef4444', weight: 3, opacity: 1, dashArray: '4 4'
     });
   },
 
@@ -450,6 +450,23 @@ Object.assign(APP, {
   },
 
   _highlightSidebarSelection(childName, childLevel, chipEl) {
+    if (chipEl && chipEl.classList.contains('active')) {
+      // Toggle off: clear selection and revert to parent view
+      chipEl.classList.remove('active');
+      this._resetLevelStyle(childLevel);
+      if (this.state.selectedPath && this.state.selectedPath.length > 0) {
+        const parentNode = this.state.selectedPath.find(p => p.level === childLevel - 1);
+        if (parentNode && this.state.layers[childLevel - 1]) {
+          this.state.layers[childLevel - 1].eachLayer(lf => {
+            if (lf.feature === parentNode.feature && lf.getBounds) {
+              this.state.map.flyToBounds(lf.getBounds(), { ...this._getPaddingOpts(), duration: 0.8 });
+            }
+          });
+        }
+      }
+      return;
+    }
+
     if (chipEl && chipEl.parentNode) {
       chipEl.parentNode.querySelectorAll('.span-chip.active').forEach(c => c.classList.remove('active'));
     }
@@ -467,7 +484,7 @@ Object.assign(APP, {
     this._resetLevelStyle(childLevel);
     layer.eachLayer(lf => {
       if (lf.feature === childFeature) {
-        lf.setStyle({ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2, weight: 2, opacity: 1, dashArray: null });
+        lf.setStyle({ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2, weight: 3, opacity: 1, dashArray: '4 4' });
         lf.bringToFront();
         if (lf.getBounds) {
           this.state.map.flyToBounds(lf.getBounds(), { padding: [50, 50], maxZoom: 12, duration: 0.8 });
@@ -766,12 +783,26 @@ Object.assign(APP, {
 
 
   /* Click handler for boundary picker items — mimics the map polygon click pattern */
-  _drillBoundaryFromPicker(childName, childLevel) {
+  async _drillBoundaryFromPicker(childName, childLevel) {
+    if (this.state._drilling) return;
+
+    if (this.state.currentLevel === 0 && childLevel === 1) {
+      const regionFeature = this.state.rawData[0]?.features[0];
+      let regionLayer = null;
+      if (this.state.layers[0] && regionFeature) {
+        this.state.layers[0].eachLayer(lf => {
+          if (lf.feature === regionFeature) regionLayer = lf;
+        });
+        await this.drillDown(regionFeature, regionLayer);
+      }
+    }
+
     const childData = this.state.rawData[childLevel];
     if (!childData || !childName) return;
     const lookup = childName.toLowerCase();
     const childFeature = childData.features.find(f => this._featureName(f, childLevel).toLowerCase() === lookup);
     if (!childFeature) return;
+    
     let childLayer = null;
     const layerGroup = this.state.layers[childLevel];
     if (layerGroup) {
@@ -779,26 +810,16 @@ Object.assign(APP, {
         if (lf.feature === childFeature) childLayer = lf;
       });
     }
+
     this.openPanel(childFeature, childLevel);
-    /* Always zoom to the selected feature's bounds */
-    if (childLayer && childLayer.getBounds) {
-      this.state.map.fitBounds(childLayer.getBounds(), {
-        padding: [50, 50],
-        maxZoom: 12,
-      });
-    } else if (childFeature.geometry) {
-      try {
-        const temp = L.geoJSON(childFeature);
-        this.state.map.fitBounds(temp.getBounds(), {
-          padding: [50, 50],
-          maxZoom: 12,
-        });
-      } catch (_) {}
-    }
+
     if (childLevel >= this._src().maxLevel) {
+      if (childLayer && childLayer.getBounds) {
+        this.state.map.flyToBounds(childLayer.getBounds(), { ...this._getPaddingOpts(), duration: 0.8 });
+      }
       this._highlightAndDim(childFeature, childLayer, childLevel);
     } else {
-      this.drillDown(childFeature, childLayer);
+      await this.drillDown(childFeature, childLayer);
     }
   },
 

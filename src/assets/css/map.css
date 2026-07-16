@@ -2127,8 +2127,11 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 }
 
 .province-accordion-list {
-  padding: 0;
+  padding: 8px;
   overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .province-accordion {
   border-bottom: 1px solid #e2e8f0;
