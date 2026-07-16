@@ -42,6 +42,9 @@ supabase/
 # OpenCode agent session state
 .omo/
 
+# AI agent instructions
+AGENTS.md
+
 # Local FTP test server artifacts
 test-ftp-root/
 .vercel
