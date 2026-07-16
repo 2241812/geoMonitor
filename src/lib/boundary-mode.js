@@ -407,7 +407,7 @@ Object.assign(APP, {
   _dimLevel(level, selectedFeature) {
     const cfg = this.config.colors[level];
     this._isolateFeature(this.state.layers[level], selectedFeature, {
-      fill: '#ef4444', fillOpacity: 0.2, stroke: '#ef4444', weight: 3, opacity: 1, dashArray: '4 4'
+      fill: cfg.fill, fillOpacity: 0.65, stroke: '#000000', weight: 3, opacity: 1,
     });
   },
 
