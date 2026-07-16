@@ -2330,8 +2330,9 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   max-width: 520px;
   max-height: 90vh;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  overflow: hidden;
+  grid-template-rows: auto auto auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transform: translateY(20px) scale(0.98);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -2382,10 +2383,6 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 }
 
 .data-request-body {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  min-height: 0;
   padding: 16px 24px 24px;
 }
 
