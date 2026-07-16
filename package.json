@@ -9,11 +9,14 @@
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write src/",
     "preview": "vite preview",
-    "postinstall": "node scripts/patch-vectorgrid.mjs"
+    "postinstall": "node scripts/patch-vectorgrid.mjs",
+    "deploy": "node scripts/deploy-ftp.mjs",
+    "deploy:upload-only": "node scripts/deploy-ftp.mjs --skip-build"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@turf/turf": "^7.3.5",
+    "basic-ftp": "^6.0.1",
     "dotenv": "^17.4.2",
     "geojson-vt": "^4.0.3",
     "leaflet": "^1.9.4",
