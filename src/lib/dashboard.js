@@ -657,7 +657,7 @@ Object.assign(APP, {
           self._drRadioChip('dr-purpose', 'Personal / Educational', 'Personal / Educational'),
           self._drRadioChip('dr-purpose', 'Other', 'Other'),
         '</div>',
-        '<input type="text" id="dr-purpose-other" class="dr-input" placeholder="Please specify your purpose..." style="display:none; margin-top:8px;">',
+        '<input type="text" id="dr-purpose-other" class="dr-input" placeholder="Please specify your purpose..." style="margin-top:8px;" disabled>',
       '</div>',
 
       '<div class="dr-section">',
@@ -693,8 +693,15 @@ Object.assign(APP, {
       radio.addEventListener('change', function() {
         var otherInput = document.getElementById('dr-purpose-other');
         if (otherInput) {
-          otherInput.style.display = this.value === 'Other' ? 'block' : 'none';
-          if (this.value === 'Other') setTimeout(function() { otherInput.focus(); }, 100);
+          if (this.value === 'Other') {
+            otherInput.disabled = false;
+            otherInput.style.opacity = '1';
+            otherInput.focus();
+          } else {
+            otherInput.disabled = true;
+            otherInput.style.opacity = '0';
+            otherInput.value = '';
+          }
         }
       });
     });
