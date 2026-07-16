@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=GeoMonitor Update
+Comment=Update DENR watershed map — drop .geojson/.topojson files here
+Exec=x-terminal-emulator -e /home/renzo/Desktop/Projects/geoMonitor/geo-update.sh %f
+Terminal=false
+Icon=applications-science
+Categories=Science;Geography;
+MimeType=application/json;text/plain;
+NoDisplay=false
