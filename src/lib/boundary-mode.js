@@ -394,9 +394,14 @@ Object.assign(APP, {
   /* ── Filter GeoJSON to parent boundary ─────── */
   /* ── Filter GeoJSON to parent boundary ─────── */
   _filterToParent(data, childLevel, parentFeature) {
-    const parentId = parentFeature.properties._id;
+    const parentId = this._featureId(parentFeature, childLevel - 1);
     if (!parentId) return { ...data, features: [] };
-    return { ...data, features: data.features.filter(f => f.properties._parentId === parentId) };
+    
+    return { ...data, features: data.features.filter(f => {
+      const childId = this._featureId(f, childLevel);
+      const pId = f.properties._parentId || this.state.hierarchy?.parents?.[childId] || (childLevel === 1 ? 'CAR' : null);
+      return pId === parentId;
+    }) };
   },
 
   /* ── Dynamic map padding to avoid panel ── */
@@ -650,10 +655,6 @@ Object.assign(APP, {
   },
 
   _heroSubtitle(props, level) {
-    if (this.state.activeSource === 'cad') {
-      if (level === 1) return props.Province || props.REGION || '';
-      return 'Cordillera Administrative Region';
-    }
     if (level === 2) return props.Province || props.PROVINCE || 'Province';
     if (level === 1) return 'Province — Cordillera Administrative Region';
     return 'Watershed Cradle of Northern Luzon';
@@ -669,81 +670,45 @@ Object.assign(APP, {
     this.state.lastViewed = null;
     this._updatePanelHeader();
 
-    const src = this._src();
     const data = this.state.rawData[1];
     if (!data || !data.features) return;
 
     let groupHtml = '';
 
-    if (src.maxLevel >= 2) {
-      /* NAMRIA: provinces list — filter to CAR children */
-      const provinces = this._filterToParent(data, 1, { properties: { _id: 'CAR' } });
-      const header = `Provinces (${provinces.features.length})`;
-      let itemsHtml = '';
-      provinces.features.forEach(f => {
-        const name = this._toTitleCase(this._featureName(f, 1));
-        const id = f.properties._id;
-        const muniCount = this.state.hierarchy?.children?.[id]?.length || 0;
-        const areaM2 = parseFloat(f.properties.Shape_Area || 0);
-        let hectares = parseFloat(f.properties.Hectares || f.properties.Area || f.properties.AREA || 0);
-        if (hectares <= 0 && areaM2 > 0) hectares = areaM2 / 10000;
-        const areaStr = hectares > 0 ? (hectares / 100).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
-        itemsHtml += `
-          <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
-            <div class="basin-picker-info">
-              <span class="basin-picker-name">${this._escHtml(name)}</span>
-              <span class="basin-picker-meta">
-                ${muniCount ? `<span class="basin-size">${muniCount} municipalities</span>` : ''}
-                ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
-              </span>
-            </div>
-            <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>`;
-      });
-      groupHtml += `
-        <div class="basin-picker-group">
-          <div class="basin-picker-group-title">${this._escHtml(header)}</div>
-          ${itemsHtml}
-        </div>`;
-    } else {
-      /* CAD: group municipalities by Province property.
-         Skip disputed boundary overlays — features whose Muni_City or Province
-         contains " vs " are CADastre dispute polygons, not real municipalities. */
-      const isDisputed = (s) => /\s+vs\s+/i.test(s || '');
-      const byProvince = {};
-      data.features.forEach(f => {
-        const prov = (f.properties.Province || '').trim();
-        const muni = (f.properties.Muni_City || '').trim();
-        if (!prov) return;
-        if (isDisputed(muni) || isDisputed(prov)) return;
-        if (!byProvince[prov]) byProvince[prov] = [];
-        byProvince[prov].push(f);
-      });
-      Object.keys(byProvince).sort().forEach(provName => {
-        const titleProv = this._toTitleCase(provName);
-        let itemsHtml = '';
-        byProvince[provName].forEach(f => {
-          const name = this._toTitleCase(this._featureName(f, 1));
-          const areaM2 = parseFloat(f.properties.Shape_Area || 0);
-          let hectares = parseFloat(f.properties.Hectares || f.properties.Area || f.properties.AREA || 0);
-          if (hectares <= 0 && areaM2 > 0) hectares = areaM2 / 10000;
-          const areaStr = hectares > 0 ? (hectares / 100).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
-          itemsHtml += `
-            <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
-              <div class="basin-picker-info">
-                <span class="basin-picker-name">${this._escHtml(name)}</span>
-                ${areaStr ? `<span class="basin-picker-meta"><span class="basin-area">${areaStr}</span></span>` : ''}
-              </div>
-              <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>`;
-        });
-        groupHtml += `
-          <div class="basin-picker-group">
-            <div class="basin-picker-group-title">${this._escHtml(titleProv)}</div>
-            ${itemsHtml}
-          </div>`;
-      });
-    }
+    /* Provinces list — filter to CAR children */
+    const provinces = this._filterToParent(data, 1, { properties: { _id: 'CAR' } });
+    provinces.features.sort((a, b) => {
+      const nameA = this._toTitleCase(this._featureName(a, 1));
+      const nameB = this._toTitleCase(this._featureName(b, 1));
+      return nameA.localeCompare(nameB);
+    });
+    const header = `Provinces (${provinces.features.length})`;
+    let itemsHtml = '';
+    provinces.features.forEach(f => {
+      const name = this._toTitleCase(this._featureName(f, 1));
+      const id = this._featureId(f, 1);
+      const muniCount = this.state.hierarchy?.children?.[id]?.length || 0;
+      const areaM2 = parseFloat(f.properties.Shape_Area || 0);
+      let hectares = parseFloat(f.properties.Hectares || f.properties.Area || f.properties.AREA || 0);
+      if (hectares <= 0 && areaM2 > 0) hectares = areaM2 / 10000;
+      const areaStr = hectares > 0 ? (hectares / 100).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km²' : '';
+      itemsHtml += `
+        <button class="basin-picker-item" onclick="APP._drillBoundaryFromPicker('${this._escHtml(name)}', 1)">
+          <div class="basin-picker-info">
+            <span class="basin-picker-name">${this._escHtml(name)}</span>
+            <span class="basin-picker-meta">
+              ${muniCount ? `<span class="basin-size">${muniCount} municipalities</span>` : ''}
+              ${areaStr ? `<span class="basin-area">${areaStr}</span>` : ''}
+            </span>
+          </div>
+          <svg class="basin-picker-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>`;
+    });
+    groupHtml += `
+      <div class="basin-picker-group">
+        <div class="basin-picker-group-title">${this._escHtml(header)}</div>
+        ${itemsHtml}
+      </div>`;
 
     const hero = document.getElementById('panel-hero');
     if (hero) {
@@ -853,7 +818,7 @@ Object.assign(APP, {
     /* Reset previous highlights on this level, then highlight the matched feature */
     this._resetLevelStyle(level);
     layer.eachLayer(lf => {
-      if (lf.feature && lf.feature.properties && lf.feature.properties._id === childId) {
+      if (lf.feature && this._featureId(lf.feature, level) === childId) {
         lf.setStyle({
           color: '#dc2626',
           weight: 2.5,

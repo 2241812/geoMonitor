@@ -31,7 +31,7 @@ export async function fetchWithCache(key, url, opts = {}) {
   /* ── Fast path: in-memory hit ── */
   if (!force) {
     const cached = _cache.get(key);
-    if (cached && Date.now() < cached.expiresAt) {
+    if (cached && Date.now() < cached.expiresAt && cached.url === url) {
       return cached.data;
     }
   }
@@ -44,11 +44,11 @@ export async function fetchWithCache(key, url, opts = {}) {
   /* ── Slow path: try IndexedDB (survives reload) ── */
   if (!force) {
     const idbEntry = await idbGet(key);
-    if (idbEntry && Date.now() < idbEntry.expiresAt) {
+    if (idbEntry && Date.now() < idbEntry.expiresAt && idbEntry.url === url) {
       _cache.set(key, idbEntry);
       return idbEntry.data;
     }
-    /* expired or missing in IDB — fall through to network */
+    /* expired or missing in IDB or URL mismatch — fall through to network */
   }
 
   /* ── Network fetch ── */
@@ -58,7 +58,7 @@ export async function fetchWithCache(key, url, opts = {}) {
   try {
     const data = await promise;
     if (data !== null && ttl > 0) {
-      const entry = { data, expiresAt: Date.now() + ttl };
+      const entry = { data, url, expiresAt: Date.now() + ttl };
       _cache.set(key, entry);
       idbSet(key, entry); /* fire-and-forget — don't await */
     }

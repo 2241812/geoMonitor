@@ -219,6 +219,11 @@ export const APP = {
     if (!this.config.sources[name]) return;
     if (this.state._drilling) return;
 
+    if (this._abortController) {
+      this._abortController.abort();
+    }
+    this._abortController = new AbortController();
+
     this.state.activeSource = name;
     this._loadHierarchy();
     this._updateBreadcrumb();
@@ -433,22 +438,30 @@ export const APP = {
 
     let rawName = 'Unknown';
 
-    if (this.state.activeSource === 'cad') {
-      if (level === 1) rawName = p.Muni_City || 'Unknown';
-      else return 'Cordillera Administrative Region';
-    } else {
-      const candidates = [
-        p.NAME_3, p.NAME_2, p.NAME_1,
-        p.Municipali, p.PROVINCE, p.Province,
-        p.Region,
-      ].filter(Boolean);
+    const candidates = [
+      p.NAME_3, p.NAME_2, p.NAME_1,
+      p.Municipali, p.Muni_City, p.PROVINCE, p.Province,
+      p.Region, p.REGION,
+    ].filter(Boolean);
 
-      if (level === 2) rawName = p.Municipali || p.NAME_2 || candidates[0] || 'Unknown';
-      else if (level === 1) rawName = p.PROVINCE || p.Province || p.NAME_1 || candidates[0] || 'Unknown';
-      else return 'Cordillera Administrative Region';
-    }
+    if (level === 2) rawName = p.Municipali || p.Muni_City || p.NAME_2 || candidates[0] || 'Unknown';
+    else if (level === 1) rawName = p.PROVINCE || p.Province || p.NAME_1 || candidates[0] || 'Unknown';
+    else return 'Cordillera Administrative Region';
     
     return this._toTitleCase(rawName);
+  },
+
+  _featureId(feature, level) {
+    const p = feature.properties || {};
+    if (p._id) return p._id;
+    if (level === 0) return 'CAR';
+    const norm = s => (s || '').toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '');
+    let id = norm(this._featureName(feature, level));
+    if (level === 2) {
+      const pName = p.Province || p.PROVINCE || '';
+      id = norm(pName) + ':' + id;
+    }
+    return id;
   },
 
   /* ── Highlight selected layer ─────────────── */

@@ -77,7 +77,11 @@ Object.assign(APP, {
             <div class="span-group-wrapper">
               <div class="span-group-content">
                 <div class="span-group-enclosed province-accordion-list">
-                  ${childrenIds.map(childId => {
+                  ${[...childrenIds].sort((a, b) => {
+                    const nameA = this.state.hierarchy.names[a] || a;
+                    const nameB = this.state.hierarchy.names[b] || b;
+                    return nameA.localeCompare(nameB);
+                  }).map(childId => {
                     const childName = this.state.hierarchy.names[childId] || childId;
                     return `<button class="span-chip" onclick="APP._highlightSidebarSelection('${this._escHtml(childName)}', ${level + 1}, this)">
                       ${this._escHtml(this._toTitleCase(childName))}
@@ -387,7 +391,7 @@ Object.assign(APP, {
     
     let sizeCategory = '';
     if (hectares > 0) {
-      if (level === 2 || (this.state.activeSource === 'cad' && level === 1)) {
+      if (level === 2) {
         if (hectares < 10000) sizeCategory = 'Small';
         else if (hectares <= 50000) sizeCategory = 'Medium';
         else sizeCategory = 'Large';
@@ -403,38 +407,27 @@ Object.assign(APP, {
     }
 
     // Build properties dictionary sequentially to strictly enforce layout order
-    if (this.state.activeSource === 'cad') {
-      if (level === 1) {
-        // Municipality
-        if (props.Province) d['Province'] = props.Province;
-        if (sizeCategory) d['Size'] = sizeCategory;
-        if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
-      } else {
-        // Region
-        d['Region'] = props.Region || props.REGION || 'Cordillera Administrative Region';
-        if (sizeCategory) d['Size'] = sizeCategory;
-        if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
+    if (level === 2) {
+      // Municipality
+      if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
+      if (sizeCategory) d['Size'] = sizeCategory;
+      if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
+      if (props.X_Coord && props.Y_Coord) {
+        d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
       }
+      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
+    } else if (level === 1) {
+      // Province
+      d['Region'] = 'Cordillera Administrative Region';
+      if (sizeCategory) d['Size'] = sizeCategory;
+      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
     } else {
-      if (level === 2) {
-        // Municipality
-        if (props.Province || props.PROVINCE) d['Province'] = props.Province || props.PROVINCE;
-        if (sizeCategory) d['Size'] = sizeCategory;
-        if (props.CENR_Cov) d['CENRO'] = props.CENR_Cov;
-        if (props.X_Coord && props.Y_Coord) {
-          d['Coordinates'] = `${(+props.Y_Coord).toFixed(4)}, ${(+props.X_Coord).toFixed(4)}`;
-        }
-      } else if (level === 1) {
-        // Province
-        d['Region'] = 'Cordillera Administrative Region';
-        if (sizeCategory) d['Size'] = sizeCategory;
-      } else {
-        // Region
-        d['Island Group'] = 'Luzon';
-        if (sizeCategory) d['Size'] = sizeCategory;
-        const cc = childCount(props._id);
-        if (cc !== null) d['Provinces'] = String(cc);
-      }
+      // Region
+      d['Island Group'] = 'Luzon';
+      if (sizeCategory) d['Size'] = sizeCategory;
+      if (props.Remarks && props.Remarks.trim()) d['Remarks'] = props.Remarks.trim();
+      const cc = childCount(props._id);
+      if (cc !== null) d['Provinces'] = String(cc);
     }
     
     if (hectares > 0) d['Area (Ha)'] = hectares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });

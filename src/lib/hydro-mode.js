@@ -1080,7 +1080,7 @@ Object.assign(APP, {
       if (!this.state.hydroBoundaryLayer) {
         try {
           if (!this.state.rawData[0]) {
-            const d = await fetchWithCache('boundary:namria:0', 'geoJSON/CAR NAMRIA Boundary.topojson', { signal: APP._abortController.signal });
+            const d = await fetchWithCache('boundary:namria:0', 'geoJSON/Overlays/namria_region.json', { signal: APP._abortController.signal });
             if (!d) throw new Error('Failed to load');
             this.state.rawData[0] = d;
           }
@@ -1371,19 +1371,14 @@ Object.assign(APP, {
     }
 
     const useCad = this.state.activeSource === 'cad';
-    /* In CAD mode there is no separate province level — province outlines are
-       derived by dissolving the municipal features that share the Province.
-       CAD municipalities also live at level 1 (maxLevel=1), not level 2.
-       Use a source-prefixed cache key so stale data from the other source is
-       never reused after a source switch in watershed mode. */
-    const adminLvl = useCad ? 1 : (type === 'province' ? 1 : 2);
+    const adminLvl = type === 'province' ? 1 : 2;
     const cacheKey = (useCad ? 'cad:' : 'namria:') + adminLvl;
 
     if (!this.state.rawData[cacheKey]) {
-      const url = useCad
-        ? 'geoJSON/CAR CAD Municipal Boundary.topojson'
-        : 'geoJSON/CAR NAMRIA ' + (adminLvl === 1 ? 'Provincial' : 'Municipal') + ' Boundary.topojson';
-      const d = await fetchWithCache(cacheKey, url, { signal: APP._abortController.signal });
+      const adminUrl = useCad
+        ? 'geoJSON/Overlays/cad_' + (adminLvl === 1 ? 'province' : 'municipality') + '.json'
+        : 'geoJSON/Overlays/namria_' + (adminLvl === 1 ? 'province' : 'municipality') + '.json';
+      const d = await fetchWithCache(cacheKey, adminUrl, { signal: APP._abortController.signal });
       if (!d) {
         this._showToast('Failed to load boundary data');
         return;
@@ -1392,32 +1387,21 @@ Object.assign(APP, {
     }
     const boundaryData = this.state.rawData[cacheKey];
 
-    /* Resolve the target feature(s) for the slug. CAD provinces may need
-       multiple municipal features dissolved into one outline. */
     let targetFeature = null;
     let targetFeatures = null;
     const norm = s => (s || '').toLowerCase().replace(/-/g, ' ').trim();
     const wantSlug = type === 'province' ? slug : slug.split(':').pop();
 
-    if (useCad && type === 'province') {
-      /* CAD province: gather all municipal features whose Province slug matches */
-      const features = (boundaryData.features || []).filter(f => {
-        const provSlug = (f.properties || {}).Province.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        return provSlug === slug;
+    const features = (boundaryData.features || []);
+    targetFeature = features.find(f => (f.properties || {})._id === slug);
+    if (!targetFeature) {
+      /* Fallback: match by normalized name */
+      const want = norm(wantSlug);
+      targetFeature = features.find(f => {
+        const p = f.properties || {};
+        if (type === 'province') return norm(p.PROVINCE || p.Province || p.NAME_1) === want;
+        return norm(p.Municipali || p.NAME_2 || p.Muni_City) === want;
       });
-      if (features.length) targetFeatures = features;
-    } else {
-      const features = (boundaryData.features || []);
-      targetFeature = features.find(f => (f.properties || {})._id === slug);
-      if (!targetFeature) {
-        /* Fallback: match by normalized name */
-        const want = norm(wantSlug);
-        targetFeature = features.find(f => {
-          const p = f.properties || {};
-          if (type === 'province') return norm(p.PROVINCE || p.Province || p.NAME_1) === want;
-          return norm(p.Municipali || p.NAME_2 || p.Muni_City) === want;
-        });
-      }
     }
 
     const outlineData = targetFeatures
