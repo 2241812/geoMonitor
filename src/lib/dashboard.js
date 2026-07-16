@@ -371,7 +371,7 @@ Object.assign(APP, {
     }
   },
 
-  _resolveDetails(props, level, name) {
+  _resolveDetails(props, level, _name) {
     const d = {};
     const hierarchy = this.state.hierarchy;
     const childCount = (id) => {
