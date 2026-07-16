@@ -2383,6 +2383,8 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 
 .data-request-body {
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   min-height: 0;
   padding: 16px 24px 24px;
 }

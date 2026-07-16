@@ -647,7 +647,7 @@ Object.assign(APP, {
 
       '<div class="dr-section">',
         '<div class="dr-section-title">Purpose of Request <span class="dr-required">*</span></div>',
-        '<div class="dr-chip-grid">',
+        '<div class="dr-chip-grid" id="dr-purpose-grid">',
           self._drRadioChip('dr-purpose', 'Academic Research', 'Academic Research'),
           self._drRadioChip('dr-purpose', 'Environmental Planning', 'Environmental Planning'),
           self._drRadioChip('dr-purpose', 'Policy Development', 'Policy Development'),
@@ -657,6 +657,7 @@ Object.assign(APP, {
           self._drRadioChip('dr-purpose', 'Personal / Educational', 'Personal / Educational'),
           self._drRadioChip('dr-purpose', 'Other', 'Other'),
         '</div>',
+        '<input type="text" id="dr-purpose-other" class="dr-input" placeholder="Please specify your purpose..." style="display:none; margin-top:8px;">',
       '</div>',
 
       '<div class="dr-section">',
@@ -686,6 +687,16 @@ Object.assign(APP, {
     /* Close on overlay background click */
     overlay.addEventListener('click', function(e) {
       if (e.target === overlay) self._closeDataRequest();
+    });
+
+    document.querySelectorAll('input[name="dr-purpose"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        var otherInput = document.getElementById('dr-purpose-other');
+        if (otherInput) {
+          otherInput.style.display = this.value === 'Other' ? 'block' : 'none';
+          if (this.value === 'Other') setTimeout(function() { otherInput.focus(); }, 100);
+        }
+      });
     });
   },
 
@@ -787,7 +798,9 @@ Object.assign(APP, {
       email: emailEl.value.trim(),
       organization: orgEl ? orgEl.value.trim() : '',
       contactNumber: phoneEl ? phoneEl.value.trim() : '',
-      purpose: purposeEl.value,
+      purpose: purposeEl.value === 'Other'
+        ? (document.getElementById('dr-purpose-other').value.trim() || 'Other')
+        : purposeEl.value,
       notes: notesEl ? notesEl.value.trim() : '',
       timestamp: new Date().toISOString(),
       sourceUrl: window.location.href
