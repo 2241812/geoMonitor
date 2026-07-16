@@ -1,6 +1,7 @@
 import { APP } from './app.js';
 import { useMapStore } from '../store/useMapStore.js';
 import { fetchLCMFromSupabase, fetchAllLCMFromSupabase } from './supabase-geo.js';
+import { fetchWithCache } from './fetch-cache.js';
 
 let _lcmFetchToken = 0;
 /**
@@ -59,7 +60,7 @@ Object.assign(APP, {
             this.openPanel(carData.features[0], 0);
           }
         }
-      }).catch(console.error);
+      }).catch(err => { if (import.meta.env.DEV) console.error(err); });
       
       if (this.state.map) {
         this.state.map.setView(this.config.mapCenter, this.config.mapZoom);
@@ -122,20 +123,16 @@ Object.assign(APP, {
     this.state.currentLevel = 0;
 
     if (!this.state.rawData['watershed']) {
-      try {
-        const resp = await fetch('geoJSON/CAR Watersheds.topojson');
-        this.state.rawData['watershed'] = window.decodeGeo(await resp.json());
-      } catch (_) {
+      const d = await fetchWithCache('watershed', 'geoJSON/CAR Watersheds.topojson', { signal: APP._abortController.signal });
+      if (!d) {
         this._showToast('Failed to load watershed data');
         return;
       }
+      this.state.rawData['watershed'] = d;
     }
-    /* R3: Load merged watershed outline if not already cached */
     if (!this.state.rawData['watershedOutline']) {
-      try {
-        const resp = await fetch('geoJSON/CAR Watersheds.topojson');
-        this.state.rawData['watershedOutline'] = window.decodeGeo(await resp.json());
-      } catch (_) {}
+      const d = await fetchWithCache('watershedOutline', 'geoJSON/CAR Watersheds.topojson', { ttl: 600000, signal: APP._abortController.signal });
+      if (d) this.state.rawData['watershedOutline'] = d;
     }
     
     this.state.hydroDrillLevel = 0;
@@ -189,7 +186,7 @@ Object.assign(APP, {
       if (!dissolved) return null;
       this.state._hydroSilhouetteGeo = dissolved;
       return dissolved;
-    } catch (e) {
+    } catch {
       try {
         let merged = data.features[0];
         for (let i = 1; i < data.features.length; i++) {
@@ -197,7 +194,7 @@ Object.assign(APP, {
         }
         this.state._hydroSilhouetteGeo = merged;
         return merged;
-      } catch (e2) {
+      } catch {
         return null;
       }
     }
@@ -294,13 +291,11 @@ Object.assign(APP, {
     /* Clear previous hydro layers */
     this._clearHydroLayers();
 
-    const colors = this.config.hydroLevelColors;
     const self = this;
 
     this.state.hydroLayers[0] = L.geoJSON(data, {
       interactive: !silhouetteMode,
-      style: (feature) => {
-        const idx = self._hydroBasinIndex(feature);
+      style: () => {
         if (silhouetteMode) {
           return {
             fillColor: self.state.basinFillColor,
@@ -324,8 +319,6 @@ Object.assign(APP, {
         if (silhouetteMode) return;
         const name = feature.properties.Name || feature.properties.Old_Name || 'Unknown';
         const labelName = name.replace(/ River Watershed$/, '').replace(/ Watershed$/, '');
-        const idx = self._hydroBasinIndex(feature);
-        const basinColor = colors[idx] || '#6b7280';
         leafletLayer._labelText = labelName;
 
         leafletLayer.bindTooltip(labelName, {
@@ -540,8 +533,8 @@ Object.assign(APP, {
     });
 
     const results = await Promise.allSettled([
-      fetch(swPath).then(r => { if (!r.ok) throw new Error('No SW'); return r.json(); }).then(window.decodeGeo),
-      fetch(soPath).then(r => { if (!r.ok) throw new Error('No StreamOrder'); return r.json(); }).then(window.decodeGeo),
+      fetchWithCache('sw:' + code, swPath, { signal: APP._abortController.signal }),
+      fetchWithCache('so:' + code, soPath, { signal: APP._abortController.signal }),
     ]);
 
     /* Sub-watershed polygons — single L.geoJSON for both visual rendering and events.
@@ -884,7 +877,9 @@ Object.assign(APP, {
     }
 
     if (!this.state.showLCM) {
-      APP.lcm.destroy();
+      APP.lcm.hide();
+    } else if (APP.lcm._layer) {
+      APP.lcm.show();
     }
     APP._updateHydroLegend();
   },
@@ -975,7 +970,7 @@ Object.assign(APP, {
       if (token === _lcmFetchToken) APP.lcm._hideLoadProgress();
       useMapStore.setState({ lcmLoading: false });
       APP._showToast('Failed to load land cover data');
-      console.warn('LCM load failed for', code, e);
+      if (import.meta.env.DEV) console.warn('LCM load failed for', code, e);
     }
   },
 
@@ -996,7 +991,7 @@ Object.assign(APP, {
       if (token === _lcmFetchToken) APP.lcm._hideLoadProgress();
       useMapStore.setState({ lcmLoading: false });
       APP._showToast('Failed to load land cover data');
-      console.warn('LCM load failed for all basins', e);
+      if (import.meta.env.DEV) console.warn('LCM load failed for all basins', e);
     }
   },
 
@@ -1085,8 +1080,9 @@ Object.assign(APP, {
       if (!this.state.hydroBoundaryLayer) {
         try {
           if (!this.state.rawData[0]) {
-            const resp = await fetch('geoJSON/CAR NAMRIA Boundary.topojson');
-            this.state.rawData[0] = window.decodeGeo(await resp.json());
+            const d = await fetchWithCache('boundary:namria:0', 'geoJSON/CAR NAMRIA Boundary.topojson', { signal: APP._abortController.signal });
+            if (!d) throw new Error('Failed to load');
+            this.state.rawData[0] = d;
           }
           this.state.hydroBoundaryLayer = L.geoJSON(this.state.rawData[0], {
             interactive: false,
@@ -1384,16 +1380,15 @@ Object.assign(APP, {
     const cacheKey = (useCad ? 'cad:' : 'namria:') + adminLvl;
 
     if (!this.state.rawData[cacheKey]) {
-      try {
-        const url = useCad
-          ? 'geoJSON/CAR CAD Municipal Boundary.topojson'
-          : 'geoJSON/CAR NAMRIA ' + (adminLvl === 1 ? 'Provincial' : 'Municipal') + ' Boundary.topojson';
-        const resp = await fetch(url);
-        this.state.rawData[cacheKey] = window.decodeGeo(await resp.json());
-      } catch (_) {
+      const url = useCad
+        ? 'geoJSON/CAR CAD Municipal Boundary.topojson'
+        : 'geoJSON/CAR NAMRIA ' + (adminLvl === 1 ? 'Provincial' : 'Municipal') + ' Boundary.topojson';
+      const d = await fetchWithCache(cacheKey, url, { signal: APP._abortController.signal });
+      if (!d) {
         this._showToast('Failed to load boundary data');
         return;
       }
+      this.state.rawData[cacheKey] = d;
     }
     const boundaryData = this.state.rawData[cacheKey];
 
@@ -1547,10 +1542,10 @@ Object.assign(APP, {
           try {
             let data = this.state.rawData['watershed'];
             if (!data) {
-              const response = await fetch('geoJSON/CAR Watersheds.topojson');
-              data = await response.json();
-              this.state.rawData['watershed'] = data;
+              data = await fetchWithCache('watershed', 'geoJSON/CAR Watersheds.topojson', { signal: APP._abortController.signal });
+              if (data) this.state.rawData['watershed'] = data;
             }
+            if (!data) return;
 
             // Instantiate all layers once, without a filter
             this.state.watershedLayer = L.geoJSON(data, {
@@ -1611,7 +1606,7 @@ Object.assign(APP, {
             });
 
           } catch (err) {
-            console.error("Failed to load watersheds:", err);
+            if (import.meta.env.DEV) console.error("Failed to load watersheds:", err);
           }
         })();
         await this.state._fetchingWatersheds;

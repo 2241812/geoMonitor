@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export const useMapStore = create((set, get) => ({
+export const useMapStore = create((set, _get) => ({
   // ═══════════ CORE VIEW STATE ═══════════
   viewMode: 'watersheds', // 'watersheds' | 'boundaries'
   activeBasemap: 'topo',

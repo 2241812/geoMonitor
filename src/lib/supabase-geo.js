@@ -112,7 +112,6 @@ export async function fetchAllLCMFromSupabase(onProgress, classes) {
   }
   if (onProgress) onProgress(0, 'Fetching LCM for all basins…');
 
-  const totalEstimate = BASIN_CODES.reduce((sum, c) => sum + (BASIN_FEATURE_COUNTS[c] || 5000), 0);
   let allFeatures = [];
   let doneCount = 0;
 
@@ -141,7 +140,7 @@ export async function fetchAllLCMFromSupabase(onProgress, classes) {
           onProgress(pct, `Fetched ${code} (${data.length} features) [${doneCount}/${BASIN_CODES.length}]`);
         }
       } else {
-        console.warn('LCM fetch failed:', result.reason?.message);
+        if (import.meta.env.DEV) console.warn('LCM fetch failed:', result.reason?.message);
         doneCount++;
       }
     }

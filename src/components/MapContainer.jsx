@@ -12,7 +12,7 @@ export default function MapContainer() {
           try {
             await window.initLayers();
           } catch (err) {
-            console.error('Layer initialization failed:', err);
+            if (import.meta.env.DEV) console.error('Layer initialization failed:', err);
           }
         }
         const loading = document.getElementById('loading-overlay');

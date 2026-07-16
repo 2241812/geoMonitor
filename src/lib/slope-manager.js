@@ -1,6 +1,7 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
 import { useMapStore } from '../store/useMapStore.js';
+import { fetchWithCache } from './fetch-cache.js';
 import {
   extractOuterRings,
   buildClipPath,
@@ -79,9 +80,8 @@ APP.slope = {
       APP._showToast('Loading slope data… this may take a moment');
       this._showLoadProgress(0, 'Fetching slope data…');
       try {
-        const resp = await fetch('geoJSON/Slope.geojson');
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const geojson = await resp.json();
+        const geojson = await fetchWithCache('slope', 'geoJSON/Slope.geojson', { signal: APP._abortController.signal });
+        if (!geojson) throw new Error('Failed to load slope data');
 
         this._showLoadProgress(20, 'Processing geometry…');
         await new Promise(r => setTimeout(r, 0));
@@ -132,7 +132,7 @@ APP.slope = {
       } catch (e) {
         this._hideLoadProgress();
         APP._showToast('Failed to load slope data');
-        console.error('Slope fetch error:', e);
+        if (import.meta.env.DEV) console.error('Slope fetch error:', e);
         APP.state.showSlope = false;
         useMapStore.setState({ showSlope: false, slopeLoading: false });
         APP._updateHydroLegend();

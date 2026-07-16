@@ -7,6 +7,7 @@
  * functionality can be modified independently from watershed/hydro code.
  */
 import { APP } from './app.js';
+import { fetchWithCache } from './fetch-cache.js';
 
 Object.assign(APP, {
   /* Resolve the CSS class for a boundary label based on admin level.
@@ -104,8 +105,6 @@ Object.assign(APP, {
     this.state._drilling = true;
     this._hideHoverLabel();
     try {
-      const previousLevel = this.state.currentLevel;
-
       if (targetLevel === this.state.currentLevel) return;
 
       /* Clear selection state */
@@ -256,9 +255,9 @@ Object.assign(APP, {
     if (!this.state.rawData[geoKey]) {
       const src = this._src();
       if (!src.geoJSON[level]) return;
-      const resp = await fetch(src.geoJSON[level]);
-      if (!resp.ok) throw new Error('Failed to load level ' + level);
-      this.state.rawData[geoKey] = window.decodeGeo(await resp.json());
+      const d = await fetchWithCache('boundary:' + this.state.activeSource + ':' + level, src.geoJSON[level], { signal: APP._abortController.signal });
+      if (!d) throw new Error('Failed to load level ' + level);
+      this.state.rawData[geoKey] = d;
     }
 
     let data = this.state.rawData[geoKey];
@@ -508,12 +507,10 @@ Object.assign(APP, {
   /* ── Background prefetch ── */
   async _prefetchLevel(level) {
     if (this.state.rawData[level]) return;
-    try {
-      const src = this._src();
-      if (!src.geoJSON[level]) return;
-      const resp = await fetch(src.geoJSON[level]);
-      if (resp.ok) this.state.rawData[level] = window.decodeGeo(await resp.json());
-    } catch (_) { }
+    const src = this._src();
+    if (!src.geoJSON[level]) return;
+    const d = await fetchWithCache('boundary:' + this.state.activeSource + ':' + level, src.geoJSON[level], { signal: APP._abortController.signal });
+    if (d) this.state.rawData[level] = d;
   },
 
   /* ── Hover label ──────────────────────────── */
@@ -601,14 +598,10 @@ Object.assign(APP, {
     const cacheKey = (useCad ? 'cad:' : 'namria:') + lvl;
     let data = this.state.rawData[cacheKey] || this.state.rawData[lvl];
     if (!data) {
-      try {
-        const resp = await fetch(src.geoJSON[lvl]);
-        if (!resp.ok) throw new Error('Failed to load');
-        data = window.decodeGeo(await resp.json());
-        this.state.rawData[cacheKey] = data;
-      } catch (_) {
-        return;
-      }
+      const d = await fetchWithCache(cacheKey, src.geoJSON[lvl], { signal: APP._abortController.signal });
+      if (!d) return;
+      data = d;
+      this.state.rawData[cacheKey] = data;
     }
     const styleMap = {
       region: { color: '#1f2937', weight: 2.5, fillOpacity: 0, opacity: 0.85 },
@@ -668,7 +661,7 @@ Object.assign(APP, {
 
 
   /* ── R1: Boundary Picker Panel (Boundary mode, level 0) ── */
-  _showBoundaryPicker(feature, level) {
+  _showBoundaryPicker(_feature, _level) {
     const panel = document.getElementById('info-panel');
     const content = document.getElementById('info-panel-content');
     if (!panel || !content) return;
@@ -881,5 +874,3 @@ Object.assign(APP, {
   },
 
 });
-
-console.log('boundary-mode.js loaded');

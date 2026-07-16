@@ -1,4 +1,7 @@
+import { fetchWithCache } from './fetch-cache.js';
+
 export const APP = {
+  _abortController: new AbortController(),
 
   state: {
     map: null,
@@ -114,25 +117,17 @@ export const APP = {
     /* Load hierarchy for active source */
     this._loadHierarchy();
     
-    fetch('geoJSON/watershed-intersections.json')
-      .then(r => r.json()).then(window.decodeGeo)
-      .then(w => { this.state.watershedIntersections = w; })
-      .catch(() => {});
+    fetchWithCache('watershed-intersections', 'geoJSON/watershed-intersections.json', { signal: this._abortController.signal })
+      .then(w => { if (w) this.state.watershedIntersections = w; });
 
-    fetch('geoJSON/zone-intersections.json')
-      .then(r => r.json()).then(window.decodeGeo)
-      .then(z => { this.state.zoneIntersections = z; })
-      .catch(() => {});
+    fetchWithCache('zone-intersections', 'geoJSON/zone-intersections.json', { signal: this._abortController.signal })
+      .then(z => { if (z) this.state.zoneIntersections = z; });
       
-    // Prefetch watershed data for area lookups and hydro mode
-    fetch('geoJSON/CAR Watersheds.topojson')
-      .then(r => r.json()).then(window.decodeGeo)
+    fetchWithCache('watershed', 'geoJSON/CAR Watersheds.topojson', { signal: this._abortController.signal })
       .then(d => {
-        if (!this.state.rawData['watershed']) this.state.rawData['watershed'] = d;
-        /* If we start in watersheds view mode, enter hydro mode now that data is ready */
+        if (d && !this.state.rawData['watershed']) this.state.rawData['watershed'] = d;
         if (this.state.viewMode === 'watersheds') this._enterHydroMode();
-      })
-      .catch(() => {});
+      });
 
     /* Prevent mobile info-panel swipes from moving the map */
     const infoPanel = document.getElementById('info-panel');
@@ -214,10 +209,8 @@ export const APP = {
   },
 
   _loadHierarchy() {
-    fetch(this._src().hierarchy)
-      .then(r => r.json()).then(window.decodeGeo)
-      .then(h => { this.state.hierarchy = h; })
-      .catch(() => {});
+    fetchWithCache('hierarchy:' + this.state.activeSource, this._src().hierarchy, { signal: this._abortController.signal })
+      .then(h => { if (h) this.state.hierarchy = h; });
   },
 
   /* ── Source toggle ────────────────────────── */
@@ -285,7 +278,7 @@ export const APP = {
 
   /* Refresh admin boundary overlay layers (bottom-left dropdown) to match
      the current activeSource. Used after a source switch in watersheds mode. */
-  _refreshBoundaryOverlays() {
+  async _refreshBoundaryOverlays() {
     /* Remove existing boundary overlay layers */
     Object.values(this.state.adminLayers).forEach(l => {
       if (l && this.state.map) this.state.map.removeLayer(l);
@@ -323,22 +316,15 @@ export const APP = {
 
     /* Fetch each needed level, then re-add overlays once all data is loaded */
     const pending = [...levelsToFetch].filter(lvl => src.geoJSON[lvl]);
-    let loaded = 0;
-    pending.forEach(lvl => {
-      fetch(src.geoJSON[lvl])
-        .then(r => r.json()).then(window.decodeGeo)
-        .then(d => {
-          this.state.rawData[lvl] = d;
-          loaded++;
-          if (loaded === pending.length) {
-            /* All levels loaded — re-add every checked overlay */
-            typesToReload.forEach(type => {
-              if (type === 'province' && src.maxLevel < 2) return;
-              this._addBoundaryLayer(type);
-            });
-          }
-        })
-        .catch(() => {});
+    const results = await Promise.allSettled(
+      pending.map(lvl => fetchWithCache('boundary:' + this.state.activeSource + ':' + lvl, src.geoJSON[lvl], { signal: this._abortController.signal }))
+    );
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled' && r.value) this.state.rawData[pending[i]] = r.value;
+    });
+    typesToReload.forEach(type => {
+      if (type === 'province' && src.maxLevel < 2) return;
+      this._addBoundaryLayer(type);
     });
   },
 
@@ -518,9 +504,6 @@ export const APP = {
       bc.innerHTML = html;
       return; /* No outline toggles in hydro mode */
     }
-
-    /* ── Admin boundary mode breadcrumb ── */
-    const src = this._src();
 
     /* Breadcrumb trail (both modes) — mode toggles moved to BottomBar.jsx */
     const atRoot = this.state.selectedPath.length === 0;
@@ -1161,11 +1144,6 @@ export const APP = {
   },
 };
 
-const EVENTS = {
-  FEATURE_SELECT: 'feature:select',
-  FEATURE_CLEAR: 'feature:clear',
-};
-
 // ==========================================
 // SECURITY FEATURES
 // ==========================================
@@ -1177,40 +1155,5 @@ document.addEventListener('keyup', (e) => {
       navigator.clipboard.writeText('');
     }
     alert('Screenshots and screen recording are disabled on this page due to sensitive data.');
-  }
-});
-
-// Prevent Print (Ctrl+P, Cmd+P) and Save (Ctrl+S, Cmd+S)
-document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-    e.preventDefault();
-    alert('Printing is disabled on this page.');
-  }
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault();
-  }
-  
-  // Mac screenshot shortcuts (Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5)
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
-    e.preventDefault();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText('');
-    }
-  }
-});
-
-// Blur the application when it loses focus (mitigates background screen recording)
-window.addEventListener('blur', () => {
-  const mapApp = document.querySelector('.map-app');
-  if (mapApp) {
-    mapApp.style.filter = 'blur(10px)';
-    mapApp.style.transition = 'filter 0.2s';
-  }
-});
-
-window.addEventListener('focus', () => {
-  const mapApp = document.querySelector('.map-app');
-  if (mapApp) {
-    mapApp.style.filter = 'none';
   }
 });

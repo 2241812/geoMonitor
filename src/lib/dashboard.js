@@ -36,7 +36,6 @@ Object.assign(APP, {
     }
 
     /* Details Section */
-    const isCAD = this.state.activeMode === 'cad';
     let html = `<div class="panel-section">
       <div class="panel-section-title">Details</div>
       <div class="stat-grid">`;
@@ -822,11 +821,11 @@ Object.assign(APP, {
       }),
     ]).then(function(results) {
       if (results[0].status === 'rejected') {
-        console.error('Supabase insert failed:', results[0].reason);
+        if (import.meta.env.DEV) console.error('Supabase insert failed:', results[0].reason);
       }
       var emailOk = results[1].status === 'fulfilled';
       if (!emailOk) {
-        console.error('EmailJS failed:', results[1].reason);
+        if (import.meta.env.DEV) console.error('EmailJS failed:', results[1].reason);
       }
       if (emailOk) {
         alert('Request submitted! A confirmation will be sent to ' + payload.email + '.');
@@ -854,7 +853,4 @@ Object.assign(APP, {
   }
 });
 
-// Legacy shims
-function initDashboard() {}
-function updateDashboard(feature) { if (feature && APP) APP.openPanel(feature, APP.state.currentLevel); }
-function clearDashboard() { APP.closePanel(); }
+

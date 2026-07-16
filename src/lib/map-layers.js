@@ -1,4 +1,5 @@
 import { APP } from './app.js';
+import { fetchWithCache } from './fetch-cache.js';
 /**
  * map-layers.js
  * Layer initialization — starts at level 0 (CAR boundary) and lets
@@ -24,11 +25,11 @@ export async function initLayers() {
 
   /* Fetch level 0 and 1 GeoJSON in parallel */
   const [geo0, geo1] = await Promise.all([
-    fetch(src.geoJSON[0]).then(r => r.json()).then(window.decodeGeo),
-    fetch(src.geoJSON[1]).then(r => r.json()).then(window.decodeGeo),
+    fetchWithCache('boundary:' + src.activeSource + ':0', src.geoJSON[0], { signal: APP._abortController.signal }),
+    fetchWithCache('boundary:' + src.activeSource + ':1', src.geoJSON[1], { signal: APP._abortController.signal }),
   ]);
-  APP.state.rawData[0] = geo0;
-  APP.state.rawData[1] = geo1;
+  if (geo0) APP.state.rawData[0] = geo0;
+  if (geo1) APP.state.rawData[1] = geo1;
 
   if (!isWatersheds) {
     await APP._showLevel(0, null, null);

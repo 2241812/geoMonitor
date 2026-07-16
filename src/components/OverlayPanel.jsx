@@ -11,6 +11,7 @@ import { LCM_CLASSES } from '../lib/lcm-manager.js';
 
 export default function OverlayPanel() {
   const [isOpen, setIsOpen] = useState(false);
+  const [lcmSelecting, setLcmSelecting] = useState(false);
   const panelRef = useRef(null);
   const hydroDrillLevel = useMapStore((s) => s.hydroDrillLevel);
   const showSlope = useMapStore((s) => s.showSlope);
@@ -20,7 +21,6 @@ export default function OverlayPanel() {
   const slopeLoading = useMapStore((s) => s.slopeLoading);
   const lcmLoading = useMapStore((s) => s.lcmLoading);
   const slopeConfirmPending = useMapStore((s) => s.slopeConfirmPending);
-  const lcmConfirmPending = useMapStore((s) => s.lcmConfirmPending);
   const viewMode = useMapStore((s) => s.viewMode);
   const currentLevel = useMapStore((s) => s.currentLevel);
   const isLevel0 = hydroDrillLevel === 0;
@@ -318,9 +318,17 @@ export default function OverlayPanel() {
                   disabled={lcmLoading}
                   onChange={() => {
                     if (lcmLoading) return;
-                    if (!showLCM && isLevel0) {
-                      useMapStore.setState({ lcmConfirmPending: true });
+                    if (!showLCM) {
+                      /* Turning ON — check if layer is already loaded */
+                      if (APP.lcm._layer) {
+                        APP._toggleLCM();
+                        APP.lcm.show();
+                      } else {
+                        setLcmSelecting(true);
+                      }
                     } else {
+                      /* Turning OFF */
+                      setLcmSelecting(false);
                       APP._toggleLCM();
                     }
                   }}
@@ -329,25 +337,54 @@ export default function OverlayPanel() {
               </label>
             </div>
 
-            {/* Level 0 Confirmation Card */}
-            {lcmConfirmPending && (
+            {/* Class selection card — shown before data is fetched */}
+            {lcmSelecting && (
               <div className="overlay-confirm-card">
                 <div className="overlay-confirm-text">
-                  The land cover overlay requires fetching data from Supabase. This may take a moment.
+                  Choose which land cover classes to load, then click Apply &amp; Fetch.
                 </div>
-                <div className="overlay-confirm-actions">
+                <div className="lcm-class-toggles" style={{ marginTop: '8px' }}>
+                  <div className="lcm-class-header">
+                    <b>Classes</b>
+                    <span className="lcm-class-actions">
+                      <a href="#" onClick={(e) => { e.preventDefault(); APP._lcmShowAll(); }} style={{ fontSize: '11px', cursor: 'pointer' }}>All</a>
+                      <span style={{ color: '#ccc', margin: '0 2px' }}>|</span>
+                      <a href="#" onClick={(e) => { e.preventDefault(); APP._lcmHideAll(); }} style={{ fontSize: '11px', cursor: 'pointer' }}>None</a>
+                    </span>
+                  </div>
+                  {LCM_CLASSES.map((c) => (
+                    <label key={c.name} className="lcm-class-row">
+                      <input
+                        type="checkbox"
+                        checked={APP.lcm.isClassVisible(c.name)}
+                        onChange={() => APP._toggleLCMClass(c.name)}
+                      />
+                      <span className="lcm-class-swatch" style={{ background: c.color }}></span>
+                      <span className="lcm-class-label">{c.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="overlay-confirm-actions" style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                   <button
                     className="overlay-confirm-btn overlay-confirm-cancel"
-                    onClick={() => useMapStore.setState({ lcmConfirmPending: false })}
+                    onClick={() => setLcmSelecting(false)}
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </button>
                   <button
                     className="overlay-confirm-btn overlay-confirm-apply"
                     onClick={() => {
-                      useMapStore.setState({ lcmConfirmPending: false });
+                      const classes = [...APP.lcm.getVisibleClasses()];
+                      if (classes.length === 0) {
+                        APP._showToast('Select at least one land cover class');
+                        return;
+                      }
+                      setLcmSelecting(false);
                       APP._toggleLCM();
+                      APP._refetchLCMWithClasses();
                     }}
+                    style={{ flex: 1 }}
                   >
                     Apply &amp; Fetch
                   </button>
