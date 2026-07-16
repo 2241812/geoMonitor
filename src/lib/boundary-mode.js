@@ -70,11 +70,11 @@ Object.assign(APP, {
         this.state.layers[currentLevel].eachLayer(function(lf) {
           if (lf.feature === feature) {
             /* Selected parent: keep solid outline */
-            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 2.5, opacity: 0.9, dashArray: null });
+            lf.setStyle({ fillOpacity: 0, color: cfg.stroke, weight: cfg.weight, opacity: 0.9, dashArray: null });
             lf.bringToFront();
           } else {
             /* Unselected siblings: dotted outline */
-            lf.setStyle({ fillOpacity: 0, color: cfg.fill, weight: 1.5, opacity: 0.5, dashArray: '4 7' });
+            lf.setStyle({ fillOpacity: 0, color: cfg.stroke, weight: cfg.weight / 2, opacity: 0.5, dashArray: '4 7' });
           }
         });
         this.state.layers[currentLevel]._hiddenByDrill = true;
@@ -105,7 +105,7 @@ Object.assign(APP, {
     this.state._drilling = true;
     this._hideHoverLabel();
     try {
-      if (targetLevel === this.state.currentLevel) return;
+      if (targetLevel === this.state.currentLevel && !this.state._selectedFeature) return;
 
       /* Clear selection state */
       this.state._selectedFeature = null;
@@ -210,13 +210,10 @@ Object.assign(APP, {
         }
       }
 
-      /* Show the feature at target level in panel and KEEP IT HIGHLIGHTED */
+      /* Show the parent feature at target level in panel */
       if (targetLevel > 0 && this.state.selectedPath.length > 0) {
         const lastItem = this.state.selectedPath[this.state.selectedPath.length - 1];
         this.openPanel(lastItem.feature, lastItem.level);
-        
-        this.state._selectedFeature = lastItem.feature;
-        this.state._selectedLevel = lastItem.level;
 
         const layer = this.state.layers[targetLevel];
         if (layer) {
@@ -228,9 +225,11 @@ Object.assign(APP, {
           const cfg = this.config.colors[targetLevel];
           layer.eachLayer((lf) => {
             if (lf.feature === lastItem.feature) {
+              /* NOTE: We do NOT set this.state._selectedFeature here, because lastItem is the parent level feature!
+                 We only visually style it to show it is the active context, but the current level selection remains empty. */
               this.state._selectedLeafletLayer = lf;
               /* Solid outline = this IS the currently-selected parent context */
-              lf.setStyle({ fillOpacity: 0.08, color: cfg.fill, weight: 2.5, opacity: 0.9, dashArray: null });
+              lf.setStyle({ fillOpacity: 0.08, color: cfg.stroke, weight: cfg.weight, opacity: 0.9, dashArray: null });
               lf.bringToFront();
             }
           });
@@ -364,15 +363,15 @@ Object.assign(APP, {
             }
             if (level !== self.state.currentLevel) return;
             if (e.target._hiddenByIsolation) {
-              /* Clicking a dimmed feature at deepest level → drill up */
-              self.drillUp(level - 1);
+              /* Clicking a dimmed feature at deepest level → step back selection only */
+              self.drillUp(level);
               return;
             }
 
             /* If a feature is already selected at this level, and we click a DIFFERENT one, 
-               treat it as 'clicking outside' to deselect and drill up, rather than instantly switching. */
+               treat it as 'clicking outside' to deselect and step back, rather than instantly switching. */
             if (self.state._selectedFeature && self.state._selectedFeature !== feature) {
-              self.drillUp(level - 1);
+              self.drillUp(level);
               return;
             }
 
@@ -501,6 +500,7 @@ Object.assign(APP, {
         weight: cfg.weight,
         opacity: 0.9,
         fillOpacity: 0.25,
+        dashArray: null
       });
       if (leafletLayer.getTooltip && leafletLayer.getTooltip()) {
         leafletLayer.getTooltip().setOpacity(0.9);

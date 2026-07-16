@@ -38,8 +38,8 @@ Object.assign(APP, {
     },
 
     colors: {
-      0: { fill: 'transparent', stroke: '#1e293b', weight: 4.0 },
-      1: { fill: 'transparent', stroke: '#334155', weight: 2.5 },
+      0: { fill: 'transparent', stroke: '#1e293b', weight: 3.5 },
+      1: { fill: 'transparent', stroke: '#334155', weight: 2.0 },
       2: { fill: 'transparent', stroke: '#475569', weight: 1.0 },
       highlight: { fill: '#000000', stroke: '#000000', weight: 3 },
       watershed: { fill: '#0ea5e9', stroke: '#0284c7', weight: 2, fillOpacity: 0.35 },

@@ -186,9 +186,10 @@ export const APP = {
          }
          return;
       }
-      
       if (this.state.selectedPath.length === 0) return;
-      if (this.state.currentLevel >= 1) {
+      if (this.state._selectedFeature && this.state._selectedLevel === this.state.currentLevel) {
+        this.drillUp(this.state.currentLevel);
+      } else if (this.state.currentLevel >= 1) {
         this.drillUp(this.state.currentLevel - 1);
       }
     });
