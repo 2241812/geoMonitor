@@ -2329,10 +2329,9 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
-  display: grid;
-  grid-template-rows: auto auto auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   transform: translateY(20px) scale(0.98);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -2346,6 +2345,7 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   justify-content: space-between;
   padding: 20px 24px 16px;
   border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
 }
 .data-request-header h3 {
   font-family: var(--font-display);
@@ -2383,6 +2383,11 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 }
 
 .data-request-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  min-height: 0;
   padding: 16px 24px 24px;
 }
 
@@ -2742,6 +2747,7 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   gap: 12px;
   padding: 16px 24px 20px;
   border-top: 1px solid #f3f4f6;
+  flex-shrink: 0;
 }
 .data-request-footer .btn-secondary {
   flex: 1;
