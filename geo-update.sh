@@ -1,10 +1,20 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# Source profile so node is found (needed for nvm/non-login shells)
+[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
+[ -f "$HOME/.profile" ] && . "$HOME/.profile"
+
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+if ! command -v node &>/dev/null; then
+  echo "ERROR: Node.js not found in PATH."
+  echo "Install Node.js from https://nodejs.org or via nvm."
+  read -p "Press Enter to close..."
+  exit 1
+fi
+
 if [ $# -eq 0 ]; then
-  # ── Watcher mode (double-click) ──
   echo "========================================"
-  echo "   GeoMonitor \342\200\224 Watcher Mode"
+  echo "   GeoMonitor - Watcher Mode"
   echo "========================================"
   echo ""
   echo "Drop .geojson / .topojson / .json files into:"
@@ -14,12 +24,13 @@ if [ $# -eq 0 ]; then
   echo "========================================"
   echo ""
   cd "$PROJECT_DIR" && node scripts/update-deploy.mjs --watch
+  echo "Watcher stopped unexpectedly."
+  read -p "Press Enter to close..."
   exit 0
 fi
 
-# ── Drag-and-drop mode ──
 echo "========================================"
-echo "   GeoMonitor \342\200\224 Update Tool"
+echo "   GeoMonitor - Update Tool"
 echo "========================================"
 echo ""
 for FILE in "$@"; do
