@@ -647,16 +647,17 @@ Object.assign(APP, {
 
       '<div class="dr-section">',
         '<div class="dr-section-title">Purpose of Request <span class="dr-required">*</span></div>',
-        '<div class="dr-chip-grid" id="dr-purpose-grid">',
-          self._drRadioChip('dr-purpose', 'Academic Research', 'Academic Research'),
-          self._drRadioChip('dr-purpose', 'Environmental Planning', 'Environmental Planning'),
-          self._drRadioChip('dr-purpose', 'Policy Development', 'Policy Development'),
-          self._drRadioChip('dr-purpose', 'Infrastructure Project', 'Infrastructure Project'),
-          self._drRadioChip('dr-purpose', 'Disaster Risk Reduction', 'Disaster Risk Reduction'),
-          self._drRadioChip('dr-purpose', 'Resource Management', 'Resource Management'),
-          self._drRadioChip('dr-purpose', 'Personal / Educational', 'Personal / Educational'),
-          self._drRadioChip('dr-purpose', 'Other', 'Other'),
-        '</div>',
+        '<select id="dr-purpose" class="dr-input">',
+          '<option value="" disabled selected>Select a purpose...</option>',
+          '<option value="Academic Research">Academic Research</option>',
+          '<option value="Environmental Planning">Environmental Planning</option>',
+          '<option value="Policy Development">Policy Development</option>',
+          '<option value="Infrastructure Project">Infrastructure Project</option>',
+          '<option value="Disaster Risk Reduction">Disaster Risk Reduction</option>',
+          '<option value="Resource Management">Resource Management</option>',
+          '<option value="Personal / Educational">Personal / Educational</option>',
+          '<option value="Other">Other</option>',
+        '</select>',
         '<input type="text" id="dr-purpose-other" class="dr-input" placeholder="Please specify your purpose..." style="margin-top:8px;" disabled>',
       '</div>',
 
@@ -689,22 +690,21 @@ Object.assign(APP, {
       if (e.target === overlay) self._closeDataRequest();
     });
 
-    document.querySelectorAll('input[name="dr-purpose"]').forEach(function(radio) {
-      radio.addEventListener('change', function() {
-        var otherInput = document.getElementById('dr-purpose-other');
-        if (otherInput) {
-          if (this.value === 'Other') {
-            otherInput.disabled = false;
-            otherInput.style.opacity = '1';
-            otherInput.focus();
-          } else {
-            otherInput.disabled = true;
-            otherInput.style.opacity = '0';
-            otherInput.value = '';
-          }
+    var purposeSelect = document.getElementById('dr-purpose');
+    var otherInput = document.getElementById('dr-purpose-other');
+    if (purposeSelect && otherInput) {
+      purposeSelect.addEventListener('change', function() {
+        if (this.value === 'Other') {
+          otherInput.disabled = false;
+          otherInput.style.opacity = '1';
+          otherInput.focus();
+        } else {
+          otherInput.disabled = true;
+          otherInput.style.opacity = '0';
+          otherInput.value = '';
         }
       });
-    });
+    }
   },
 
   /* ── Form helper: checkbox chip ── */
@@ -782,12 +782,12 @@ Object.assign(APP, {
     var extent = extentEl ? extentEl.value : 'Entire CAR';
 
     /* Collect purpose */
-    var purposeEl = document.querySelector('input[name="dr-purpose"]:checked');
-    if (!purposeEl) {
-      var firstPurpose = document.querySelector('.dr-chip-radio');
-      if (firstPurpose) firstPurpose.style.borderColor = '#dc2626';
+    var purposeEl = document.getElementById('dr-purpose');
+    if (!purposeEl || !purposeEl.value) {
+      if (purposeEl) purposeEl.style.borderColor = '#dc2626';
       return;
     }
+    purposeEl.style.borderColor = '';
 
     /* Object info */
     var objNameEl = document.querySelector('.data-request-object-name');
