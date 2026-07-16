@@ -3,21 +3,24 @@ title GeoMonitor Update
 cd /d "%~dp0"
 
 if "%~1"=="" (
+    cls
     echo ========================================
-    echo    GeoMonitor - GeoJSON Update Tool
+    echo    GeoMonitor - Watcher Mode
     echo ========================================
     echo.
-    echo  Drag a .geojson / .topojson / .json file
-    echo  onto this script to update the app.
+    echo  Drop .geojson / .topojson / .json files into:
+    echo    %CD%\gis-drop\
     echo.
-    echo  Requires Node.js installed and in PATH.
+    echo  Press Ctrl+C to stop.
+    echo ========================================
     echo.
-    pause
-    exit /b 1
+    node scripts\update-deploy.mjs --watch
+    exit /b 0
 )
 
+cls
 echo ========================================
-echo    GeoMonitor - GeoJSON Update Tool
+echo    GeoMonitor - Update Tool
 echo ========================================
 echo.
 
@@ -25,18 +28,14 @@ echo.
 if "%~1"=="" goto :done
 echo --- Processing: %~nx1 ---
 echo.
-node "scripts\update-deploy.mjs" "%~1"
-if %ERRORLEVEL% neq 0 (
-    echo.
-    echo   FAILED (exit code %ERRORLEVEL%)
-)
+node scripts\update-deploy.mjs "%~1"
+if %ERRORLEVEL% neq 0 echo   FAILED
 echo.
 shift
 goto :process
 
 :done
 echo ========================================
-echo   Done! Check the output above.
+echo   Done
 echo ========================================
-echo.
 pause
