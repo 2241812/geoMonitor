@@ -2539,7 +2539,6 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
 }
 .dr-chip input:checked ~ .dr-chip-label {
   color: #065f46;
-  font-weight: 600;
 }
 .dr-chip input:focus-visible ~ .dr-chip-check {
   box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25);
