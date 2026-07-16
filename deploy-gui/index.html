@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoMonitor — Deploy</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--surface:#161b22;--surface2:#1c2333;
+    --border:#30363d;--text:#e6edf3;--text-dim:#8b949e;
+    --accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--orange:#d56c0a;
+    --radius:8px;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;
+  }
+
+  /* ── Header ── */
+  header{
+    background:var(--surface);border-bottom:1px solid var(--border);
+    padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+  }
+  header h1{
+    font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px;
+  }
+  .logo{
+    width:26px;height:26px;background:var(--accent);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:12px;color:#fff;
+  }
+  .status-badge{
+    display:flex;align-items:center;gap:6px;
+    padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;
+    background:var(--surface2);border:1px solid var(--border);
+  }
+  .status-dot{
+    width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;
+  }
+  .status-dot.busy{background:var(--yellow);animation:pulse 1s infinite}
+  .status-dot.error{background:var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  .btn-exit{
+    padding:4px 12px;font-size:11px;font-weight:500;
+    background:transparent;border:1px solid var(--border);
+    border-radius:5px;color:var(--text-dim);cursor:pointer;
+    transition:all .15s;
+  }
+  .btn-exit:hover{color:var(--red);border-color:var(--red)}
+
+  .btn-bug{
+    padding:4px 12px;font-size:11px;font-weight:500;
+    background:transparent;border:1px solid var(--border);
+    border-radius:5px;color:var(--text-dim);cursor:pointer;
+    transition:all .15s;margin-right:6px;
+  }
+  .btn-bug:hover{color:var(--yellow);border-color:var(--yellow)}
+
+  /* ── Bug report modal ── */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+    z-index:1000;align-items:center;justify-content:center;
+  }
+  .modal-overlay.show{display:flex}
+  .modal-box{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;width:480px;max-width:90vw;padding:20px;
+    box-shadow:0 16px 48px rgba(0,0,0,.5);
+  }
+  .modal-box h2{font-size:15px;font-weight:600;margin-bottom:4px}
+  .modal-box .sub{font-size:12px;color:var(--text-dim);margin-bottom:14px}
+  .modal-box label{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}
+  .modal-box input,.modal-box textarea{
+    width:100%;padding:8px 10px;font-size:13px;
+    background:var(--bg);border:1px solid var(--border);
+    border-radius:6px;color:var(--text);outline:none;
+    font-family:inherit;margin-bottom:12px;
+  }
+  .modal-box textarea{resize:vertical;min-height:100px}
+  .modal-box input:focus,.modal-box textarea:focus{border-color:var(--accent)}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+  .modal-actions button{
+    padding:7px 16px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--border);transition:all .15s;
+  }
+  .modal-actions .btn-cancel{background:transparent;color:var(--text-dim)}
+  .modal-actions .btn-cancel:hover{color:var(--text)}
+  .modal-actions .btn-submit{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .modal-actions .btn-submit:hover{filter:brightness(1.1)}
+
+  /* ── Layout ── */
+  .content{
+    flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0;
+  }
+  .top-section{
+    padding:16px 20px;display:flex;gap:12px;flex-shrink:0;
+    align-items:flex-start;flex-wrap:wrap;
+  }
+  .bottom-section{
+    flex:1;display:flex;overflow:hidden;border-top:1px solid var(--border);
+  }
+
+  /* ── Drop zone ── */
+  .drop-zone{
+    flex:1;min-width:280px;
+    border:2px dashed var(--border);border-radius:var(--radius);
+    padding:20px;text-align:center;cursor:pointer;
+    transition:all .2s;font-size:13px;color:var(--text-dim);
+  }
+  .drop-zone.dragover{border-color:var(--accent);background:rgba(88,166,255,.08);color:var(--accent)}
+  .drop-zone .icon{font-size:28px;display:block;margin-bottom:4px}
+  .drop-zone .hint{font-size:12px;margin-top:4px}
+  .drop-zone input[type="file"]{display:none}
+
+  /* ── File list ── */
+  .file-list{flex:1;min-width:200px}
+  .file-list h3{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .file-list .empty{font-size:12px;color:var(--text-dim);font-style:italic}
+  .file-item{
+    padding:6px 10px;background:var(--surface2);border:1px solid var(--border);
+    border-radius:5px;margin-bottom:4px;font-size:12px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .file-item .name{font-family:'SF Mono','Consolas',monospace;font-size:11px;color:var(--accent)}
+  .file-item .meta{font-size:10px;color:var(--text-dim)}
+
+  /* ── Deploy button ── */
+  .deploy-area{
+    display:flex;flex-direction:column;gap:8px;align-items:stretch;
+  }
+  .btn-deploy{
+    padding:14px 32px;font-size:15px;font-weight:600;
+    background:#1a5f3a;border:1px solid var(--green);
+    border-radius:var(--radius);color:#fff;cursor:pointer;
+    transition:all .15s;white-space:nowrap;
+  }
+  .btn-deploy:hover:not(:disabled){background:#217a4a;transform:translateY(-1px)}
+  .btn-deploy:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .btn-deploy.running{background:#5f1a1a;border-color:var(--red)}
+  .btn-deploy.running:hover:not(:disabled){background:#7a2121}
+
+  /* ── Progress bar ── */
+  .progress-wrap{
+    width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;
+    opacity:0;transition:opacity .3s;
+  }
+  .progress-wrap.active{opacity:1}
+  .progress-bar{
+    height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));
+    border-radius:3px;transition:width .3s ease;
+  }
+  .progress-label{font-size:11px;color:var(--text-dim);text-align:center;min-height:16px}
+
+  /* ── Completion banner ── */
+  .done-banner{
+    display:none;align-items:center;gap:10px;
+    padding:10px 14px;background:#1a5f3a;border:1px solid var(--green);
+    border-radius:var(--radius);font-size:12px;color:#fff;
+    margin-top:4px;
+  }
+  .done-banner.show{display:flex}
+  .done-banner .icon{font-size:18px}
+  .done-banner .text{flex:1}
+  .done-banner .btn-stop{
+    padding:5px 12px;font-size:11px;font-weight:600;
+    background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+    border-radius:5px;color:#fff;cursor:pointer;white-space:nowrap;
+    transition:background .15s;
+  }
+  .done-banner .btn-stop:hover{background:rgba(255,255,255,.25)}
+
+  /* ── Log panel ── */
+  .log-panel{
+    flex:1;display:flex;flex-direction:column;
+  }
+  .log-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 16px;border-bottom:1px solid var(--border);
+    background:var(--surface);flex-shrink:0;
+  }
+  .log-header h2{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em}
+  .log-header button{
+    padding:3px 8px;font-size:10px;background:var(--surface2);
+    border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;
+  }
+  .log-header button:hover{color:var(--text)}
+  .log-container{
+    flex:1;overflow-y:auto;padding:6px 16px;
+    font-family:'SF Mono','Consolas','Cascadia Code',monospace;
+    font-size:11px;line-height:1.6;background:var(--bg);
+  }
+  .log-line{padding:1px 0;white-space:pre-wrap;word-break:break-all}
+  .log-line.info{color:var(--accent)}
+  .log-line.ok{color:var(--green)}
+  .log-line.warn{color:var(--yellow)}
+  .log-line.error{color:var(--red)}
+  .log-line.stdout{color:var(--text)}
+  .log-line.stderr{color:var(--orange)}
+  .log-line .ts{color:var(--text-dim);opacity:.4;font-size:10px;margin-right:6px}
+  .log-hint{
+    display:flex;align-items:center;justify-content:center;height:100%;
+    color:var(--text-dim);font-size:12px;font-family:inherit;
+  }
+
+  ::-webkit-scrollbar{width:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="logo">GM</span> GeoMonitor — Deploy</h1>
+  <div class="status-badge">
+    <span class="status-dot" id="dot"></span>
+    <span id="statusLabel">Starting...</span>
+  </div>
+  <div style="display:flex;gap:4px">
+    <button class="btn-bug" onclick="openBugReport()">⚠ Report Bug</button>
+    <button class="btn-exit" onclick="shutdown()">✕ Exit</button>
+  </div>
+</header>
+
+<div class="content">
+  <div class="top-section">
+    <div class="drop-zone" id="dropZone">
+      <span class="icon">&#128229;</span>
+      <div>Drop GeoJSON / TopoJSON / JSON files here</div>
+      <div class="hint">or click to browse &middot; auto-routed to correct watershed folder</div>
+      <input type="file" id="fileInput" accept=".geojson,.topojson,.json" multiple>
+    </div>
+
+    <div class="file-list" id="fileList">
+      <h3>Staged Files</h3>
+      <div class="empty" id="fileListEmpty">No files staged yet</div>
+      <div id="fileItems"></div>
+    </div>
+
+    <div class="deploy-area">
+      <button class="btn-deploy" id="btnDeploy" onclick="doDeploy()">
+        &#9654; Deploy to FTP
+      </button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-label" id="progressLabel"></div>
+      <div class="done-banner" id="doneBanner">
+        <span class="icon">&#10003;</span>
+        <span class="text">Deploy complete! You can now <strong>close this tab</strong> or click Exit to stop the server.</span>
+        <button class="btn-stop" onclick="shutdown()">✕ Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <div class="log-panel">
+      <div class="log-header">
+        <h2>Output Log</h2>
+        <button onclick="clearLog()">Clear</button>
+      </div>
+      <div class="log-container" id="logContainer">
+        <div class="log-hint" id="logHint">Logs will appear here...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   State
+   ══════════════════════════════════════════════ */
+let isRunning = false;
+let autoPulled = false;
+
+/* ══════════════════════════════════════════════
+   Status polling
+   ══════════════════════════════════════════════ */
+async function pollStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    updateStatus(s);
+    updateFileList(s.files);
+    updateProgress(s.progress);
+    /* Auto-pull once on first status */
+    if (!autoPulled && !s.running) {
+      autoPulled = true;
+      /* Small delay to let SSE connect first */
+      setTimeout(() => doPull(), 600);
+    }
+  } catch {}
+}
+
+function updateStatus(s) {
+  isRunning = s.running;
+  const dot = document.getElementById('dot');
+  const label = document.getElementById('statusLabel');
+  const btn = document.getElementById('btnDeploy');
+  const banner = document.getElementById('doneBanner');
+
+  dot.className = 'status-dot';
+  if (s.operation === 'idle' || !s.operation) {
+    dot.classList.remove('busy', 'error');
+    label.textContent = isRunning ? 'Busy...' : 'Ready';
+    btn.disabled = false;
+    btn.className = 'btn-deploy';
+    btn.innerHTML = '&#9654; Deploy to FTP';
+    btn.onclick = () => doDeploy();
+  } else {
+    /* Hide completion banner when a new operation starts */
+    banner.classList.remove('show');
+    dot.classList.add('busy');
+    const labels = {
+      pulling: 'Pulling from git...',
+      building: 'Building...',
+      uploading: 'Uploading via FTP...',
+      deploying: 'Deploying...',
+    };
+    label.textContent = labels[s.operation] || 'Running...';
+    btn.disabled = true;
+    btn.className = 'btn-deploy running';
+    btn.innerHTML = '&#9632; Cancel';
+    btn.onclick = () => doCancel();
+  }
+
+  /* Show completion banner when deploy finishes (idle + no progress phase) */
+  if (s.operation === 'idle' && !s.progress?.phase && !s.running) {
+    /* Only show if a deploy just completed (not on initial load) */
+    if (window._deployJustRan) {
+      banner.classList.add('show');
+      window._deployJustRan = false;
+    }
+  }
+}
+
+/* ── Progress bar ── */
+function updateProgress(p) {
+  const wrap = document.getElementById('progressWrap');
+  const bar = document.getElementById('progressBar');
+  const label = document.getElementById('progressLabel');
+  if (p && p.phase && p.phase !== '') {
+    wrap.classList.add('active');
+    const pct = p.total > 0 ? Math.round((p.current / p.total) * 100) : 0;
+    bar.style.width = Math.min(pct, 100) + '%';
+    if (p.phase === 'building') {
+      label.textContent = 'Building app...';
+      bar.style.width = '30%';
+    } else if (p.phase === 'uploading') {
+      label.textContent = p.total > 0
+        ? `Uploading ${p.current}/${p.total} files (${pct}%)`
+        : 'Uploading...';
+    }
+  } else {
+    wrap.classList.remove('active');
+    bar.style.width = '0%';
+    label.textContent = '';
+  }
+}
+
+/* ── File list ── */
+function updateFileList(files) {
+  const container = document.getElementById('fileItems');
+  const empty = document.getElementById('fileListEmpty');
+  if (!files || files.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  container.innerHTML = files.map((f, i) =>
+    `<div class="file-item">
+      <span class="name">${esc(f.name)}</span>
+      <span class="meta">${esc(f.folder || '')} &middot; ${esc(f.size || '')}</span>
+    </div>`
+  ).join('');
+}
+
+function esc(s) { return String(s).replace(/[&<>"']/g, function(m) {
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
+}
+
+/* ══════════════════════════════════════════════
+   SSE Logs
+   ══════════════════════════════════════════════ */
+function connectLogs() {
+  const src = new EventSource('/api/logs');
+  const container = document.getElementById('logContainer');
+  const hint = document.getElementById('logHint');
+
+  src.onmessage = (e) => {
+    const entry = JSON.parse(e.data);
+    hint.style.display = 'none';
+
+    /* Progress events handled by the progress bar, skip log line */
+    if (entry.level === 'progress') return;
+
+    const line = document.createElement('div');
+    line.className = 'log-line ' + entry.level;
+    const ts = document.createElement('span');
+    ts.className = 'ts';
+    ts.textContent = new Date(entry.ts).toLocaleTimeString('en-PH', { hour12: false });
+    line.appendChild(ts);
+    line.appendChild(document.createTextNode(entry.msg));
+    container.appendChild(line);
+    container.scrollTop = container.scrollHeight;
+
+    while (container.children.length > 1500) container.removeChild(container.firstChild);
+  };
+  src.onerror = () => {};
+}
+
+/* ══════════════════════════════════════════════
+   API calls
+   ══════════════════════════════════════════════ */
+async function doPull() {
+  try { await fetch('/api/pull', { method: 'POST' }); } catch {}
+  await pollStatus();
+}
+
+async function doDeploy() {
+  document.getElementById('doneBanner').classList.remove('show');
+  window._deployJustRan = true;
+  const btn = document.getElementById('btnDeploy');
+  btn.disabled = true;
+  btn.innerHTML = '&#9632; Cancel';
+  btn.className = 'btn-deploy running';
+  btn.onclick = () => doCancel();
+  try {
+    await fetch('/api/deploy', { method: 'POST' });
+  } catch {}
+  await pollStatus();
+  btn.disabled = false;
+  btn.className = 'btn-deploy';
+  btn.innerHTML = '&#9654; Deploy to FTP';
+  btn.onclick = () => doDeploy();
+}
+
+async function doCancel() {
+  window._deployJustRan = false;
+  document.getElementById('doneBanner').classList.remove('show');
+  try { await fetch('/api/cancel', { method: 'POST' }); } catch {}
+  await pollStatus();
+}
+
+function shutdown() {
+  fetch('/api/shutdown', { method: 'POST' });
+  /* Close the tab */
+  window.close();
+  /* Fallback if window.close() is blocked */
+  setTimeout(() => { document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b949e;font-family:sans-serif;font-size:14px">Server stopped. You can close this tab.</div>'; }, 500);
+}
+
+function clearLog() {
+  document.getElementById('logContainer').innerHTML = '';
+  const hint = document.getElementById('logHint');
+  hint.style.display = 'flex';
+  hint.textContent = 'Log cleared.';
+}
+
+/* ══════════════════════════════════════════════
+   Drag & drop
+   ══════════════════════════════════════════════ */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  for (const f of e.dataTransfer.files) uploadFile(f);
+});
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => {
+  for (const f of e.target.files) uploadFile(f);
+  fileInput.value = '';
+});
+
+async function uploadFile(file) {
+  const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+  if (!['.geojson', '.topojson', '.json'].includes(ext)) {
+    addLog('warn', `Skipped ${file.name} — not a GeoJSON/TopoJSON/JSON file`);
+    return;
+  }
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/api/geojson', { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!data.success) addLog('error', `${file.name}: ${data.error}`);
+  } catch (err) {
+    addLog('error', `${file.name}: ${err.message}`);
+  }
+  await pollStatus();
+}
+
+/* Fallback log entry (when SSE not yet connected) */
+function addLog(level, msg) {
+  const container = document.getElementById('logContainer');
+  const hint = document.getElementById('logHint');
+  hint.style.display = 'none';
+  const line = document.createElement('div');
+  line.className = 'log-line ' + level;
+  const ts = document.createElement('span');
+  ts.className = 'ts';
+  ts.textContent = new Date().toLocaleTimeString('en-PH', { hour12: false });
+  line.appendChild(ts);
+  line.appendChild(document.createTextNode(msg));
+  container.appendChild(line);
+  container.scrollTop = container.scrollHeight;
+}
+
+/* ══════════════════════════════════════════════
+   Init
+   ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   Bug Report
+   ══════════════════════════════════════════════ */
+function openBugReport() {
+  document.getElementById('bugModal').classList.add('show');
+  document.getElementById('bugTitle').value = '';
+  document.getElementById('bugBody').value = '';
+  /* Pre-fill version info */
+  const now = new Date().toISOString().slice(0, 10);
+  document.getElementById('bugBody').value = `## Environment\n- Date: ${now}\n- Node: ${navigator.userAgent}\n\n## Description\n`;
+}
+
+function closeBugReport() {
+  document.getElementById('bugModal').classList.remove('show');
+}
+
+function submitBugReport() {
+  const title = document.getElementById('bugTitle').value.trim();
+  const body = document.getElementById('bugBody').value.trim();
+  if (!title) { alert('Please enter a bug title.'); return; }
+
+  /* Open GitHub new issue page with pre-filled content */
+  const repo = '2241812/geoMonitor';
+  const url = `https://github.com/${repo}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  window.open(url, '_blank');
+  closeBugReport();
+}
+
+connectLogs();
+pollStatus();
+setInterval(pollStatus, 2000);
+</script>
+
+<!-- Bug Report Modal -->
+<div class="modal-overlay" id="bugModal" onclick="if(event.target===this)closeBugReport()">
+  <div class="modal-box">
+    <h2>Report a Bug</h2>
+    <div class="sub">Opens a new GitHub Issue on <strong>2241812/geoMonitor</strong></div>
+
+    <label for="bugTitle">Bug Title</label>
+    <input id="bugTitle" type="text" placeholder="Brief description of the issue">
+
+    <label for="bugBody">Description</label>
+    <textarea id="bugBody" placeholder="What happened, what did you expect, how to reproduce..."></textarea>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBugReport()">Cancel</button>
+      <button class="btn-submit" onclick="submitBugReport()">Open GitHub Issue</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

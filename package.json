@@ -14,7 +14,8 @@
     "deploy:upload-only": "node scripts/deploy-ftp.mjs --skip-build",
     "deploy:update": "node scripts/update-deploy.mjs",
     "deploy:watch": "node scripts/update-deploy.mjs --watch",
-    "deploy:now": "node scripts/update-deploy.mjs --deploy-only"
+    "deploy:now": "node scripts/update-deploy.mjs --deploy-only",
+    "deploy-gui": "node deploy-gui/server.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

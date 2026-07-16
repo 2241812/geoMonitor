@@ -18,6 +18,9 @@ dist-ssr
 # GeoJSON drop folder for update-deploy.mjs
 gis-drop/
 
+# Deploy GUI temp uploads
+deploy-gui/uploads/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
