@@ -2130,10 +2130,11 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   padding: 8px;
   overflow: hidden;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 .province-accordion {
+  width: 100%;
   border-bottom: 1px solid #e2e8f0;
 }
 .province-accordion:last-child {
@@ -2146,11 +2147,19 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   padding: 10px 12px;
   cursor: pointer;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  transition: background-color 0.15s;
+  transition: background-color 0.15s, color 0.15s, padding 0.15s;
+  border-left: 3px solid transparent;
 }
 .province-accordion-header:hover {
   background-color: #f1f5f9;
+}
+.province-accordion:not(.collapsed) .province-accordion-header {
+  background-color: #ecfdf5;
+  color: #064e3b;
+  border-left: 3px solid #10b981;
+  padding-left: 9px; /* 12px minus 3px border to keep text aligned */
 }
 .province-accordion-header::after {
   content: '▼';
