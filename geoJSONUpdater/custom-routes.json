@@ -1,0 +1,5 @@
+{
+  "description": "Add custom filename prefix → target folder mappings here.",
+  "instructions": "Add entries to 'prefixFolders' for new 3-letter basin/area prefixes. The key is the uppercase filename prefix (first part before '_'), the value is the subfolder under public/geoJSON/. Example: \"XYZ\": \"Watersheds/Some Basin\"",
+  "prefixFolders": {}
+}

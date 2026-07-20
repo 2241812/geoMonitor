@@ -132,6 +132,31 @@
   }
   .file-item .name{font-family:'SF Mono','Consolas',monospace;font-size:11px;color:var(--accent)}
   .file-item .meta{font-size:10px;color:var(--text-dim)}
+  .file-item .warn-badge{
+    display:inline-flex;align-items:center;gap:3px;
+    padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;
+    background:rgba(210,153,34,.15);color:var(--yellow);margin-left:4px;
+    cursor:help;
+  }
+  .file-item .relocate-row{
+    display:none;margin-top:4px;padding-top:4px;border-top:1px solid var(--border);
+    align-items:center;gap:6px;font-size:10px;
+  }
+  .file-item .relocate-row.show{display:flex}
+  .file-item .relocate-row select{
+    flex:1;padding:3px 6px;font-size:10px;background:var(--bg);
+    border:1px solid var(--border);border-radius:4px;color:var(--text);
+    outline:none;font-family:inherit;
+  }
+  .file-item .relocate-row select:focus{border-color:var(--accent)}
+  .file-item .relocate-row .btn-relocate{
+    padding:3px 10px;font-size:10px;font-weight:600;
+    background:var(--accent);border:none;border-radius:4px;
+    color:#fff;cursor:pointer;white-space:nowrap;
+  }
+  .file-item .relocate-row .btn-relocate:hover{filter:brightness(1.1)}
+  .file-item .relocate-row .btn-relocate:disabled{opacity:.4;cursor:not-allowed}
+  .file-item .relocate-row .relocate-ok{color:var(--green);font-size:10px}
 
   /* ── Deploy button ── */
   .deploy-area{
@@ -387,6 +412,14 @@ function updateStatus(s) {
   }
 
 /* ── File list ── */
+let _folderCache = null;
+async function getFolders() {
+  if (!_folderCache) {
+    try { _folderCache = await (await fetch('/api/folders')).json(); } catch { _folderCache = [{ label: '(root)', value: '' }]; }
+  }
+  return _folderCache;
+}
+
 function updateFileList(files) {
   const container = document.getElementById('fileItems');
   const empty = document.getElementById('fileListEmpty');
@@ -396,12 +429,62 @@ function updateFileList(files) {
     return;
   }
   empty.style.display = 'none';
-  container.innerHTML = files.map((f, i) =>
-    `<div class="file-item">
-      <span class="name">${esc(f.name)}</span>
-      <span class="meta">${esc(f.folder || '')} &middot; ${esc(f.size || '')}</span>
-    </div>`
-  ).join('');
+
+    getFolders().then(folders => {
+    const folderOpts = folders.map(f => `<option value="${esc(f.value)}">${esc(f.label)}</option>`).join('');
+    container.innerHTML = files.map((f, i) => {
+      const unrouted = f.unrouted;
+      const nameAttr = esc(f.name);
+      return `<div class="file-item" data-idx="${i}">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;flex:1">
+          <span class="name">${nameAttr}${unrouted ? ' <span class="warn-badge" title="No routing rule matches this filename">⚠️ unrouted</span>' : ''}</span>
+          <span class="meta">${esc(f.folder || '')} &middot; ${esc(f.size || '')}</span>
+        </div>
+        ${unrouted ? `<div class="relocate-row show" id="relocateRow-${i}">
+          <span style="color:var(--yellow);white-space:nowrap">Move to:</span>
+          <select id="folderSel-${i}">${folderOpts}</select>
+          <button class="btn-relocate" id="relocateBtn-${i}" data-idx="${i}" data-name="${btoa(unescape(encodeURIComponent(f.name)))}">Move</button>
+          <span class="relocate-ok" id="relocateOk-${i}"></span>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+    /* Wire relocate buttons */
+    document.querySelectorAll('.btn-relocate').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const idx = parseInt(this.dataset.idx, 10);
+        const name = decodeURIComponent(escape(atob(this.dataset.name)));
+        relocateFile(idx, name);
+      });
+    });
+  });
+}
+
+async function relocateFile(idx, name) {
+  const sel = document.getElementById('folderSel-' + idx);
+  const btn = document.getElementById('relocateBtn-' + idx);
+  const ok = document.getElementById('relocateOk-' + idx);
+  const folder = sel.value;
+  if (!folder && folder !== '') return;
+  btn.disabled = true;
+  ok.textContent = '';
+  try {
+    const r = await fetch('/api/relocate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, folder }),
+    });
+    const data = await r.json();
+    if (data.success) {
+      ok.textContent = '✓';
+      setTimeout(() => pollStatus(), 300);
+    } else {
+      ok.textContent = '✗ ' + (data.error || '');
+      btn.disabled = false;
+    }
+  } catch (e) {
+    ok.textContent = '✗ error';
+    btn.disabled = false;
+  }
 }
 
 function esc(s) { return String(s).replace(/[&<>"']/g, function(m) {
@@ -527,7 +610,11 @@ async function uploadFile(file) {
   try {
     const r = await fetch('/api/geojson', { method: 'POST', body: fd });
     const data = await r.json();
-    if (!data.success) addLog('error', `${file.name}: ${data.error}`);
+    if (!data.success) {
+      addLog('error', `${file.name}: ${data.error}`);
+    } else if (data.warn === 'unrouted') {
+      addLog('warn', `${file.name} — ⚠️ no routing rule matches this filename. Placed in root. Select a folder below to move it.`);
+    }
   } catch (err) {
     addLog('error', `${file.name}: ${err.message}`);
   }

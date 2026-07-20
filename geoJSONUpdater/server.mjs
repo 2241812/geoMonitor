@@ -39,6 +39,24 @@ const BASIN_MAP = {
   ZUM: 'Watersheds/Zumigui-Ziwanan River',
 };
 
+/* ── Load custom basin prefix → folder mappings from JSON (user-extensible) ── */
+(function loadCustomRoutes() {
+  const customPath = path.join(__dirname, 'custom-routes.json');
+  try {
+    if (fs.existsSync(customPath)) {
+      const custom = JSON.parse(fs.readFileSync(customPath, 'utf-8'));
+      let count = 0;
+      for (const [prefix, folder] of Object.entries(custom.prefixFolders || {})) {
+        const key = prefix.toUpperCase();
+        if (!BASIN_MAP[key]) { BASIN_MAP[key] = folder; count++; }
+      }
+      if (count > 0) console.log(`  Loaded ${count} custom route(s) from custom-routes.json`);
+    }
+  } catch (e) {
+    console.warn(`  ⚠ Could not load custom-routes.json: ${e.message}`);
+  }
+})();
+
 function routeFile(filename) {
   const base = path.basename(filename);
   if (base.startsWith('CAR ') || base.startsWith('Slope') || base.startsWith('hierarchy') || base.includes('intersections') || base === 'hierarchy.json') return '';
@@ -172,17 +190,21 @@ async function doGeoJSON(filePath, originalName) {
   if (!data.type) return { success: false, error: 'Not GeoJSON/TopoJSON (missing "type")' };
 
   const targetDir = routeFile(originalName);
+  const unrouted = targetDir === null;
   const destDir = path.join(PUBLIC_GEOJSON, targetDir || '');
   const destPath = path.join(destDir, originalName);
   fs.mkdirSync(destDir, { recursive: true });
   fs.copyFileSync(filePath, destPath);
 
   const sizeKB = (content.length / 1024).toFixed(0);
-  emit('ok', `Staged: ${targetDir ? targetDir + '/' : ''}${originalName} (${sizeKB} KB)`);
+  const folderLabel = unrouted ? '(root — ⚠️ unrouted)' : targetDir;
+  emit('ok', `Staged: ${folderLabel}/${originalName} (${sizeKB} KB)`);
 
   if (!global.fileList) global.fileList = [];
-  global.fileList.push({ name: originalName, folder: targetDir || '(root)', size: sizeKB + ' KB' });
-  return { success: true };
+  global.fileList.push({ name: originalName, folder: folderLabel, size: sizeKB + ' KB', unrouted });
+  const res = { success: true };
+  if (unrouted) res.warn = 'unrouted';
+  return res;
 }
 
 async function doDeploy() {
@@ -321,6 +343,55 @@ async function handler(req, res) {
   /* Files list */
   if (p === '/api/files' && m === 'GET') {
     return json(res, global.fileList || []);
+  }
+
+  /* List available target folders under public/geoJSON/ */
+  if (p === '/api/folders' && m === 'GET') {
+    const folders = [{ label: '(root)', value: '' }];
+    try {
+      for (const e of fs.readdirSync(PUBLIC_GEOJSON, { withFileTypes: true })) {
+        if (!e.isDirectory() || e.name.startsWith('.')) continue;
+        if (e.name === 'Watersheds') {
+          for (const sub of fs.readdirSync(path.join(PUBLIC_GEOJSON, e.name), { withFileTypes: true })) {
+            if (sub.isDirectory() && !sub.name.startsWith('.')) {
+              folders.push({ label: 'Watersheds/' + sub.name, value: 'Watersheds/' + sub.name });
+            }
+          }
+        } else {
+          folders.push({ label: e.name, value: e.name });
+        }
+      }
+    } catch {}
+    return json(res, folders);
+  }
+
+  /* Relocate a staged file to a different folder */
+  if (p === '/api/relocate' && m === 'POST') {
+    let body = '';
+    for await (const c of req) body += c;
+    try {
+      const { name, folder } = JSON.parse(body);
+      if (!name) return json(res, { error: 'Missing file name' }, 400);
+      const fileList = global.fileList || [];
+      const idx = fileList.findIndex(f => f.name === name);
+      if (idx === -1) return json(res, { error: 'File not found in staged list' }, 404);
+
+      const src = path.join(PUBLIC_GEOJSON, fileList[idx].folder === '(root — ⚠️ unrouted)' ? '' : fileList[idx].folder, name);
+      if (!fs.existsSync(src)) return json(res, { error: 'File not found on disk' }, 404);
+
+      const destDir = path.join(PUBLIC_GEOJSON, folder || '');
+      const dest = path.join(destDir, name);
+      fs.mkdirSync(destDir, { recursive: true });
+      fs.copyFileSync(src, dest);
+      fs.unlinkSync(src);
+
+      const sizeKB = (fs.statSync(dest).size / 1024).toFixed(0);
+      fileList[idx] = { name, folder: folder || '(root)', size: sizeKB + ' KB', unrouted: false };
+      emit('ok', `Relocated: ${name} → ${folder || '(root)'}`);
+      return json(res, { success: true, file: fileList[idx] });
+    } catch (e) {
+      return json(res, { error: e.message }, 500);
+    }
   }
 
   /* Serve HTML */

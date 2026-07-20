@@ -18,6 +18,9 @@ dist-ssr
 # GeoJSON drop folder for update-deploy.mjs
 gis-drop/
 
+# Per-basin slope GeoJSON (large files, deployed via Vercel CLI directly)
+public/geoJSON/Watersheds/*_Slope.geojson
+
 # Deploy GUI temp uploads
 geoJSONUpdater/uploads/
 
