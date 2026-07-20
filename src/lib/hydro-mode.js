@@ -1,6 +1,5 @@
 import { APP } from './app.js';
 import { useMapStore } from '../store/useMapStore.js';
-import { fetchLCMFromSupabase, fetchAllLCMFromSupabase } from './supabase-geo.js';
 import { fetchWithCache } from './fetch-cache.js';
 
 let _lcmFetchToken = 0;
@@ -959,10 +958,15 @@ Object.assign(APP, {
     const classes = [...APP.lcm.getVisibleClasses()];
     useMapStore.setState({ lcmLoading: true });
     APP._showToast('Loading land cover data…');
-    APP.lcm._showLoadProgress(0, 'Fetching LCM data…');
+    APP.lcm._showLoadProgress(0, 'Loading LCM data…');
     try {
-      const geojson = await fetchLCMFromSupabase(lcmCode, (pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
+      const path = 'geoJSON/LCM/' + lcmCode + '_LCM2025.geojson';
+      const geojson = await fetchWithCache('lcm:' + lcmCode, path, { signal: APP._abortController.signal });
       if (token !== _lcmFetchToken || !APP.state.showLCM) { useMapStore.setState({ lcmLoading: false }); return; }
+      if (!geojson || !geojson.features) throw new Error('No data for ' + lcmCode);
+      if (classes.length > 0) {
+        geojson.features = geojson.features.filter(f => classes.includes(f.properties.LCM_CLASS));
+      }
       await APP.lcm.loadBasin(code, geojson);
       useMapStore.setState({ lcmLoading: false });
       APP._showToast('Land cover overlay loaded ✓');
@@ -978,13 +982,30 @@ Object.assign(APP, {
     if (!APP.state.showLCM) return;
     const token = ++_lcmFetchToken;
     const classes = [...APP.lcm.getVisibleClasses()];
+    const BASIN_CODES = ['ABR', 'ABU', 'ACH', 'AGN', 'AMB', 'ARI', 'BUD', 'CAB', 'MLG', 'NAG', 'SIF', 'SMR', 'UMT', 'ZUM'];
     useMapStore.setState({ lcmLoading: true });
     APP._showToast('Loading land cover data…');
-    APP.lcm._showLoadProgress(0, 'Fetching LCM for all basins…');
+    APP.lcm._showLoadProgress(0, 'Loading LCM for all basins…');
     try {
-      const geojson = await fetchAllLCMFromSupabase((pct, msg) => APP.lcm._showLoadProgress(pct, msg), classes);
+      const allFeatures = [];
+      let doneCount = 0;
+      for (const code of BASIN_CODES) {
+        const path = 'geoJSON/LCM/' + code + '_LCM2025.geojson';
+        const geojson = await fetchWithCache('lcm:' + code, path, { signal: APP._abortController.signal });
+        let feats = [];
+        if (geojson && geojson.features) {
+          feats = geojson.features;
+          if (classes.length > 0) {
+            feats = feats.filter(f => classes.includes(f.properties.LCM_CLASS));
+          }
+          allFeatures.push(...feats);
+        }
+        doneCount++;
+        APP.lcm._showLoadProgress(Math.round((doneCount / BASIN_CODES.length) * 90), `Fetched ${code} (${feats.length} features) [${doneCount}/${BASIN_CODES.length}]`);
+      }
       if (token !== _lcmFetchToken || !APP.state.showLCM) { useMapStore.setState({ lcmLoading: false }); return; }
-      await APP.lcm.loadBasin('ALL', geojson);
+      if (allFeatures.length === 0) throw new Error('No LCM data found');
+      await APP.lcm.loadBasin('ALL', { type: 'FeatureCollection', features: allFeatures });
       useMapStore.setState({ lcmLoading: false });
       APP._showToast('Land cover overlay loaded ✓');
     } catch (e) {

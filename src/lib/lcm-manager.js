@@ -1,6 +1,6 @@
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
-import { invalidateLCMCache } from './supabase-geo.js';
+import { cacheDelete } from './fetch-cache.js';
 import {
   extractOuterRings,
   buildClipPath,
@@ -83,7 +83,9 @@ APP.lcm = {
   },
 
   invalidateCache() {
-    invalidateLCMCache();
+    const BASIN_CODES = ['ABR', 'ABU', 'ACH', 'AGN', 'AMB', 'ARI', 'BUD', 'CAB', 'MLG', 'NAG', 'SIF', 'SMR', 'UMT', 'ZUM'];
+    BASIN_CODES.forEach(code => cacheDelete('lcm:' + code));
+    cacheDelete('lcm:UCH'); /* ACH→UCH mapping */
   },
 
   hideAllClasses() {

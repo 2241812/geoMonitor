@@ -170,7 +170,7 @@ async function doPull() {
   currentOp = 'pulling';
   emit('info', '═══ Pulling from git ═══');
   try {
-    await runProc('git', ['pull', 'origin', 'main']);
+    await runProc('git', ['pull', 'origin', 'ftp-deploy']);
     emit('ok', 'Repository is up to date.');
     currentOp = 'idle';
     return { success: true };
@@ -210,6 +210,18 @@ async function doGeoJSON(filePath, originalName) {
 async function doDeploy() {
   emit('info', '═══ Deploying to FTP ═══');
   resetProgress();
+
+  /* Node version check: Vite 8 requires 20.19+ or 22.12+ */
+  const nodeVer = process.version.slice(1); // "18.19.1"
+  const [major, minor] = nodeVer.split('.').map(Number);
+  const ok = major > 22 || (major === 22 && minor >= 12) || (major === 20 && minor >= 19);
+  if (!ok) {
+    emit('error', `Node ${process.version} is too old. Vite 8 requires Node 20.19+ or 22.12+.`);
+    emit('error', 'Upgrade: run "nvm install 22 && nvm use 22" or download from https://nodejs.org');
+    currentOp = 'idle';
+    return { success: false, error: `Node ${process.version} not supported. Upgrade to 20.19+ or 22.12+` };
+  }
+
   deployProgress.phase = 'building';
   emitProgress(0, 'Building app...');
 

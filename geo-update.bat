@@ -13,8 +13,32 @@ echo    GeoMonitor - Full Deploy
 echo ========================================
 echo.
 
+:: Node version check (Vite 8 needs 20.19+ or 22.12+)
+for /f "tokens=1 delims=v" %%a in ('node --version') do set NODE_VER=%%a
+for /f "tokens=1,2 delims=." %%a in ("%NODE_VER%") do set NODE_MAJOR=%%a& set NODE_MINOR=%%b
+if %NODE_MAJOR% lss 20 (
+    echo   FAILED: Node %NODE_VER% is too old. Vite 8 requires Node 20.19+ or 22.12+.
+    echo   Upgrade: https://nodejs.org (download v22 LTS)
+    pause
+    exit /b 1
+)
+if %NODE_MAJOR% equ 20 if %NODE_MINOR% lss 19 (
+    echo   FAILED: Node %NODE_VER% is too old. Vite 8 requires Node 20.19+ or 22.12+.
+    echo   Upgrade: https://nodejs.org (download v22 LTS)
+    pause
+    exit /b 1
+)
+if %NODE_MAJOR% equ 22 if %NODE_MINOR% lss 12 (
+    echo   FAILED: Node %NODE_VER% is too old. Vite 8 requires Node 20.19+ or 22.12+.
+    echo   Upgrade: https://nodejs.org (download v22 LTS)
+    pause
+    exit /b 1
+)
+echo   Node %NODE_VER% ✓
+echo.
+
 echo [1/4] Pulling latest from git...
-git pull origin main
+git pull origin ftp-deploy
 if errorlevel 1 echo   WARNING: git pull had issues (non-fatal)& echo.
 
 echo [2/4] Installing dependencies...
