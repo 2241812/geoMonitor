@@ -12,18 +12,18 @@ import {
 } from './overlay-utils.js';
 
 export const LCM_CLASSES = [
-  { name: 'Closed Forest',   color: '#006400' },
-  { name: 'Open Forest',     color: '#228B22' },
-  { name: 'Mangrove Forest', color: '#004d40' },
-  { name: 'Brush/Shrubs',    color: '#8FBC8F' },
-  { name: 'Grassland',       color: '#90EE90' },
-  { name: 'Annual Crop',     color: '#FFD700' },
-  { name: 'Perennial Crop',  color: '#DAA520' },
-  { name: 'Marshland/Swamp', color: '#4682B4' },
-  { name: 'Open/Barren',     color: '#D2B48C' },
-  { name: 'Built-up',        color: '#DC143C' },
-  { name: 'Fishpond',        color: '#00BFFF' },
-  { name: 'Inland Water',    color: '#1E90FF' },
+  { name: 'Closed Forest',   color: '#016300' },
+  { name: 'Open Forest',     color: '#02DB00' },
+  { name: 'Mangrove Forest', color: '#BA00FE' },
+  { name: 'Brush/Shrubs',    color: '#FED4C2' },
+  { name: 'Grassland',       color: '#974749' },
+  { name: 'Annual Crop',     color: '#FEFAC2' },
+  { name: 'Perennial Crop',  color: '#FFFF00' },
+  { name: 'Marshland/Swamp', color: '#C2FBFE' },
+  { name: 'Open/Barren',     color: '#D2D2D2' },
+  { name: 'Built-up',        color: '#FF0000' },
+  { name: 'Fishpond',        color: '#0081FE' },
+  { name: 'Inland Water',    color: '#281F94' },
 ];
 
 const LCM_COLORS = {};
