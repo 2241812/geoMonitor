@@ -647,7 +647,7 @@ body.panel-open .bottom-left-controls {
   padding: 1px;
 }
 
-/* ── Toggle switch ── */
+/* ── Toggle switch & Map Overlays ── */
 
 .toggle-row {
   display: flex;
@@ -655,8 +655,53 @@ body.panel-open .bottom-left-controls {
   justify-content: space-between;
   gap: 12px;
   font-size: 0.85rem;
-  color: #374151;
+  color: #1e293b;
+  font-weight: 600; /* slightly bolder for main labels */
   cursor: pointer;
+  margin-top: 16px; /* Vertical group spacing */
+}
+
+/* Ensure the very first toggle doesn't have an extra top margin if it's the first child */
+.panel-section-title + .toggle-row {
+  margin-top: 8px;
+}
+
+.overlay-controls {
+  padding-left: 4px;
+  margin-top: 10px; /* Space between toggle and sub-settings */
+}
+
+.overlay-slider-row,
+.overlay-color-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px; /* Horizontal spacing between label and control */
+  margin-bottom: 8px; /* Vertical spacing between sub-settings */
+}
+
+.overlay-slider-row:last-child,
+.overlay-color-row:last-child {
+  margin-bottom: 0;
+}
+
+.overlay-slider-row label,
+.overlay-color-row label {
+  font-size: 0.8rem;
+  color: #64748b; /* dark gray, readable but subtle */
+  font-weight: 400; /* lighter font weight */
+  flex: 0 0 auto; /* Keep label width tight */
+  min-width: 90px;
+}
+
+.overlay-slider-row input[type="range"] {
+  flex: 1; /* Stretch to fill all remaining horizontal space */
+  width: 100%;
+}
+
+.overlay-color-row input[type="color"],
+.overlay-color-row select {
+  min-width: 50px;
 }
 
 .toggle-switch {
@@ -2133,6 +2178,17 @@ body.panel-open .info-panel-edge-toggle .icon-closed {
   flex-direction: column;
   gap: 8px;
 }
+
+/* Specific fix for municipality child items to flow as pills instead of full-width blocks */
+.province-accordion-list:has(> .span-chip) {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.province-accordion-list > .span-chip {
+  width: auto;
+  align-self: flex-start;
+}
+
 .province-accordion {
   width: 100%;
   border-bottom: 1px solid #e2e8f0;
