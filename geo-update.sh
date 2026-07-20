@@ -12,35 +12,28 @@ if ! command -v node &>/dev/null; then
   exit 1
 fi
 
-if [ $# -eq 0 ]; then
-  echo "========================================"
-  echo "   GeoMonitor - Watcher Mode"
-  echo "========================================"
-  echo ""
-  echo "Drop .geojson / .topojson / .json files into:"
-  echo "  $PROJECT_DIR/gis-drop/"
-  echo ""
-  echo "Press Ctrl+C to stop."
-  echo "========================================"
-  echo ""
-  cd "$PROJECT_DIR" && node scripts/update-deploy.mjs --watch
-  echo "Watcher stopped unexpectedly."
-  read -p "Press Enter to close..."
-  exit 0
+# Kill any lingering server on port 3479 (mirrors geoJSONUpdater.bat behavior)
+echo "Checking for existing server on port 3479..."
+if command -v lsof &>/dev/null; then
+  PID=$(lsof -ti:3479 2>/dev/null)
+  if [ -n "$PID" ]; then
+    echo "  Killing process $PID..."
+    kill "$PID" 2>/dev/null
+    sleep 1
+  fi
+fi
+if command -v fuser &>/dev/null; then
+  fuser -k 3479/tcp 2>/dev/null
+  sleep 0.5
 fi
 
+echo ""
 echo "========================================"
-echo "   GeoMonitor - Update Tool"
+echo "   GeoMonitor - Deploy GUI"
 echo "========================================"
 echo ""
-for FILE in "$@"; do
-  echo "--- Processing: $(basename "$FILE") ---"
-  echo ""
-  cd "$PROJECT_DIR" && node scripts/update-deploy.mjs "$FILE"
-  if [ $? -ne 0 ]; then echo "  FAILED"; fi
-  echo ""
-done
-echo "========================================"
-echo "   Done"
-echo "========================================"
+
+cd "$PROJECT_DIR" && node geoJSONUpdater/server.mjs
+
+echo ""
 read -p "Press Enter to close..."

@@ -159,7 +159,7 @@ async function doPull() {
   } catch (err) {
     emit('warn', `Git pull: ${err.message.split('\n')[0]}`);
     currentOp = 'idle';
-    return { success: true };
+    return { success: false };
   }
 }
 
