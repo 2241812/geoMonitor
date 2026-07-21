@@ -313,10 +313,17 @@ def _resolve_cmd(name: str) -> str:
             capture_output=True, text=True, timeout=10,
         )
         if r.returncode == 0:
-            full = r.stdout.strip().splitlines()[0].strip()
-            if full:
-                _cmd_cache[name] = full
-                return full
+            candidates = [ln.strip() for ln in r.stdout.strip().splitlines() if ln.strip()]
+            # Prefer .cmd / .exe / .bat — skip extensionless files (not valid Win32)
+            exts = (".exe", ".cmd", ".bat")
+            preferred = [c for c in candidates if c.lower().endswith(exts)]
+            if preferred:
+                _cmd_cache[name] = preferred[0]
+                return preferred[0]
+            # Fallback: first candidate even without extension
+            if candidates:
+                _cmd_cache[name] = candidates[0]
+                return candidates[0]
     except Exception:
         pass
     _cmd_cache[name] = name
