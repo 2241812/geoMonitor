@@ -1,7 +1,6 @@
 import { APP } from './app.js';
-import { simplify } from '@turf/turf';
 import { useMapStore } from '../store/useMapStore.js';
-import { fetchWithCache } from './fetch-cache.js';
+import { fetchSlopeFromSupabase } from './supabase-geo.js';
 import {
   extractOuterRings,
   buildClipPath,
@@ -16,16 +15,9 @@ import {
  * slope-manager.js
  *
  * Manages the slope overlay layer independently of hydro drill-down logic.
- * Handles: layer creation/destruction, watershed-boundary clipping via CSS
- * clip-path on a custom Leaflet pane, and responsive clip updates during
- * map move/zoom animations.
- *
- * v2 fixes:
- *  - Handles MultiPolygon geometry (multiple outer rings → multi-polygon clip)
- *  - Uses latLngToLayerPoint for jitter-free clip tracking during zoom/pan
- *  - Module-level bound handler prevents event listener leaks on destroy/toggle
- *  - Skips clip updates during zoom animation to avoid stale transforms
- *  - hide()/show() methods for drill transitions without destroying the layer
+ * Strategy: fetch ALL basins ONCE on first toggle, keep the single layer
+ * alive, and clip via CSS clip-path based on the current drill level.
+ * No re-fetching on drill-in/out — instant transitions.
  */
 
 export const SLOPE_COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
@@ -54,118 +46,110 @@ function _onZoomEnd() {
     pane.style.opacity = '';
     pane.style.willChange = '';
   }
-  /* reapplyClip handled by _onZoomSwap on the same zoomend event */
+  APP.slope.reapplyClip();
 }
+
+/* No-op placeholder so bindOverlayEvents doesn't log "wrong listener type: undefined"
+   when we omit onZoomSwap (no LOD swap needed with single-layer strategy). */
+function _noop() {}
 
 APP.slope = {
   _layer: null,
-  _layerSimplified: null,
-  _layerFull: null,
   _rafId: null,
-  _clipFeature: null, /* the feature currently used for clipping */
-  _toggling: false, /* guard against double-toggle race */
-  LOD_ZOOM: 10,
+  _clipFeature: null,
+  _toggling: false,
+  _basinsLoaded: {},
 
-  async toggle() {
-    if (this._toggling) return; /* prevent concurrent toggles */
-    this._toggling = true;
-    try {
-    APP.state.showSlope = !APP.state.showSlope;
-    useMapStore.setState({ showSlope: APP.state.showSlope });
-    const map = APP.state.map;
-    if (!map) return;
-
-    if (APP.state.showSlope && !this._layer) {
-      useMapStore.setState({ slopeLoading: true });
-      APP._showToast('Loading slope data… this may take a moment');
-      this._showLoadProgress(0, 'Fetching slope data…');
+  async _loadBasin(code) {
+    if (this._basinsLoaded[code]) return this._basinsLoaded[code];
+    this._basinsLoaded[code] = (async () => {
+      this._showLoadProgress(0, `Fetching slope data for ${code}…`);
       try {
-        const geojson = await fetchWithCache('slope', 'geoJSON/Slope.geojson', { signal: APP._abortController.signal });
-        if (!geojson) throw new Error('Failed to load slope data');
-
-        this._showLoadProgress(20, 'Processing geometry…');
-        await new Promise(r => setTimeout(r, 0));
-        this._ensurePane();
-
-        const styleFn = (f) => ({
-          fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
-          fillOpacity: 0.65,
-          stroke: false,
-          weight: 0,
+        const geojson = await fetchSlopeFromSupabase(code, (pct, msg) => {
+          this._showLoadProgress(pct, msg);
         });
-        const layerOpts = { style: styleFn, interactive: false };
-
-        const simplified = { type: 'FeatureCollection', features: [] };
-        const total = geojson.features.length;
-        for (let i = 0; i < total; i++) {
-          try {
-            simplified.features.push(simplify(geojson.features[i], { tolerance: 0.002, highQuality: true }));
-          } catch (_) { simplified.features.push(geojson.features[i]); }
-          if (i % 4 === 0) {
-            const pct = 20 + Math.round((i / total) * 40);
-            this._showLoadProgress(pct, `Simplifying… ${i}/${total}`);
-            await new Promise(r => setTimeout(r, 0));
-          }
+        this._showLoadProgress(90, 'Adding to layer…');
+        await new Promise(r => setTimeout(r, 0));
+        if (this._layer && this._layer.addData) {
+          this._layer.addData(geojson);
         }
-
-        this._showLoadProgress(65, 'Building layers…');
-        await new Promise(r => setTimeout(r, 0));
-
-        this._layerSimplified = L.geoJSON(simplified, {
-          ...layerOpts,
-          renderer: L.canvas({ pane: 'slopePane' }),
-          onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
-        });
-
-        this._showLoadProgress(80, 'Building full-detail layer…');
-        await new Promise(r => setTimeout(r, 0));
-
-        this._layerFull = L.geoJSON(geojson, {
-          ...layerOpts,
-          renderer: L.canvas({ pane: 'slopePane' }),
-          onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
-        });
-
         this._showLoadProgress(100, 'Done');
-        const z = map.getZoom();
-        this._layer = z < this.LOD_ZOOM ? this._layerSimplified : this._layerFull;
+        setTimeout(() => this._hideLoadProgress(), 600);
       } catch (e) {
         this._hideLoadProgress();
-        APP._showToast('Failed to load slope data');
-        if (import.meta.env.DEV) console.error('Slope fetch error:', e);
-        APP.state.showSlope = false;
-        useMapStore.setState({ showSlope: false, slopeLoading: false });
-        APP._updateHydroLegend();
-        return; /* finally still runs — _toggling will be cleared */
+        delete this._basinsLoaded[code];
+        throw e;
       }
+    })();
+    return this._basinsLoaded[code];
+  },
+
+  async toggle() {
+    if (this._toggling) return;
+    this._toggling = true;
+    try {
+      APP.state.showSlope = !APP.state.showSlope;
+      useMapStore.setState({ showSlope: APP.state.showSlope });
+      const map = APP.state.map;
+      if (!map) return;
+
+      if (APP.state.showSlope && !this._layer) {
+        useMapStore.setState({ slopeLoading: false });
+        this._ensurePane();
+        const styleFn = (f) => ({
+          fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
+          fillOpacity: 0.65, stroke: false, weight: 0,
+        });
+        this._layer = L.geoJSON(null, {
+          style: styleFn,
+          interactive: false,
+          renderer: L.canvas({ pane: 'slopePane' }),
+        });
+      }
+
+      if (!this._layer) {
+        APP.state.showSlope = false;
+        useMapStore.setState({ showSlope: false });
+        return;
+      }
+
+      if (APP.state.showSlope) {
+        map.addLayer(this._layer);
+        this.reapplyClip();
+        this._bindMapEvents(map);
+      } else {
+        this._unbindMapEvents(map);
+        map.removeLayer(this._layer);
+        this.removeClip();
+        this._clipFeature = null;
+      }
+
+      const slopeCtrl = document.getElementById('slope-controls');
+      if (slopeCtrl) slopeCtrl.style.display = APP.state.showSlope ? 'block' : 'none';
+
+      APP._updateHydroLegend();
+    } finally {
+      this._toggling = false;
     }
+  },
 
-    APP._updateSubWatershedStyles();
-    if (!this._layer) {
-      APP.state.showSlope = false;
-      useMapStore.setState({ showSlope: false });
-      return;
-    }
-
-    if (APP.state.showSlope) {
-      this._hideLoadProgress();
-      useMapStore.setState({ slopeLoading: false });
-      APP._showToast('Slope overlay loaded ✓');
-      map.addLayer(this._layer);
-      this.reapplyClip();
-      this._bindMapEvents(map);
-    } else {
-      this._unbindMapEvents(map);
-      map.removeLayer(this._layer);
-      this.removeClip();
-      this._clipFeature = null;
-    }
-
-    const slopeCtrl = document.getElementById('slope-controls');
-    if (slopeCtrl) slopeCtrl.style.display = APP.state.showSlope ? 'block' : 'none';
-
-    APP._updateHydroLegend();
-    } finally { this._toggling = false; }
+  /**
+   * Build a single L.geoJSON layer from all-basins data.
+   * No LOD swapping, no duplicate — we clip with CSS instead.
+   */
+  _buildLayer(geojson) {
+    const map = APP.state.map;
+    this._ensurePane();
+    const styleFn = (f) => ({
+      fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
+      fillOpacity: 0.65, stroke: false, weight: 0,
+    });
+    this._layer = L.geoJSON(geojson, {
+      style: styleFn,
+      interactive: false,
+      renderer: L.canvas({ pane: 'slopePane' }),
+      onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
+    });
   },
 
   _showLoadProgress(pct, label) {
@@ -185,24 +169,8 @@ APP.slope = {
       onMapMove: _onMapMove,
       onZoomStart: _onZoomStart,
       onZoomEnd: _onZoomEnd,
-      onZoomSwap: this._onZoomSwap,
+      onZoomSwap: _noop,
     }, this);
-  },
-
-  _onZoomSwap() {
-    if (!APP.state.showSlope) return;
-    const map = APP.state.map;
-    if (!map || !this._layerSimplified || !this._layerFull) return;
-    const z = map.getZoom();
-    const target = z < this.LOD_ZOOM ? this._layerSimplified : this._layerFull;
-    if (target === this._layer) return;
-    const wasActive = map.hasLayer(this._layer);
-    map.removeLayer(this._layer);
-    this._layer = target;
-    if (wasActive) {
-      map.addLayer(this._layer);
-      this.reapplyClip();
-    }
   },
 
   _unbindMapEvents(map) {
@@ -210,7 +178,7 @@ APP.slope = {
       onMapMove: _onMapMove,
       onZoomStart: _onZoomStart,
       onZoomEnd: _onZoomEnd,
-      onZoomSwap: this._onZoomSwap,
+      onZoomSwap: _noop,
     }, this);
   },
 
@@ -256,8 +224,6 @@ APP.slope = {
    */
   reapplyClip() {
     if (!APP.state.showSlope) {
-      /* Clear stale clip-path even when slope is off — prevents
-         a leftover clip from reappearing on next toggle. */
       this.removeClip();
       return;
     }
@@ -267,8 +233,6 @@ APP.slope = {
       const map = APP.state.map;
       if (!map) return;
 
-      /* During Leaflet's zoom animation the pane transform is in flux;
-         skip until zoomend fires to avoid a flash of misaligned clip. */
       if (map._animatingZoom) return;
 
       if (APP.state.hydroSelectedZone) {
@@ -278,11 +242,17 @@ APP.slope = {
       } else {
         this.removeClip();
       }
+
+      const code = APP.state.hydroSelectedBasin?.code;
+      if (code && !this._basinsLoaded[code]) {
+        this._loadBasin(code).catch(e => {
+          if (import.meta.env.DEV) console.error('Slope load error:', e);
+        });
+      }
     });
   },
 
-  /** Temporarily hide the slope layer without destroying it.
-   *  Used during drill transitions so the layer doesn't need re-fetching. */
+  /** Hide from map without destroying. Layer + data stay in memory. */
   hide() {
     const map = APP.state.map;
     if (!map || !this._layer) return;
@@ -293,7 +263,7 @@ APP.slope = {
     this.removeClip();
   },
 
-  /** Re-show a previously hidden slope layer. No-op if slope is toggled off. */
+  /** Re-show after hide. Instant — no fetch, no rebuild. */
   show() {
     const map = APP.state.map;
     if (!map || !this._layer || !APP.state.showSlope) return;
@@ -311,15 +281,13 @@ APP.slope = {
     const map = APP.state.map;
     if (map) {
       this._unbindMapEvents(map);
-      if (this._layerSimplified) map.removeLayer(this._layerSimplified);
-      if (this._layerFull) map.removeLayer(this._layerFull);
+      if (this._layer) map.removeLayer(this._layer);
       const pane = map.getPane('slopePane');
       if (pane && pane.parentNode) pane.parentNode.removeChild(pane);
     }
     this._layer = null;
-    this._layerSimplified = null;
-    this._layerFull = null;
     this._clipFeature = null;
+    this._basinsLoaded = {};
     this.removeClip();
     APP.state.showSlope = false;
     useMapStore.setState({ showSlope: false });
@@ -328,12 +296,8 @@ APP.slope = {
   },
 
   _setOpacity(val) {
-    const apply = (layer) => {
-      if (!layer || !layer.eachLayer) return;
-      layer.eachLayer((l) => { if (l.setStyle) l.setStyle({ fillOpacity: val }); });
-    };
-    apply(this._layerSimplified);
-    apply(this._layerFull);
+    if (!this._layer || !this._layer.eachLayer) return;
+    this._layer.eachLayer((l) => { if (l.setStyle) l.setStyle({ fillOpacity: val }); });
   },
 
   _setColorScheme(scheme) {
@@ -342,14 +306,12 @@ APP.slope = {
       : scheme === 'heat'
       ? { 1: '#2b83ba', 2: '#abdda4', 3: '#ffffbf', 4: '#fdae61', 5: '#d7191c' }
       : SLOPE_COLORS;
-    [this._layerSimplified, this._layerFull].forEach((layer) => {
-      if (!layer || !layer.eachLayer) return;
-      layer.eachLayer((l) => {
-        const code = l.feature?.properties?.gridcode;
-        if (l.setStyle && code != null) {
-          l.setStyle({ fillColor: palette[code] || '#cccccc' });
-        }
-      });
+    if (!this._layer || !this._layer.eachLayer) return;
+    this._layer.eachLayer((l) => {
+      const code = l.feature?.properties?.gridcode;
+      if (l.setStyle && code != null) {
+        l.setStyle({ fillColor: palette[code] || '#cccccc' });
+      }
     });
   },
 };

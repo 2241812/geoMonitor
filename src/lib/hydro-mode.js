@@ -508,6 +508,7 @@ Object.assign(APP, {
 
       await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
       this._updateBreadcrumb();
+      /* Clip the existing all-basins slope layer to the selected basin */
       APP.slope.reapplyClip();
       APP.lcm.reapplyClip();
       this._loadBasinLCM(mapEntry.code);
@@ -910,11 +911,17 @@ Object.assign(APP, {
     this.state.hydroDrillLevel = 0;
     useMapStore.setState({ hydroDrillLevel: 0 });
     this.state.hydroSelectedBasin = null;
+    this.state._basinCode = null;
+    this.state._basinFolder = null;
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
     this.state.selectedPath = [];
     APP.lcm.destroy();
-    APP.slope.hide();
+    if (APP.state.showSlope) {
+      APP.slope.reapplyClip(); /* no basin selected → removeClip → full overview visible */
+    } else {
+      APP.slope.hide();
+    }
 
     /* Re-render basins interactively (no silhouette) */
     this._clearHydroLayers();
@@ -939,7 +946,6 @@ Object.assign(APP, {
     this._showBasinPickerPanel();
     this._updateHydroLabels();
     this._updateHydroLegend();
-    if (this.state.showSlope) APP.slope.show();
   },
 
   /* Remove all hydro layers from the map */
