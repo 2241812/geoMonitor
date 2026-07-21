@@ -169,8 +169,13 @@ def insert_batch(table: str, rows: list[dict],
     log: list[str] = []
     url = f"{SUPABASE_URL}/rest/v1/{table}"
     total = len(rows)
+    skipped_geom = False
     for i in range(0, total, batch_size):
         batch = rows[i:i + batch_size]
+        # If we've already detected geom_simplified is missing, strip it
+        if skipped_geom:
+            for row in batch:
+                row.pop("geom_simplified", None)
         try:
             r = requests.post(url, headers=_headers(), json=batch)
             ok = r.status_code in (200, 201, 204)
@@ -178,8 +183,26 @@ def insert_batch(table: str, rows: list[dict],
                 log.append(f"  ⚠ Batch {i // batch_size} conflict, skipping")
                 continue
             if not ok:
+                body = r.text[:300]
+                # PGRST204 = column not in schema cache → geom_simplified missing
+                if "geom_simplified" in body and not skipped_geom:
+                    log.append(f"  ⚠ geom_simplified column missing — "
+                               f"stripping and retrying")
+                    skipped_geom = True
+                    for row in batch:
+                        row.pop("geom_simplified", None)
+                    r2 = requests.post(url, headers=_headers(), json=batch)
+                    if r2.status_code in (200, 201, 204):
+                        n = i // batch_size + 1
+                        total_batches = math.ceil(total / batch_size)
+                        log.append(f"  ✓ Batch {n}/{total_batches} "
+                                   f"({len(batch)} rows, no geom_simplified)")
+                        log.append(f"  ℹ Add column later: ALTER TABLE {table} "
+                                   f"ADD COLUMN geom_simplified jsonb;")
+                        on_progress(min(i + batch_size, total), total)
+                        continue
                 log.append(f"  ❌ INSERT batch {i // batch_size} "
-                           f"({r.status_code}): {r.text[:200]}")
+                           f"({r.status_code}): {body}")
                 return log
             n = i // batch_size + 1
             total_batches = math.ceil(total / batch_size)
