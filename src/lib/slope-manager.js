@@ -15,7 +15,7 @@ import {
 export const SLOPE_COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
 
 const LOD_ZOOM = 10;
-const SIMPLIFY_TOLERANCE = 0.001;
+const SIMPLIFY_TOLERANCE = 0.0005;
 
 function _onMapMove() { APP.slope.reapplyClip(); }
 function _onZoomStart() {
