@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import webbrowser
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from typing import Any, Callable
@@ -66,11 +67,23 @@ def load_env(path: str) -> None:
     with open(path, encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
+            if not line or line.startswith("#"):
+                continue
+            # Strip optional 'export ' prefix
+            if line.startswith("export "):
+                line = line[7:].lstrip()
+            # Split on first '=' only
+            if "=" not in line:
                 continue
             k, _, v = line.partition("=")
             k = k.strip()
-            v = v.strip().strip("\"'")
+            v = v.strip()
+            # Strip surrounding quotes (single or double) from value
+            if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
+                v = v[1:-1]
+            # Unescape common escape sequences in values
+            v = v.replace("\\n", "\n").replace("\\r", "\r").replace("\\t", "\t")
+            # Key matching (case-sensitive match)
             if k == "SUPABASE_URL":
                 SUPABASE_URL = v
             elif k == "SUPABASE_SERVICE_KEY":
@@ -87,7 +100,7 @@ def load_env(path: str) -> None:
                 try:
                     FTP_PORT = int(v)
                 except ValueError:
-                    FTP_PORT = 21
+                    pass
             elif k == "FTP_PASSIVE":
                 FTP_PASSIVE = v.lower() in ("true", "1", "yes")
 
@@ -485,7 +498,11 @@ class DeployTool:
         self.update_btn.pack(side=tk.LEFT, padx=(0, 8))
         self.deploy_btn = ttk.Button(act, text="2. Build & Deploy to FTP",
                                      command=self._on_deploy)
-        self.deploy_btn.pack(side=tk.LEFT)
+        self.deploy_btn.pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(act, text="Git Status",
+                   command=self._on_git_status).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(act, text="Report Bug",
+                   command=self._on_report_bug).pack(side=tk.RIGHT)
 
         # Row 5: Progress
         prog = ttk.Frame(main)
@@ -754,6 +771,39 @@ class DeployTool:
         self._gui_prog("")
         self._gui_log(f"\n═══ Done: {ok}/{len(ready)} files updated ═══")
         self._gui_busy(False)
+
+    # ──────── Git Status ────────
+
+    def _on_git_status(self) -> None:
+        self._writelog("═══ Git Status ═══")
+        try:
+            r = subprocess.run(["git", "status", "--short"],
+                               capture_output=True, text=True,
+                               cwd=PROJECT_ROOT, timeout=30)
+            if r.returncode == 0:
+                out = r.stdout.strip()
+                self._writelog(out if out else "  ✓ Working tree clean")
+            else:
+                self._writelog(f"  ⚠ {r.stderr.strip()}")
+            # Show branch info too
+            r2 = subprocess.run(["git", "branch", "--show-current"],
+                                capture_output=True, text=True,
+                                cwd=PROJECT_ROOT, timeout=10)
+            branch = r2.stdout.strip()
+            self._writelog(f"  Branch: {branch}")
+        except Exception as e:
+            self._writelog(f"  ❌ {e}")
+        self._writelog("═══ Done ═══\n")
+
+    # ──────── Report Bug ────────
+
+    def _on_report_bug(self) -> None:
+        url = "https://github.com/2241812/geoMonitor/issues/new"
+        try:
+            webbrowser.open(url)
+            self._writelog(f"  Opened {url}")
+        except Exception as e:
+            self._writelog(f"  ❌ Could not open browser: {e}")
 
     # ──────── 2. Build & Deploy ────────
 
