@@ -34,11 +34,10 @@ except ImportError:
 
 # ── Paths ──
 if getattr(sys, "frozen", False):
-    EXE_DIR = os.path.dirname(sys.executable)
-    SCRIPT_DIR = os.path.dirname(EXE_DIR)
+    PROJECT_ROOT = os.path.dirname(sys.executable)
 else:
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, ".."))
+    PROJECT_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, ".."))
 DOT_ENV = os.path.join(PROJECT_ROOT, ".env")
 SLOPE_DIR = os.path.join(PROJECT_ROOT, "public", "geoJSON")
 LCM_DIR = os.path.join(SLOPE_DIR, "LCM")
