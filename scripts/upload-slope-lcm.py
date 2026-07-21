@@ -173,9 +173,10 @@ def insert_batch(table: str, rows: list[dict],
     url = f"{SUPABASE_URL}/rest/v1/{table}"
     total = len(rows)
     skipped_geom = False
-    for i in range(0, total, batch_size):
-        batch = rows[i:i + batch_size]
-        # If we've already detected geom_simplified is missing, strip it
+    current_batch_size = batch_size
+    i = 0
+    while i < total:
+        batch = rows[i:i + current_batch_size]
         if skipped_geom:
             for row in batch:
                 row.pop("geom_simplified", None)
@@ -183,7 +184,8 @@ def insert_batch(table: str, rows: list[dict],
             r = requests.post(url, headers=_headers(), json=batch)
             ok = r.status_code in (200, 201, 204)
             if not ok and r.status_code == 409:
-                log.append(f"  ⚠ Batch {i // batch_size} conflict, skipping")
+                log.append(f"  ⚠ Batch conflict, skipping")
+                i += len(batch)
                 continue
             if not ok:
                 body = r.text[:300]
@@ -196,24 +198,29 @@ def insert_batch(table: str, rows: list[dict],
                         row.pop("geom_simplified", None)
                     r2 = requests.post(url, headers=_headers(), json=batch)
                     if r2.status_code in (200, 201, 204):
-                        n = i // batch_size + 1
-                        total_batches = math.ceil(total / batch_size)
-                        log.append(f"  ✓ Batch {n}/{total_batches} "
-                                   f"({len(batch)} rows, no geom_simplified)")
+                        log.append(f"  ✓ Batch ({len(batch)} rows, "
+                                   f"no geom_simplified)")
                         log.append(f"  ℹ Add column later: ALTER TABLE {table} "
                                    f"ADD COLUMN geom_simplified jsonb;")
-                        on_progress(min(i + batch_size, total), total)
+                        i += len(batch)
+                        on_progress(min(i, total), total)
                         continue
-                log.append(f"  ❌ INSERT batch {i // batch_size} "
-                           f"({r.status_code}): {body}")
+                # 5xx = server error (520, 503 etc), likely oversized payload
+                if r.status_code >= 500 and current_batch_size > 1:
+                    smaller = max(1, current_batch_size // 2)
+                    log.append(f"  ⚠ Server error ({r.status_code}), "
+                               f"halving batch size: {current_batch_size}→{smaller}")
+                    current_batch_size = smaller
+                    continue  # retry same batch with smaller size
+                log.append(f"  ❌ INSERT ({r.status_code}): {body}")
                 return log
-            n = i // batch_size + 1
-            total_batches = math.ceil(total / batch_size)
-            log.append(f"  ✓ Batch {n}/{total_batches} ({len(batch)} rows)")
+            n = len(batch)
+            log.append(f"  ✓ Batch ({n} rows)")
         except Exception as e:
-            log.append(f"  ❌ INSERT error batch {i // batch_size}: {e}")
+            log.append(f"  ❌ INSERT error: {e}")
             return log
-        on_progress(min(i + batch_size, total), total)
+        i += len(batch)
+        on_progress(min(i, total), total)
     return log
 
 
