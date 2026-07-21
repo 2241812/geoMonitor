@@ -26,7 +26,7 @@ import webbrowser
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from typing import Any, Callable
-from ftplib import FTP
+from ftplib import FTP, FTP_TLS
 from tkinterdnd2 import TkinterDnD, DND_FILES
 
 try:
@@ -56,12 +56,13 @@ FTP_PASS: str | None = None
 FTP_REMOTE_DIR: str | None = None
 FTP_PORT: int = 21
 FTP_PASSIVE: bool = True
+FTP_USE_TLS: bool = True
 
 # ─────────────────────────────────────────────
 #  .env loader
 # ─────────────────────────────────────────────
 def load_env(path: str) -> None:
-    global SUPABASE_URL, SUPABASE_SERVICE_KEY, FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR, FTP_PORT, FTP_PASSIVE
+    global SUPABASE_URL, SUPABASE_SERVICE_KEY, FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR, FTP_PORT, FTP_PASSIVE, FTP_USE_TLS
     if not os.path.isfile(path):
         return
     with open(path, encoding="utf-8-sig") as f:
@@ -103,6 +104,8 @@ def load_env(path: str) -> None:
                     pass
             elif k == "FTP_PASSIVE":
                 FTP_PASSIVE = v.lower() in ("true", "1", "yes")
+            elif k == "FTP_USE_TLS":
+                FTP_USE_TLS = v.lower() in ("true", "1", "yes")
 
 
 # ─────────────────────────────────────────────
@@ -361,23 +364,34 @@ def build_project() -> list[str]:
     return msg
 
 
-def ftp_upload() -> list[str]:
+def ftp_upload(log_cb: Callable) -> list[str]:
     msg: list[str] = []
     if not all([FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR]):
-        return ["  ❌ Set FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR in .env"]
+        msg.append("  ❌ Set FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR in .env")
+        return msg
 
     if not os.path.isdir(DIST_DIR):
-        return [f"  ❌ dist/ not found at {DIST_DIR}"]
+        msg.append(f"  ❌ dist/ not found at {DIST_DIR}")
+        return msg
 
-    msg.append(f"  Connecting to {FTP_HOST}:{FTP_PORT}…")
+    msg.append(f"  Connecting to {FTP_HOST}:{FTP_PORT} (TLS={FTP_USE_TLS})…")
+    log_cb(f"  Connecting to {FTP_HOST}:{FTP_PORT} (TLS={FTP_USE_TLS})…")
     try:
-        ftp = FTP()
+        if FTP_USE_TLS:
+            ftp: FTP | FTP_TLS = FTP_TLS()
+        else:
+            ftp = FTP()
         ftp.connect(FTP_HOST, FTP_PORT, timeout=30)
         ftp.set_pasv(FTP_PASSIVE)
         ftp.login(FTP_USER, FTP_PASS)
+        if FTP_USE_TLS:
+            ftp.prot_p()  # data channel encryption
+        log_cb("  ✓ Logged in")
         msg.append("  ✓ Logged in")
     except Exception as e:
-        return [f"  ❌ FTP connect failed: {e}"]
+        log_cb(f"  ❌ FTP connect failed: {e}")
+        msg.append(f"  ❌ FTP connect failed: {e}")
+        return msg
 
     try:
         ftp.cwd(FTP_REMOTE_DIR)
@@ -387,8 +401,11 @@ def ftp_upload() -> list[str]:
             ftp.cwd(FTP_REMOTE_DIR)
         except Exception as e:
             ftp.quit()
-            return [f"  ❌ Cannot cd/mkdir {FTP_REMOTE_DIR}: {e}"]
+            msg.append(f"  ❌ Cannot cd/mkdir {FTP_REMOTE_DIR}: {e}")
+            return msg
 
+    # Count total files first for progress
+    total = sum(len(files) for _r, _d, files in os.walk(DIST_DIR))
     uploaded = 0
     for root, _dirs, files in os.walk(DIST_DIR):
         for f in files:
@@ -411,12 +428,15 @@ def ftp_upload() -> list[str]:
                 with open(local, "rb") as fh:
                     ftp.storbinary(f"STOR {os.path.basename(rel)}", fh)
                 uploaded += 1
+                log_cb(f"  ✓ ({uploaded}/{total}) {rel}")
             except Exception as e:
+                log_cb(f"  ⚠ {rel}: {e}")
                 msg.append(f"  ⚠ Failed to upload {rel}: {e}")
             if rdir and rdir != ".":
                 ftp.cwd(FTP_REMOTE_DIR)
 
     ftp.quit()
+    log_cb(f"  ✓ Uploaded {uploaded}/{total} files to {FTP_REMOTE_DIR}")
     msg.append(f"  ✓ Uploaded {uploaded} files to {FTP_REMOTE_DIR}")
     return msg
 
@@ -425,8 +445,7 @@ def build_and_deploy(log_cb: Callable) -> None:
     log_cb("═══ Build & Deploy ═══")
     for m in build_project():
         log_cb(m)
-    for m in ftp_upload():
-        log_cb(m)
+    ftp_upload(log_cb)
     log_cb("═══ Done ═══\n")
 
 
