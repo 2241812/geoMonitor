@@ -52,12 +52,14 @@ FTP_HOST: str | None = None
 FTP_USER: str | None = None
 FTP_PASS: str | None = None
 FTP_REMOTE_DIR: str | None = None
+FTP_PORT: int = 21
+FTP_PASSIVE: bool = True
 
 # ─────────────────────────────────────────────
 #  .env loader
 # ─────────────────────────────────────────────
 def load_env(path: str) -> None:
-    global SUPABASE_URL, SUPABASE_SERVICE_KEY, FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR
+    global SUPABASE_URL, SUPABASE_SERVICE_KEY, FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR, FTP_PORT, FTP_PASSIVE
     if not os.path.isfile(path):
         return
     with open(path, encoding="utf-8") as f:
@@ -76,10 +78,17 @@ def load_env(path: str) -> None:
                 FTP_HOST = v
             elif k == "FTP_USER":
                 FTP_USER = v
-            elif k == "FTP_PASS":
+            elif k in ("FTP_PASS", "FTP_PASSWORD"):
                 FTP_PASS = v
             elif k == "FTP_REMOTE_DIR":
                 FTP_REMOTE_DIR = v
+            elif k == "FTP_PORT":
+                try:
+                    FTP_PORT = int(v)
+                except ValueError:
+                    FTP_PORT = 21
+            elif k == "FTP_PASSIVE":
+                FTP_PASSIVE = v.lower() in ("true", "1", "yes")
 
 
 # ─────────────────────────────────────────────
@@ -102,6 +111,11 @@ def classify_file(filename: str) -> dict:
         "basin_code": None,
         "dest_dir": GEOJSON_ROOT,
     }
+
+    # .env → load credentials
+    if basename == ".env":
+        result["action"] = "load credentials"
+        return result
 
     # Slope
     m = RE_SLOPE.match(basename)
@@ -307,9 +321,11 @@ def ftp_upload() -> list[str]:
     if not os.path.isdir(DIST_DIR):
         return [f"  ❌ dist/ not found at {DIST_DIR}"]
 
-    msg.append(f"  Connecting to {FTP_HOST}…")
+    msg.append(f"  Connecting to {FTP_HOST}:{FTP_PORT}…")
     try:
-        ftp = FTP(FTP_HOST, timeout=30)
+        ftp = FTP()
+        ftp.connect(FTP_HOST, FTP_PORT, timeout=30)
+        ftp.set_pasv(FTP_PASSIVE)
         ftp.login(FTP_USER, FTP_PASS)
         msg.append("  ✓ Logged in")
     except Exception as e:
@@ -506,8 +522,13 @@ class DeployTool:
         if any(f["path"] == path for f in self.files):
             return
         route = classify_file(path)
+        # If .env dropped → load credentials immediately
+        if route["action"] == "load credentials":
+            load_env(path)
+            self._refresh_conn()
+            self._writelog(f"✓ Loaded credentials from {path}")
         self.files.append({"path": path, "basename": os.path.basename(path),
-                           "route": route, "status": "ready"})
+                           "route": route, "status": "loaded" if route["action"] == "load credentials" else "ready"})
         self._refresh()
 
     def _remove_sel(self) -> None:
