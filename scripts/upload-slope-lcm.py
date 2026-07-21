@@ -227,29 +227,24 @@ class UploadTool:
         ttk.Button(top, text="Test", command=self._test_conn,
                    width=8).pack(side=tk.RIGHT)
 
-        # ---- Row 1: drop zone ----
-        dz = tk.LabelFrame(main, text="Drop GeoJSON Files",
+        # ---- Row 1: file picker zone ----
+        dz = tk.LabelFrame(main, text="Select GeoJSON Files",
                            padx=10, pady=10,
                            bg="#e8f0fe", relief=tk.GROOVE, bd=2)
         dz.pack(fill=tk.X, pady=(0, 8))
         dz_inner = ttk.Frame(dz)
         dz_inner.pack(pady=6)
         ttk.Label(dz_inner,
-                  text="📂 Drag files onto this window\n"
-                       "or click Browse to select",
+                  text="📂 Click Browse to select GeoJSON files\n"
+                       "(Shift+click or Ctrl+click for multiple)",
                   justify=tk.CENTER,
                   font=("Segoe UI", 11)).pack()
         ttk.Label(dz_inner,
-                  text='Expected:  ABR_Slope.geojson  ·  ABR_LCM2025.geojson',
+                  text='Expected:  ABR_Slope.geojson  ·  ABR_LCM2025.geojson  ·  ..._LCM2025.geojson',
                   foreground="#666",
                   font=("Segoe UI", 9)).pack(pady=(4, 0))
         ttk.Button(dz_inner, text="Browse for GeoJSON Files…",
                    command=self._browse).pack(pady=(6, 0))
-        # Bind the whole frame & children for drag
-        for widget in (dz, dz_inner, dz.winfo_children()[0]):
-            widget.bind("<Drop>", self._on_drop)
-            widget.bind("<ButtonPress-1>", self._on_drop_click)
-        self.root.bind("<Drop>", self._on_drop)
 
         # ---- Row 2: file list ----
         list_frame = ttk.LabelFrame(main, text="Files to Upload", padding=4)
@@ -331,16 +326,6 @@ class UploadTool:
         )
         for p in paths:
             self._add_file(p)
-
-    def _on_drop(self, event: tk.Event) -> None:
-        """Handle file drop (tkinterdnd2 protocol if available, else noop)."""
-        raw = getattr(event, "data", None) or ""
-        for path in raw.split() if raw else []:
-            self._add_file(path.strip("{}"))
-
-    def _on_drop_click(self, event: tk.Event) -> None:
-        """Click on drop zone acts as browse."""
-        self._browse()
 
     def _add_file(self, path: str) -> None:
         if not os.path.isfile(path):
