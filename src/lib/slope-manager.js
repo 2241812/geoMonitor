@@ -62,9 +62,14 @@ APP.slope = {
         await new Promise(r => setTimeout(r, 0));
         const simplifiedFeatures = [];
         for (const f of geojson.features) {
-          try {
-            simplifiedFeatures.push(simplify(f, { tolerance: SIMPLIFY_TOLERANCE, highQuality: true }));
-          } catch (_) { simplifiedFeatures.push(f); }
+          if (f.properties?._simplified) {
+            // Already server-simplified — no need to re-run turf simplify
+            simplifiedFeatures.push(f);
+          } else {
+            try {
+              simplifiedFeatures.push(simplify(f, { tolerance: SIMPLIFY_TOLERANCE, highQuality: true }));
+            } catch (_) { simplifiedFeatures.push(f); }
+          }
         }
         const simplifiedFC = { type: 'FeatureCollection', features: simplifiedFeatures };
 

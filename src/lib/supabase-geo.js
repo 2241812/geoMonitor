@@ -187,8 +187,11 @@ export async function submitDataRequest(payload) {
 function _buildSlopeFeatures(rows) {
   return rows.map(row => ({
     type: 'Feature',
-    properties: { gridcode: row.gridcode },
-    geometry: row.geom,
+    properties: {
+      gridcode: row.gridcode,
+      _simplified: !!row.geom_simplified,
+    },
+    geometry: row.geom_simplified || row.geom,
   }));
 }
 
@@ -206,12 +209,25 @@ export async function fetchSlopeFromSupabase(basinCode, onProgress) {
     return cached;
   }
   if (onProgress) onProgress(0, `Fetching ${basinCode} slope…`);
-  /* Slope has 5-9 features per basin with large geometry — fetch all in one page */
   const supabase = getClient();
-  const { data, error } = await supabase
+
+  /* Try selecting geom_simplified (server-simplified geometry). If the column
+     doesn't exist yet (older DB), fall back to raw geom + client-side simplify. */
+  let { data, error } = await supabase
     .from('slope')
-    .select('gridcode, geom')
+    .select('gridcode, geom, geom_simplified')
     .eq('basin_code', basinCode);
+
+  if (error && error.message && error.message.includes('geom_simplified')) {
+    if (onProgress) onProgress(0, `Fetching ${basinCode} slope (full geom)…`);
+    const retry = await supabase
+      .from('slope')
+      .select('gridcode, geom')
+      .eq('basin_code', basinCode);
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) throw new Error('Supabase slope query failed: ' + error.message);
   if (!data || data.length === 0) throw new Error('No slope data for basin: ' + basinCode);
   if (onProgress) onProgress(90, `Rebuilding GeoJSON (${data.length} features)…`);
