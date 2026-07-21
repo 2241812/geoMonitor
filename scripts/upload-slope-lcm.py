@@ -604,6 +604,7 @@ class DeployTool:
         self._writelog("═══ Connection Test ═══")
         supa_ok = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
         ftp_ok = bool(FTP_HOST and FTP_USER and FTP_PASS and FTP_REMOTE_DIR)
+        self._writelog(f"  Debug: FTP_HOST={FTP_HOST!r} USER={FTP_USER!r} PASS={'***' if FTP_PASS else '<empty>'} DIR={FTP_REMOTE_DIR!r}")
         if supa_ok:
             try:
                 r = requests.get(f"{SUPABASE_URL}/rest/v1/",
