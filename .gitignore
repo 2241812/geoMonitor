@@ -46,6 +46,10 @@ supabase/
 # OpenCode agent session state
 .omo/
 
+# Python
+__pycache__/
+*.pyc
+
 # PyInstaller intermediate build files
 scripts/build/
 scripts/*.spec
