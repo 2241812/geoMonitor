@@ -297,13 +297,40 @@ def supa_insert(table: str, rows: list[dict],
 
 
 # ─────────────────────────────────────────────
+#  Command resolution (frozen exe may not inherit user PATH)
+# ─────────────────────────────────────────────
+_cmd_cache: dict[str, str] = {}
+
+def _resolve_cmd(name: str) -> str:
+    """Return the full path to *name* so subprocess can find it even when
+    the frozen .exe doesn't inherit the user's shell PATH (common with
+    NVM-installed Node on Windows)."""
+    if name in _cmd_cache:
+        return _cmd_cache[name]
+    try:
+        r = subprocess.run(
+            ["where", name],
+            capture_output=True, text=True, timeout=10,
+        )
+        if r.returncode == 0:
+            full = r.stdout.strip().splitlines()[0].strip()
+            if full:
+                _cmd_cache[name] = full
+                return full
+    except Exception:
+        pass
+    _cmd_cache[name] = name
+    return name
+
+
+# ─────────────────────────────────────────────
 #  FTP deploy
 # ─────────────────────────────────────────────
 def build_project() -> list[str]:
     msg: list[str] = []
     msg.append("  git pull…")
     try:
-        r = subprocess.run(["git", "pull"], capture_output=True, text=True,
+        r = subprocess.run([_resolve_cmd("git"), "pull"], capture_output=True, text=True,
                            cwd=PROJECT_ROOT, timeout=120)
         msg.append(f"    {r.stdout.strip() or 'done'}")
         if r.returncode != 0:
@@ -313,7 +340,7 @@ def build_project() -> list[str]:
 
     msg.append("  npm run build…")
     try:
-        r = subprocess.run(["npm", "run", "build"], capture_output=True, text=True,
+        r = subprocess.run([_resolve_cmd("npm"), "run", "build"], capture_output=True, text=True,
                            cwd=PROJECT_ROOT, timeout=300)
         for line in r.stdout.splitlines():
             if "error" in line.lower() or "failed" in line.lower():
@@ -777,7 +804,7 @@ class DeployTool:
     def _on_git_status(self) -> None:
         self._writelog("═══ Git Status ═══")
         try:
-            r = subprocess.run(["git", "status", "--short"],
+            r = subprocess.run([_resolve_cmd("git"), "status", "--short"],
                                capture_output=True, text=True,
                                cwd=PROJECT_ROOT, timeout=30)
             if r.returncode == 0:
@@ -786,7 +813,7 @@ class DeployTool:
             else:
                 self._writelog(f"  ⚠ {r.stderr.strip()}")
             # Show branch info too
-            r2 = subprocess.run(["git", "branch", "--show-current"],
+            r2 = subprocess.run([_resolve_cmd("git"), "branch", "--show-current"],
                                 capture_output=True, text=True,
                                 cwd=PROJECT_ROOT, timeout=10)
             branch = r2.stdout.strip()
