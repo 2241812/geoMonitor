@@ -33,7 +33,11 @@ except ImportError:
     sys.exit(1)
 
 # ── Paths ──
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, "frozen", False):
+    EXE_DIR = os.path.dirname(sys.executable)
+    SCRIPT_DIR = os.path.dirname(EXE_DIR)
+else:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, ".."))
 DOT_ENV = os.path.join(PROJECT_ROOT, ".env")
 SLOPE_DIR = os.path.join(PROJECT_ROOT, "public", "geoJSON")
@@ -397,7 +401,7 @@ class UploadTool:
             self.conn_lbl.configure(text="✓ configured", foreground="green")
         else:
             self.conn_lbl.configure(
-                text="✗ missing SUPABASE_URL / SUPABASE_SERVICE_KEY in .env",
+                text="✗ copy .env.example → .env and fill in your Supabase keys",
                 foreground="red")
 
     def _test_conn(self) -> None:
