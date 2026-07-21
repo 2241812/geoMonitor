@@ -1,6 +1,7 @@
 import { APP } from './app.js';
 import { useMapStore } from '../store/useMapStore.js';
 import { fetchSlopeFromSupabase } from './supabase-geo.js';
+import { simplify } from '@turf/turf';
 import {
   extractOuterRings,
   buildClipPath,
@@ -11,50 +12,30 @@ import {
   ensurePane,
 } from './overlay-utils.js';
 
-/**
- * slope-manager.js
- *
- * Manages the slope overlay layer independently of hydro drill-down logic.
- * Strategy: fetch ALL basins ONCE on first toggle, keep the single layer
- * alive, and clip via CSS clip-path based on the current drill level.
- * No re-fetching on drill-in/out — instant transitions.
- */
-
 export const SLOPE_COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
 
-/* Module-level bound handlers — same references for on() and off(),
-   preventing listener leaks regardless of how toggle/destroy are called. */
-function _onMapMove() {
-  APP.slope.reapplyClip();
-}
+const LOD_ZOOM = 10;
+const SIMPLIFY_TOLERANCE = 0.001;
 
+function _onMapMove() { APP.slope.reapplyClip(); }
 function _onZoomStart() {
   const map = APP.state.map;
   if (!map || !APP.state.showSlope) return;
   const pane = map.getPane('slopePane');
-  if (pane) {
-    pane.style.willChange = 'transform';
-    pane.style.opacity = '0';
-  }
+  if (pane) { pane.style.willChange = 'transform'; pane.style.opacity = '0'; }
 }
-
 function _onZoomEnd() {
   const map = APP.state.map;
   if (!map || !APP.state.showSlope) return;
   const pane = map.getPane('slopePane');
-  if (pane) {
-    pane.style.opacity = '';
-    pane.style.willChange = '';
-  }
+  if (pane) { pane.style.opacity = ''; pane.style.willChange = ''; }
   APP.slope.reapplyClip();
 }
 
-/* No-op placeholder so bindOverlayEvents doesn't log "wrong listener type: undefined"
-   when we omit onZoomSwap (no LOD swap needed with single-layer strategy). */
-function _noop() {}
-
 APP.slope = {
   _layer: null,
+  _layerSimplified: null,
+  _layerFull: null,
   _rafId: null,
   _clipFeature: null,
   _toggling: false,
@@ -68,11 +49,26 @@ APP.slope = {
         const geojson = await fetchSlopeFromSupabase(code, (pct, msg) => {
           this._showLoadProgress(pct, msg);
         });
-        this._showLoadProgress(90, 'Adding to layer…');
+
+        this._showLoadProgress(60, 'Building simplified layer…');
         await new Promise(r => setTimeout(r, 0));
-        if (this._layer && this._layer.addData) {
-          this._layer.addData(geojson);
+        const simplifiedFeatures = [];
+        for (const f of geojson.features) {
+          try {
+            simplifiedFeatures.push(simplify(f, { tolerance: SIMPLIFY_TOLERANCE, highQuality: true }));
+          } catch (_) { simplifiedFeatures.push(f); }
         }
+        const simplifiedFC = { type: 'FeatureCollection', features: simplifiedFeatures };
+
+        this._showLoadProgress(85, 'Adding to layers…');
+        await new Promise(r => setTimeout(r, 0));
+        if (this._layerFull && this._layerFull.addData) {
+          this._layerFull.addData(geojson);
+        }
+        if (this._layerSimplified && this._layerSimplified.addData) {
+          this._layerSimplified.addData(simplifiedFC);
+        }
+
         this._showLoadProgress(100, 'Done');
         setTimeout(() => this._hideLoadProgress(), 600);
       } catch (e) {
@@ -100,11 +96,16 @@ APP.slope = {
           fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
           fillOpacity: 0.65, stroke: false, weight: 0,
         });
-        this._layer = L.geoJSON(null, {
-          style: styleFn,
-          interactive: false,
+        this._layerSimplified = L.geoJSON(null, {
+          style: styleFn, interactive: false,
           renderer: L.canvas({ pane: 'slopePane' }),
         });
+        this._layerFull = L.geoJSON(null, {
+          style: styleFn, interactive: false,
+          renderer: L.canvas({ pane: 'slopePane' }),
+        });
+        const z = map.getZoom();
+        this._layer = z < LOD_ZOOM ? this._layerSimplified : this._layerFull;
       }
 
       if (!this._layer) {
@@ -133,23 +134,19 @@ APP.slope = {
     }
   },
 
-  /**
-   * Build a single L.geoJSON layer from all-basins data.
-   * No LOD swapping, no duplicate — we clip with CSS instead.
-   */
-  _buildLayer(geojson) {
+  _onZoomSwap() {
     const map = APP.state.map;
-    this._ensurePane();
-    const styleFn = (f) => ({
-      fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
-      fillOpacity: 0.65, stroke: false, weight: 0,
-    });
-    this._layer = L.geoJSON(geojson, {
-      style: styleFn,
-      interactive: false,
-      renderer: L.canvas({ pane: 'slopePane' }),
-      onEachFeature: (f, l) => { l.options.pane = 'slopePane'; },
-    });
+    if (!map || !this._layerSimplified || !this._layerFull) return;
+    const z = map.getZoom();
+    const target = z < LOD_ZOOM ? this._layerSimplified : this._layerFull;
+    if (target === this._layer) return;
+    const wasActive = map.hasLayer(this._layer);
+    map.removeLayer(this._layer);
+    this._layer = target;
+    if (wasActive) {
+      map.addLayer(this._layer);
+      this.reapplyClip();
+    }
   },
 
   _showLoadProgress(pct, label) {
@@ -169,7 +166,7 @@ APP.slope = {
       onMapMove: _onMapMove,
       onZoomStart: _onZoomStart,
       onZoomEnd: _onZoomEnd,
-      onZoomSwap: _noop,
+      onZoomSwap: this._onZoomSwap,
     }, this);
   },
 
@@ -178,7 +175,7 @@ APP.slope = {
       onMapMove: _onMapMove,
       onZoomStart: _onZoomStart,
       onZoomEnd: _onZoomEnd,
-      onZoomSwap: _noop,
+      onZoomSwap: this._onZoomSwap,
     }, this);
   },
 
@@ -281,11 +278,14 @@ APP.slope = {
     const map = APP.state.map;
     if (map) {
       this._unbindMapEvents(map);
-      if (this._layer) map.removeLayer(this._layer);
+      if (this._layerSimplified) map.removeLayer(this._layerSimplified);
+      if (this._layerFull) map.removeLayer(this._layerFull);
       const pane = map.getPane('slopePane');
       if (pane && pane.parentNode) pane.parentNode.removeChild(pane);
     }
     this._layer = null;
+    this._layerSimplified = null;
+    this._layerFull = null;
     this._clipFeature = null;
     this._basinsLoaded = {};
     this.removeClip();
@@ -296,8 +296,12 @@ APP.slope = {
   },
 
   _setOpacity(val) {
-    if (!this._layer || !this._layer.eachLayer) return;
-    this._layer.eachLayer((l) => { if (l.setStyle) l.setStyle({ fillOpacity: val }); });
+    const apply = (layer) => {
+      if (!layer || !layer.eachLayer) return;
+      layer.eachLayer((l) => { if (l.setStyle) l.setStyle({ fillOpacity: val }); });
+    };
+    apply(this._layerSimplified);
+    apply(this._layerFull);
   },
 
   _setColorScheme(scheme) {
@@ -306,12 +310,16 @@ APP.slope = {
       : scheme === 'heat'
       ? { 1: '#2b83ba', 2: '#abdda4', 3: '#ffffbf', 4: '#fdae61', 5: '#d7191c' }
       : SLOPE_COLORS;
-    if (!this._layer || !this._layer.eachLayer) return;
-    this._layer.eachLayer((l) => {
-      const code = l.feature?.properties?.gridcode;
-      if (l.setStyle && code != null) {
-        l.setStyle({ fillColor: palette[code] || '#cccccc' });
-      }
-    });
+    const apply = (layer) => {
+      if (!layer || !layer.eachLayer) return;
+      layer.eachLayer((l) => {
+        const code = l.feature?.properties?.gridcode;
+        if (l.setStyle && code != null) {
+          l.setStyle({ fillColor: palette[code] || '#cccccc' });
+        }
+      });
+    };
+    apply(this._layerSimplified);
+    apply(this._layerFull);
   },
 };
