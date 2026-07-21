@@ -17,7 +17,15 @@ export const SLOPE_COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9
 const LOD_ZOOM = 10;
 const SIMPLIFY_TOLERANCE = 0.0005;
 
-function _onMapMove() { APP.slope.reapplyClip(); }
+let _movePending = false;
+function _onMapMove() {
+  if (_movePending) return;
+  _movePending = true;
+  requestAnimationFrame(() => {
+    _movePending = false;
+    APP.slope.reapplyClip();
+  });
+}
 function _onZoomStart() {
   const map = APP.state.map;
   if (!map || !APP.state.showSlope) return;
