@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+!scripts/dist/
 *.local
 
 # Environment variables
@@ -45,6 +46,10 @@ supabase/
 
 # OpenCode agent session state
 .omo/
+
+# PyInstaller intermediate build files
+scripts/build/
+scripts/*.spec
 
 # AI agent instructions
 AGENTS.md
