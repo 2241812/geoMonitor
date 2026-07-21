@@ -13,7 +13,6 @@ const BASIN_FEATURE_COUNTS = { ABR: 20366, ABU: 6220, AGN: 5000, AMB: 5875, ARI:
 
 let _cachedAllLCM = null;
 let _cachedBasinLCM = {};
-let _cachedAllSlope = null;
 let _cachedBasinSlope = {};
 
 function _cacheKey(basinCode, classes) {
@@ -222,71 +221,11 @@ export async function fetchSlopeFromSupabase(basinCode, onProgress) {
   return geojson;
 }
 
-export async function fetchAllSlopeFromSupabase(onProgress) {
-  const key = 'slope:ALL';
-  if (_cachedAllSlope && _cachedAllSlope._key === key) {
-    if (onProgress) onProgress(100, 'All basins slope loaded from cache');
-    return _cachedAllSlope;
-  }
-  const idbKey = _slopeIdbKey('ALL');
-  const cached = await cacheGet(idbKey);
-  if (cached) {
-    cached._key = key;
-    _cachedAllSlope = cached;
-    if (onProgress) onProgress(100, 'All basins slope loaded from cache');
-    return cached;
-  }
-  if (onProgress) onProgress(0, 'Fetching slope for all basins…');
-
-  let allFeatures = [];
-  let doneCount = 0;
-
-  for (let i = 0; i < BASIN_CODES.length; i += CONCURRENCY) {
-    const chunk = BASIN_CODES.slice(i, i + CONCURRENCY);
-    const results = await Promise.allSettled(
-      chunk.map(async (code) => {
-        const supabase = getClient();
-        const { data, error } = await supabase
-          .from('slope')
-          .select('gridcode, geom')
-          .eq('basin_code', code);
-        if (error) throw error;
-        return { code, data: data || [] };
-      })
-    );
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        const { code, data } = result.value;
-        for (const row of data) {
-          allFeatures.push({ type: 'Feature', properties: { gridcode: row.gridcode }, geometry: row.geom });
-        }
-        doneCount++;
-        if (onProgress) {
-          const pct = Math.round((doneCount / BASIN_CODES.length) * 90);
-          onProgress(pct, `Fetched ${code} (${data.length} features) [${doneCount}/${BASIN_CODES.length}]`);
-        }
-      } else {
-        if (import.meta.env.DEV) console.warn('Slope fetch failed:', result.reason?.message);
-        doneCount++;
-      }
-    }
-  }
-
-  if (allFeatures.length === 0) throw new Error('No slope data found in Supabase');
-  if (onProgress) onProgress(95, `Rebuilding GeoJSON (${allFeatures.length} features)…`);
-  const result = { type: 'FeatureCollection', features: allFeatures };
-  result._key = key;
-  _cachedAllSlope = result;
-  cacheSet(idbKey, result);
-  return result;
-}
-
 export function invalidateSlopeCache(basinCode) {
   if (basinCode) {
     delete _cachedBasinSlope[_slopeCacheKey(basinCode)];
     cacheDelete(_slopeIdbKey(basinCode));
   } else {
-    _cachedAllSlope = null;
     _cachedBasinSlope = {};
     cacheDelete(_slopeIdbKey('ALL'));
   }
