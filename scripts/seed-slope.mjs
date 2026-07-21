@@ -1,19 +1,13 @@
 /**
  * seed-slope.mjs
  *
- * Reads all public/geoJSON/Slope/*_Slope.geojson files and inserts their
- * features into the Supabase `slope` table.
+ * Reads all public/geoJSON/*_Slope.geojson files and inserts their
+ * features into the Supabase `slope` table using a direct PG connection.
  *
  * Usage:
  *   node scripts/seed-slope.mjs
- *
- * Env vars (or .env):
- *   SUPABASE_URL
- *   SUPABASE_SERVICE_KEY
- *
- * The script clears existing slope data first, then bulk-inserts.
  */
-import { createClient } from '@supabase/supabase-js';
+import pg from 'pg';
 import { readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -23,37 +17,37 @@ config();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const SLOPE_DIR = join(ROOT, 'public', 'geoJSON', 'Slope');
+const SLOPE_DIR = join(ROOT, 'public', 'geoJSON');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const client = new pg.Client({
+  host: 'aws-1-ap-southeast-2.pooler.supabase.com',
+  port: 6543,
+  database: 'postgres',
+  user: 'postgres.micsfokodqqqgwtlctca',
+  password: 'denrCAR2026',
+  ssl: { rejectUnauthorized: false },
+});
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.error('Set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env or env');
-  process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const BATCH_SIZE = 1; // 1 at a time — geometries are huge
-const DECIMALS = 4; // ~11m accuracy, reduces 19MB → ~2MB per feature
+const DECIMALS = 4; // ~11m accuracy
+const BATCH = 1; // 1 at a time — geometries are huge
 
 /** Round all coordinates in a geometry to N decimal places */
 function roundCoords(geometry, decimals) {
   const f = Math.pow(10, decimals);
   function roundRing(ring) { return ring.map(c => [Math.round(c[0] * f) / f, Math.round(c[1] * f) / f]); }
-  if (geometry.type === 'Polygon') {
-    return { ...geometry, coordinates: geometry.coordinates.map(roundRing) };
-  }
-  if (geometry.type === 'MultiPolygon') {
-    return { ...geometry, coordinates: geometry.coordinates.map(poly => poly.map(roundRing)) };
-  }
+  if (geometry.type === 'Polygon') return { ...geometry, coordinates: geometry.coordinates.map(roundRing) };
+  if (geometry.type === 'MultiPolygon') return { ...geometry, coordinates: geometry.coordinates.map(poly => poly.map(roundRing)) };
   return geometry;
 }
 
 async function main() {
+  await client.connect();
+  // Give Postgres up to 10 minutes per statement for huge slope geometries
+  await client.query('SET statement_timeout = 600000');
+
+  // --- Clear existing data ---
   console.log('Clearing existing slope data...');
-  const { error: delErr } = await supabase.from('slope').delete().neq('id', 0);
-  if (delErr) { console.error('Delete failed:', delErr.message); process.exit(1); }
+  await client.query('DELETE FROM slope');
   console.log('  Cleared');
 
   const files = readdirSync(SLOPE_DIR).filter(f => f.endsWith('_Slope.geojson')).sort();
@@ -69,17 +63,23 @@ async function main() {
 
     console.log(`  ${basinCode}: ${features.length} features`);
 
-    const rows = features.map(f => ({
-      basin_code: basinCode,
-      gridcode: f.properties.gridcode,
-      geom: roundCoords(f.geometry, DECIMALS),
-    }));
+    for (let i = 0; i < features.length; i += BATCH) {
+      const batch = features.slice(i, i + BATCH);
+      const values = [];
+      const params = [];
+      let paramIdx = 1;
 
-    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-      const batch = rows.slice(i, i + BATCH_SIZE);
-      const { error } = await supabase.from('slope').insert(batch).select('id');
-      if (error) {
-        console.error(`  ERROR ${basinCode} batch ${Math.floor(i / BATCH_SIZE)}: ${error.message}`);
+      for (const feat of batch) {
+        const geom = roundCoords(feat.geometry, DECIMALS);
+        values.push(`($${paramIdx++}, $${paramIdx++}, $${paramIdx++})`);
+        params.push(basinCode, feat.properties.gridcode, JSON.stringify(geom));
+      }
+
+      const sql = `INSERT INTO slope (basin_code, gridcode, geom) VALUES ${values.join(',')}`;
+      try {
+        await client.query(sql, params);
+      } catch (err) {
+        console.error(`  ERROR ${basinCode} batch ${Math.floor(i / BATCH)}: ${err.message}`);
         process.exit(1);
       }
     }
@@ -87,10 +87,11 @@ async function main() {
     totalFeatures += features.length;
   }
 
-  console.log(`\nDone. Inserted ${totalFeatures} slope features across ${files.length} basins.`);
-
-  const { count } = await supabase.from('slope').select('*', { count: 'exact', head: true });
+  const { rows: [{ count }] } = await client.query('SELECT count(*) FROM slope');
+  console.log(`\nDone. Inserted ${totalFeatures} slope features.`);
   console.log(`Verification: ${count} rows in slope table`);
+
+  await client.end();
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch(err => { console.error('Fatal:', err); process.exit(1); });

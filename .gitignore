@@ -20,6 +20,7 @@ gis-drop/
 
 # Per-basin slope GeoJSON (large files, deployed via Vercel CLI directly)
 public/geoJSON/Watersheds/*_Slope.geojson
+public/geoJSON/*_Slope.geojson
 
 # Deploy GUI temp uploads
 geoJSONUpdater/uploads/
