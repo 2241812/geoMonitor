@@ -106,7 +106,7 @@ function runProc(cmd, args, opts = {}) {
 
     const progressTracker = opts.trackProgress;
 
-    /* Pre-count dist/ files for reliable progress tracking */
+    /* Pre-count files for reliable progress tracking */
     if (progressTracker) {
       const distDir = path.join(PROJECT_ROOT, 'dist');
       if (fs.existsSync(distDir)) {
@@ -128,8 +128,8 @@ function runProc(cmd, args, opts = {}) {
       allOut += text;
 
       if (progressTracker) {
-        /* Also try "Scanning N files" for a more precise count */
-        const scanMatch = text.match(/Scanning\s+(\d+)\s+files/);
+        /* Try "Scanning N files" or "Scanning N geoJSON files" for precise count */
+        const scanMatch = text.match(/Scanning\s+(\d+)\s+(geoJSON\s+)?files/);
         if (scanMatch) deployProgress.total = parseInt(scanMatch[1], 10);
 
         /* Count upload completions — only match ✓ lines that contain a file path (has / or \) */
@@ -221,10 +221,12 @@ async function doDeploy() {
 
     /* Step 2: FTP Upload with progress */
     deployProgress.phase = 'uploading';
-    emitProgress(0, 'Uploading to FTP...');
-    emit('info', '[2/2] Uploading via FTP...');
+    emitProgress(0, 'Uploading app to FTP...');
+    emit('info', '[2/2] Uploading app via FTP...');
 
     await runProc('node', [`"${DEPLOY_SCRIPT}"`, '--skip-build'], { trackProgress: true });
+    emit('ok', 'App upload complete.');
+
     deployProgress.phase = 'done';
     deployProgress.current = deployProgress.total;
     emitProgress(100, 'Deploy complete');
@@ -239,6 +241,8 @@ async function doDeploy() {
     return { success: false, error: err.message };
   }
 }
+
+/* doPushGeoJSON removed — slope and LCM are now served from Supabase */
 
 function doCancel() {
   if (currentProc) {
@@ -289,6 +293,8 @@ async function handler(req, res) {
       running: currentProc !== null,
       files: global.fileList || [],
       progress: deployProgress,
+      /* Include geoJSON file count for the GUI */
+      geoJSONCount: global.geoJSONCount || 0,
     });
   }
 

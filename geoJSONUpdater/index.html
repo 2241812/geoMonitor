@@ -158,7 +158,7 @@
   .file-item .relocate-row .btn-relocate:disabled{opacity:.4;cursor:not-allowed}
   .file-item .relocate-row .relocate-ok{color:var(--green);font-size:10px}
 
-  /* ── Deploy button ── */
+  /* ── Deploy buttons ── */
   .deploy-area{
     display:flex;flex-direction:column;gap:8px;align-items:stretch;
   }
@@ -173,7 +173,7 @@
   .btn-deploy.running{background:#5f1a1a;border-color:var(--red)}
   .btn-deploy.running:hover:not(:disabled){background:#7a2121}
 
-  /* ── Progress bar ── */
+    /* ── Progress bar ── */
   .progress-wrap{
     width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;
     opacity:0;transition:opacity .3s;
@@ -374,6 +374,7 @@ function updateStatus(s) {
     /* Only show if a deploy just completed (not on initial load) */
     if (window._deployJustRan) {
       banner.classList.add('show');
+      banner.querySelector('.text').textContent = 'Deploy complete! You can now close this tab or click Exit to stop the server.';
       window._deployJustRan = false;
     }
   }
@@ -388,7 +389,7 @@ function updateStatus(s) {
       wrap.classList.add('active');
       if (p.phase === 'done') {
         bar.style.width = '100%';
-        label.textContent = 'Deploy complete!';
+        label.textContent = 'Complete!';
         /* Show the choice popup when deploy finishes */
         if (window._deployJustRan) {
           setTimeout(function() { showDeployDonePopup(); }, 300);
@@ -401,8 +402,8 @@ function updateStatus(s) {
         const pct = p.total > 0 ? Math.min(Math.round((p.current / p.total) * 100), 100) : 0;
         bar.style.width = pct + '%';
         label.textContent = p.total > 0
-          ? `Uploading ${p.current}/${p.total} files (${pct}%)`
-          : 'Uploading...';
+          ? `Uploading app ${p.current}/${p.total} files (${pct}%)`
+          : 'Uploading app...';
       }
     } else {
       wrap.classList.remove('active');
@@ -552,10 +553,6 @@ async function doDeploy() {
     await fetch('/api/deploy', { method: 'POST' });
   } catch {}
   await pollStatus();
-  btn.disabled = false;
-  btn.className = 'btn-deploy';
-  btn.innerHTML = '&#9654; Deploy to FTP';
-  btn.onclick = () => doDeploy();
 }
 
 async function doCancel() {
