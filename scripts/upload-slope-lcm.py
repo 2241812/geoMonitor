@@ -26,6 +26,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from typing import Any, Callable
 from ftplib import FTP
+from tkinterdnd2 import TkinterDnD, DND_FILES
 
 try:
     import requests
@@ -388,7 +389,7 @@ def build_and_deploy(log_cb: Callable) -> None:
 class DeployTool:
     def __init__(self) -> None:
         load_env(DOT_ENV)
-        self.root = tk.Tk()
+        self.root = TkinterDnD.Tk()
         self.root.title("geoMonitor — Update & Deploy")
         self.root.geometry("860x720")
         self.root.resizable(True, True)
@@ -426,14 +427,17 @@ class DeployTool:
         dzi = ttk.Frame(dz)
         dzi.pack(pady=6)
         ttk.Label(dzi,
-                  text="📂 Click Browse to select files (any type)\n"
+                  text="📂 Drag & drop files here or click Browse\n"
                        "Auto-routes slope → Supabase, everything else → local",
                   justify=tk.CENTER, font=("Segoe UI", 11)).pack()
         ttk.Label(dzi,
-                  text="*_Slope.geojson · *_LCM2025.geojson · *.topojson · *.json · etc.",
+                  text="*_Slope.geojson · *_LCM2025.geojson · *.topojson · *.json · .env · etc.",
                   foreground="#666", font=("Segoe UI", 9)).pack(pady=(2, 0))
         ttk.Button(dzi, text="Browse for Files…",
                    command=self._browse).pack(pady=(6, 0))
+        # Enable drag-drop on the whole window
+        self.root.drop_target_register(DND_FILES)
+        self.root.dnd_bind("<<Drop>>", self._on_drop)
 
         # Row 2: File list
         lf = ttk.LabelFrame(main, text="Files", padding=4)
@@ -505,6 +509,37 @@ class DeployTool:
         self.root.bind("<Control-l>", lambda _: self._clear_log())
 
     # ──────── File management ────────
+
+    def _on_drop(self, event: tk.Event) -> None:
+        raw = event.data
+        if not raw:
+            return
+        # tkinterdnd2 returns paths as: {C:\path\to\a} C:\path\to\b C:\path with spaces\to\c
+        # Parse by splitting on spaces while respecting {...} groups
+        paths = []
+        buf = ""
+        in_brace = False
+        for ch in raw:
+            if ch == "{":
+                in_brace = True
+                buf = ""
+            elif ch == "}":
+                in_brace = False
+                if buf:
+                    paths.append(buf)
+                    buf = ""
+            elif ch == " " and not in_brace:
+                if buf:
+                    paths.append(buf)
+                    buf = ""
+            else:
+                buf += ch
+        if buf:
+            paths.append(buf)
+        for p in paths:
+            p = p.strip()
+            if p:
+                self._add(p)
 
     def _browse(self) -> None:
         paths = filedialog.askopenfilenames(
