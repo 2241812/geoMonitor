@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """
-upload-slope-lcm.py — Drag-and-drop GeoJSON uploader for slope / land cover (LCM).
+Deploy Tool — Updates local GeoJSON files, uploads slope/LCM to Supabase,
+then builds and deploys to FTP.
 
-Drop or select GeoJSON files — the tool auto-detects dataset type and basin
-code from the filename pattern:
-  *_Slope.geojson     → slope table, basin = prefix
-  *_LCM2025.geojson   → lcm table,   basin = prefix
-
-Connects via SUPABASE_URL + SUPABASE_SERVICE_KEY from the project .env file.
+Drop any file — the tool auto-detects the destination:
+  *_Slope.geojson     → public/geoJSON/ + Supabase slope table
+  *_LCM2025.geojson   → public/geoJSON/LCM/ + Supabase lcm table
+  Everything else     → matched by filename under public/geoJSON/
 
 Usage:
-  pip install requests
-  python scripts/upload-slope-lcm.py
+  Double-click the .exe or run:  python scripts/upload-slope-lcm.py
 """
 
 from __future__ import annotations
@@ -20,11 +18,14 @@ import json
 import math
 import os
 import re
+import shutil
+import subprocess
 import sys
 import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from typing import Any, Callable
+from ftplib import FTP
 
 try:
     import requests
@@ -38,22 +39,28 @@ if getattr(sys, "frozen", False):
 else:
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     PROJECT_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, ".."))
-DOT_ENV = os.path.join(PROJECT_ROOT, ".env")
-SLOPE_DIR = os.path.join(PROJECT_ROOT, "public", "geoJSON")
-LCM_DIR = os.path.join(SLOPE_DIR, "LCM")
 
+DOT_ENV = os.path.join(PROJECT_ROOT, ".env")
+GEOJSON_ROOT = os.path.join(PROJECT_ROOT, "public", "geoJSON")
+LCM_DIR = os.path.join(GEOJSON_ROOT, "LCM")
+DIST_DIR = os.path.join(PROJECT_ROOT, "dist")
+
+# ── Credentials (loaded from .env) ──
 SUPABASE_URL: str | None = None
 SUPABASE_SERVICE_KEY: str | None = None
-
+FTP_HOST: str | None = None
+FTP_USER: str | None = None
+FTP_PASS: str | None = None
+FTP_REMOTE_DIR: str | None = None
 
 # ─────────────────────────────────────────────
-#  .env
+#  .env loader
 # ─────────────────────────────────────────────
-def load_env() -> None:
-    global SUPABASE_URL, SUPABASE_SERVICE_KEY
-    if not os.path.isfile(DOT_ENV):
+def load_env(path: str) -> None:
+    global SUPABASE_URL, SUPABASE_SERVICE_KEY, FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR
+    if not os.path.isfile(path):
         return
-    with open(DOT_ENV, encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
@@ -65,29 +72,79 @@ def load_env() -> None:
                 SUPABASE_URL = v
             elif k == "SUPABASE_SERVICE_KEY":
                 SUPABASE_SERVICE_KEY = v
+            elif k == "FTP_HOST":
+                FTP_HOST = v
+            elif k == "FTP_USER":
+                FTP_USER = v
+            elif k == "FTP_PASS":
+                FTP_PASS = v
+            elif k == "FTP_REMOTE_DIR":
+                FTP_REMOTE_DIR = v
 
 
 # ─────────────────────────────────────────────
-#  Filename → dataset + basin
+#  File routing
 # ─────────────────────────────────────────────
 RE_SLOPE = re.compile(r"^(.+?)_Slope\.geojson$", re.IGNORECASE)
 RE_LCM   = re.compile(r"^(.+?)_LCM2025\.geojson$", re.IGNORECASE)
 
 
-def classify_file(filename: str) -> tuple[str, str] | None:
-    """Return (table, basin_code) or None if filename doesn't match."""
+def classify_file(filename: str) -> dict:
+    """Return a routing dict for the given filename."""
     basename = os.path.basename(filename)
+    ext = os.path.splitext(basename)[1].lower()
+
+    result = {
+        "basename": basename,
+        "ext": ext,
+        "action": "update local",      # default
+        "supabase_table": None,
+        "basin_code": None,
+        "dest_dir": GEOJSON_ROOT,
+    }
+
+    # Slope
     m = RE_SLOPE.match(basename)
     if m:
-        return ("slope", m.group(1))
+        result["supabase_table"] = "slope"
+        result["basin_code"] = m.group(1)
+        result["dest_dir"] = GEOJSON_ROOT
+        result["action"] = "update local + Supabase slope"
+        return result
+
+    # LCM
     m = RE_LCM.match(basename)
     if m:
-        return ("lcm", m.group(1))
+        result["supabase_table"] = "lcm"
+        result["basin_code"] = m.group(1)
+        result["dest_dir"] = LCM_DIR
+        result["action"] = "update local + Supabase lcm"
+        return result
+
+    # Everything else → find matching file in geoJSON tree
+    match = _find_existing(basename)
+    if match:
+        result["dest_dir"] = os.path.dirname(match)
+        result["action"] = f"update local (matches {os.path.relpath(match, GEOJSON_ROOT)})"
+    else:
+        result["dest_dir"] = GEOJSON_ROOT
+        result["action"] = "update local (new file)"
+    return result
+
+
+def _find_existing(basename: str) -> str | None:
+    """Walk public/geoJSON/ and return the path of the first file matching basename."""
+    if not os.path.isdir(GEOJSON_ROOT):
+        return None
+    for root, _dirs, files in os.walk(GEOJSON_ROOT):
+        for f in files:
+            if f.lower() == basename.lower():
+                return os.path.join(root, f)
     return None
 
 
 # ─────────────────────────────────────────────
-#  Douglas-Peucker simplification  (pure Python)
+#  Douglas-Peucker  (pure Python)
 # ─────────────────────────────────────────────
 def _perp_dist(px: float, py: float, sx: float, sy: float,
                ex: float, ey: float) -> float:
@@ -128,7 +185,6 @@ def simplify_geometry(geom: dict[str, Any], tol: float) -> dict[str, Any]:
 
 
 def round_coords(geom: dict[str, Any], decimals: int = 4) -> dict[str, Any]:
-    """Round all coordinates to *decimals* places (matching seed-*.mjs)."""
     f = 10 ** decimals
     def _rr(ring: list[list[float]]) -> list[list[float]]:
         return [[round(c[0] * f) / f, round(c[1] * f) / f] for c in ring]
@@ -141,9 +197,9 @@ def round_coords(geom: dict[str, Any], decimals: int = 4) -> dict[str, Any]:
 
 
 # ─────────────────────────────────────────────
-#  Supabase REST
+#  Supabase REST helpers
 # ─────────────────────────────────────────────
-def _headers() -> dict[str, str]:
+def _supa_headers() -> dict[str, str]:
     return {
         "apikey": SUPABASE_SERVICE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
@@ -152,94 +208,176 @@ def _headers() -> dict[str, str]:
     }
 
 
-def delete_basin(table: str, basin: str) -> list[str]:
-    log: list[str] = []
+def supa_delete(table: str, basin: str) -> list[str]:
+    msg: list[str] = []
     url = f"{SUPABASE_URL}/rest/v1/{table}?basin_code=eq.{basin}"
     try:
-        r = requests.delete(url, headers=_headers())
+        r = requests.delete(url, headers=_supa_headers())
         if r.status_code in (200, 204):
-            log.append(f"  ✓ Cleared existing {table} data for {basin}")
+            msg.append(f"  ✓ Cleared {basin} from {table}")
         else:
-            log.append(f"  ⚠ DELETE returned {r.status_code} (may be OK)")
-        return log
+            msg.append(f"  ⚠ DELETE {r.status_code}")
+        return msg
     except Exception as e:
         return [f"  ❌ DELETE error: {e}"]
 
 
-def insert_batch(table: str, rows: list[dict],
-                 batch_size: int,
-                 on_progress: Callable) -> list[str]:
-    log: list[str] = []
+def supa_insert(table: str, rows: list[dict],
+                batch_size: int, on_prog: Callable) -> list[str]:
+    msg: list[str] = []
     url = f"{SUPABASE_URL}/rest/v1/{table}"
     total = len(rows)
     skipped_geom = False
-    current_batch_size = batch_size
+    cur_bs = batch_size
     i = 0
     while i < total:
-        batch = rows[i:i + current_batch_size]
+        batch = rows[i:i + cur_bs]
         if skipped_geom:
-            for row in batch:
-                row.pop("geom_simplified", None)
+            for r in batch:
+                r.pop("geom_simplified", None)
         try:
-            r = requests.post(url, headers=_headers(), json=batch)
+            r = requests.post(url, headers=_supa_headers(), json=batch)
             ok = r.status_code in (200, 201, 204)
             if not ok and r.status_code == 409:
-                log.append(f"  ⚠ Batch conflict, skipping")
                 i += len(batch)
                 continue
             if not ok:
                 body = r.text[:300]
-                # PGRST204 = column not in schema cache → geom_simplified missing
                 if "geom_simplified" in body and not skipped_geom:
-                    log.append(f"  ⚠ geom_simplified column missing — "
-                               f"stripping and retrying")
                     skipped_geom = True
-                    for row in batch:
-                        row.pop("geom_simplified", None)
-                    r2 = requests.post(url, headers=_headers(), json=batch)
+                    for r2 in batch:
+                        r2.pop("geom_simplified", None)
+                    r2 = requests.post(url, headers=_supa_headers(), json=batch)
                     if r2.status_code in (200, 201, 204):
-                        log.append(f"  ✓ Batch ({len(batch)} rows, "
-                                   f"no geom_simplified)")
-                        log.append(f"  ℹ Add column later: ALTER TABLE {table} "
-                                   f"ADD COLUMN geom_simplified jsonb;")
+                        msg.append(f"  ✓ ({len(batch)} rows, no geom_simplified)")
                         i += len(batch)
-                        on_progress(min(i, total), total)
+                        on_prog(min(i, total), total)
                         continue
-                # 5xx = server error (520, 503 etc), likely oversized payload
-                if r.status_code >= 500 and current_batch_size > 1:
-                    smaller = max(1, current_batch_size // 2)
-                    log.append(f"  ⚠ Server error ({r.status_code}), "
-                               f"halving batch size: {current_batch_size}→{smaller}")
-                    current_batch_size = smaller
-                    continue  # retry same batch with smaller size
-                log.append(f"  ❌ INSERT ({r.status_code}): {body}")
-                return log
-            n = len(batch)
-            log.append(f"  ✓ Batch ({n} rows)")
+                if r.status_code >= 500 and cur_bs > 1:
+                    cur_bs = max(1, cur_bs // 2)
+                    msg.append(f"  ⚠ Halving batch: {cur_bs * 2}→{cur_bs}")
+                    continue
+                msg.append(f"  ❌ INSERT ({r.status_code}): {body[:150]}")
+                return msg
+            msg.append(f"  ✓ Batch ({len(batch)} rows)")
         except Exception as e:
-            log.append(f"  ❌ INSERT error: {e}")
-            return log
+            msg.append(f"  ❌ INSERT error: {e}")
+            return msg
         i += len(batch)
-        on_progress(min(i, total), total)
-    return log
+        on_prog(min(i, total), total)
+    return msg
+
+
+# ─────────────────────────────────────────────
+#  FTP deploy
+# ─────────────────────────────────────────────
+def build_project() -> list[str]:
+    msg: list[str] = []
+    msg.append("  git pull…")
+    try:
+        r = subprocess.run(["git", "pull"], capture_output=True, text=True,
+                           cwd=PROJECT_ROOT, timeout=120)
+        msg.append(f"    {r.stdout.strip() or 'done'}")
+        if r.returncode != 0:
+            msg.append(f"    ⚠ {r.stderr.strip()}")
+    except Exception as e:
+        return [f"  ❌ git pull failed: {e}"]
+
+    msg.append("  npm run build…")
+    try:
+        r = subprocess.run(["npm", "run", "build"], capture_output=True, text=True,
+                           cwd=PROJECT_ROOT, timeout=300)
+        for line in r.stdout.splitlines():
+            if "error" in line.lower() or "failed" in line.lower():
+                msg.append(f"    {line.strip()}")
+        if r.returncode != 0:
+            msg.append(f"    ⚠ {r.stderr.strip()}")
+            return msg + ["  ❌ Build failed"]
+        msg.append("  ✓ Build complete")
+    except Exception as e:
+        return [f"  ❌ Build failed: {e}"]
+    return msg
+
+
+def ftp_upload() -> list[str]:
+    msg: list[str] = []
+    if not all([FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR]):
+        return ["  ❌ Set FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR in .env"]
+
+    if not os.path.isdir(DIST_DIR):
+        return [f"  ❌ dist/ not found at {DIST_DIR}"]
+
+    msg.append(f"  Connecting to {FTP_HOST}…")
+    try:
+        ftp = FTP(FTP_HOST, timeout=30)
+        ftp.login(FTP_USER, FTP_PASS)
+        msg.append("  ✓ Logged in")
+    except Exception as e:
+        return [f"  ❌ FTP connect failed: {e}"]
+
+    try:
+        ftp.cwd(FTP_REMOTE_DIR)
+    except Exception:
+        try:
+            ftp.mkd(FTP_REMOTE_DIR)
+            ftp.cwd(FTP_REMOTE_DIR)
+        except Exception as e:
+            ftp.quit()
+            return [f"  ❌ Cannot cd/mkdir {FTP_REMOTE_DIR}: {e}"]
+
+    uploaded = 0
+    for root, _dirs, files in os.walk(DIST_DIR):
+        for f in files:
+            local = os.path.join(root, f)
+            rel = os.path.relpath(local, DIST_DIR)
+            # create subdirs on FTP
+            rdir = os.path.dirname(rel).replace("\\", "/")
+            if rdir and rdir != ".":
+                try:
+                    ftp.cwd(rdir)
+                except Exception:
+                    for part in rdir.split("/"):
+                        try:
+                            ftp.cwd(part)
+                        except Exception:
+                            ftp.mkd(part)
+                            ftp.cwd(part)
+                    ftp.cwd(FTP_REMOTE_DIR)
+            try:
+                with open(local, "rb") as fh:
+                    ftp.storbinary(f"STOR {os.path.basename(rel)}", fh)
+                uploaded += 1
+            except Exception as e:
+                msg.append(f"  ⚠ Failed to upload {rel}: {e}")
+            if rdir and rdir != ".":
+                ftp.cwd(FTP_REMOTE_DIR)
+
+    ftp.quit()
+    msg.append(f"  ✓ Uploaded {uploaded} files to {FTP_REMOTE_DIR}")
+    return msg
+
+
+def build_and_deploy(log_cb: Callable) -> None:
+    log_cb("═══ Build & Deploy ═══")
+    for m in build_project():
+        log_cb(m)
+    for m in ftp_upload():
+        log_cb(m)
+    log_cb("═══ Done ═══\n")
 
 
 # ─────────────────────────────────────────────
 #  GUI
 # ─────────────────────────────────────────────
-class UploadTool:
+class DeployTool:
     def __init__(self) -> None:
-        load_env()
+        load_env(DOT_ENV)
         self.root = tk.Tk()
-        self.root.title("Slope / LCM Upload — Supabase")
-        self.root.geometry("820x680")
+        self.root.title("geoMonitor — Update & Deploy")
+        self.root.geometry("860x720")
         self.root.resizable(True, True)
 
-        # colour scheme
-        self.root.tk_setPalette(background="#f5f5f5",
-                                foreground="#1a1a1a")
-
-        self.files: list[dict] = []            # {path, table, basin, status}
+        self.files: list[dict] = []   # {path, basename, route, status}
         self.tol = tk.DoubleVar(value=0.0005)
         self.batch = tk.IntVar(value=5)
 
@@ -252,83 +390,84 @@ class UploadTool:
         main = ttk.Frame(self.root, padding=14)
         main.pack(fill=tk.BOTH, expand=True)
 
-        # ---- Row 0: connection ----
+        # Row 0: Status bar
         top = ttk.Frame(main)
         top.pack(fill=tk.X, pady=(0, 8))
         ttk.Label(top, text="Supabase:").pack(side=tk.LEFT)
         self.conn_lbl = ttk.Label(top, text="⏳", foreground="gray")
         self.conn_lbl.pack(side=tk.LEFT, padx=6)
-        ttk.Button(top, text="Test", command=self._test_conn,
-                   width=8).pack(side=tk.RIGHT)
+        ttk.Label(top, text="  FTP:").pack(side=tk.LEFT)
+        self.ftp_lbl = ttk.Label(top, text="⏳", foreground="gray")
+        self.ftp_lbl.pack(side=tk.LEFT, padx=2)
+        ttk.Button(top, text="Test", command=self._test_all,
+                   width=7).pack(side=tk.RIGHT)
 
-        # ---- Row 1: file picker zone ----
-        dz = tk.LabelFrame(main, text="Select GeoJSON Files",
+        # Row 1: Drop zone
+        dz = tk.LabelFrame(main, text="Drop Files Here",
                            padx=10, pady=10,
                            bg="#e8f0fe", relief=tk.GROOVE, bd=2)
-        dz.pack(fill=tk.X, pady=(0, 8))
-        dz_inner = ttk.Frame(dz)
-        dz_inner.pack(pady=6)
-        ttk.Label(dz_inner,
-                  text="📂 Click Browse to select GeoJSON files\n"
-                       "(Shift+click or Ctrl+click for multiple)",
-                  justify=tk.CENTER,
-                  font=("Segoe UI", 11)).pack()
-        ttk.Label(dz_inner,
-                  text='Expected:  ABR_Slope.geojson  ·  ABR_LCM2025.geojson  ·  ..._LCM2025.geojson',
-                  foreground="#666",
-                  font=("Segoe UI", 9)).pack(pady=(4, 0))
-        ttk.Button(dz_inner, text="Browse for GeoJSON Files…",
+        dz.pack(fill=tk.X, pady=(0, 6))
+        dzi = ttk.Frame(dz)
+        dzi.pack(pady=6)
+        ttk.Label(dzi,
+                  text="📂 Click Browse to select files (any type)\n"
+                       "Auto-routes slope → Supabase, everything else → local",
+                  justify=tk.CENTER, font=("Segoe UI", 11)).pack()
+        ttk.Label(dzi,
+                  text="*_Slope.geojson · *_LCM2025.geojson · *.topojson · *.json · etc.",
+                  foreground="#666", font=("Segoe UI", 9)).pack(pady=(2, 0))
+        ttk.Button(dzi, text="Browse for Files…",
                    command=self._browse).pack(pady=(6, 0))
 
-        # ---- Row 2: file list ----
-        list_frame = ttk.LabelFrame(main, text="Files to Upload", padding=4)
-        list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
-        cols = ("#", "File", "Dataset", "Basin", "Status")
-        self.tree = ttk.Treeview(list_frame, columns=cols, show="headings",
+        # Row 2: File list
+        lf = ttk.LabelFrame(main, text="Files", padding=4)
+        lf.pack(fill=tk.BOTH, expand=True, pady=(0, 6))
+        cols = ("#", "File", "Action", "Status")
+        self.tree = ttk.Treeview(lf, columns=cols, show="headings",
                                  height=6, selectmode="extended")
-        for c in cols:
-            self.tree.heading(c, text=c)
-            self.tree.column(c, width=60, anchor=tk.CENTER)
-        self.tree.column("#", width=30)
-        self.tree.column("File", width=250, anchor=tk.W)
-        self.tree.column("Dataset", width=70)
-        self.tree.column("Basin", width=60)
-        self.tree.column("Status", width=120)
-        scroll = ttk.Scrollbar(list_frame, orient=tk.VERTICAL,
-                               command=self.tree.yview)
+        self.tree.heading("#", text="#")
+        self.tree.heading("File", text="File")
+        self.tree.heading("Action", text="Action")
+        self.tree.heading("Status", text="Status")
+        self.tree.column("#", width=30, anchor=tk.CENTER)
+        self.tree.column("File", width=260, anchor=tk.W)
+        self.tree.column("Action", width=240, anchor=tk.W)
+        self.tree.column("Status", width=100, anchor=tk.CENTER)
+        scroll = ttk.Scrollbar(lf, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scroll.set)
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # file-list action buttons
-        fl_actions = ttk.Frame(main)
-        fl_actions.pack(fill=tk.X, pady=(0, 6))
-        ttk.Button(fl_actions, text="Remove Selected",
-                   command=self._remove_selected).pack(side=tk.LEFT)
-        ttk.Button(fl_actions, text="Clear All",
+        fa = ttk.Frame(main)
+        fa.pack(fill=tk.X, pady=(0, 4))
+        ttk.Button(fa, text="Remove Selected",
+                   command=self._remove_sel).pack(side=tk.LEFT)
+        ttk.Button(fa, text="Clear All",
                    command=self._clear_files).pack(side=tk.LEFT, padx=6)
-        self.file_count_lbl = ttk.Label(fl_actions, text="0 files",
-                                        foreground="#555")
-        self.file_count_lbl.pack(side=tk.RIGHT)
+        self.fcount = ttk.Label(fa, text="0 files", foreground="#555")
+        self.fcount.pack(side=tk.RIGHT)
 
-        # ---- Row 3: options ----
+        # Row 3: Options
         opts = ttk.LabelFrame(main, text="Options", padding=8)
         opts.pack(fill=tk.X, pady=(0, 6))
-        ttk.Label(opts, text="Simplify tolerance:").pack(side=tk.LEFT)
+        ttk.Label(opts, text="Simplify tol:").pack(side=tk.LEFT)
         ttk.Spinbox(opts, from_=0.0001, to=0.01, increment=0.0001,
                     textvariable=self.tol, width=8).pack(side=tk.LEFT, padx=4)
-        ttk.Label(opts, text="Batch size:").pack(side=tk.LEFT, padx=(20, 0))
+        ttk.Label(opts, text="Batch:").pack(side=tk.LEFT, padx=(16, 0))
         ttk.Spinbox(opts, from_=1, to=50, increment=1,
                     textvariable=self.batch, width=5).pack(side=tk.LEFT, padx=4)
 
-        # ---- Row 4: upload ----
+        # Row 4: Action buttons
         act = ttk.Frame(main)
         act.pack(fill=tk.X, pady=(0, 6))
-        self.upload_btn = ttk.Button(act, text="Upload All",
-                                     command=self._on_upload)
-        self.upload_btn.pack(side=tk.RIGHT)
+        self.update_btn = ttk.Button(act, text="1. Update Files",
+                                     command=self._on_update)
+        self.update_btn.pack(side=tk.LEFT, padx=(0, 8))
+        self.deploy_btn = ttk.Button(act, text="2. Build & Deploy to FTP",
+                                     command=self._on_deploy)
+        self.deploy_btn.pack(side=tk.LEFT)
 
-        # ---- Row 5: progress ----
+        # Row 5: Progress
         prog = ttk.Frame(main)
         prog.pack(fill=tk.X, pady=(0, 4))
         self.pbar = ttk.Progressbar(prog, mode="determinate")
@@ -336,96 +475,100 @@ class UploadTool:
         self.plbl = ttk.Label(prog, text="", foreground="gray")
         self.plbl.pack(anchor=tk.W)
 
-        # ---- Row 6: log ----
-        log_frame = ttk.LabelFrame(main, text="Log", padding=4)
-        log_frame.pack(fill=tk.BOTH, expand=True)
-        self.log = tk.Text(log_frame, height=10, wrap=tk.WORD,
-                           font=("Consolas", 9), bg="#fafafa",
-                           state=tk.DISABLED)
-        ls = ttk.Scrollbar(log_frame, command=self.log.yview)
+        # Row 6: Log
+        lf2 = ttk.LabelFrame(main, text="Log", padding=4)
+        lf2.pack(fill=tk.BOTH, expand=True)
+        self.log = tk.Text(lf2, height=10, wrap=tk.WORD,
+                           font=("Consolas", 9), bg="#fafafa", state=tk.DISABLED)
+        ls = ttk.Scrollbar(lf2, command=self.log.yview)
         self.log.configure(yscrollcommand=ls.set)
         ls.pack(side=tk.RIGHT, fill=tk.Y)
         self.log.pack(fill=tk.BOTH, expand=True)
 
-        # quick bind F5 to test, Ctrl+L to clear log
-        self.root.bind("<F5>", lambda _: self._test_conn())
+        self.root.bind("<F5>", lambda _: self._test_all())
         self.root.bind("<Control-l>", lambda _: self._clear_log())
 
     # ──────── File management ────────
 
     def _browse(self) -> None:
         paths = filedialog.askopenfilenames(
-            title="Select GeoJSON files (Ctrl+click for multiple)",
-            filetypes=[("GeoJSON", "*.geojson"), ("All files", "*.*")],
+            title="Select files (any type — Ctrl+click for multiple)",
+            filetypes=[("All files", "*.*"), ("GeoJSON", "*.geojson"),
+                       ("TopoJSON", "*.topojson"), ("JSON", "*.json")],
         )
         for p in paths:
-            self._add_file(p)
+            self._add(p)
 
-    def _add_file(self, path: str) -> None:
+    def _add(self, path: str) -> None:
         if not os.path.isfile(path):
             return
-        # normalise
         path = os.path.normpath(path)
         if any(f["path"] == path for f in self.files):
             return
-        info = classify_file(path)
-        if info is None:
-            self.files.append({"path": path, "table": "?",
-                               "basin": "?", "status": "skipped (bad name)"})
-        else:
-            self.files.append({"path": path, "table": info[0],
-                               "basin": info[1], "status": "ready"})
-        self._refresh_list()
+        route = classify_file(path)
+        self.files.append({"path": path, "basename": os.path.basename(path),
+                           "route": route, "status": "ready"})
+        self._refresh()
 
-    def _remove_selected(self) -> None:
+    def _remove_sel(self) -> None:
         sel = self.tree.selection()
         idxs = sorted((int(self.tree.item(i)["values"][0]) - 1)
                       for i in sel if self.tree.exists(i))
         for i in reversed(idxs):
             if 0 <= i < len(self.files):
                 self.files.pop(i)
-        self._refresh_list()
+        self._refresh()
 
     def _clear_files(self) -> None:
         self.files.clear()
-        self._refresh_list()
+        self._refresh()
 
-    def _refresh_list(self) -> None:
+    def _refresh(self) -> None:
         for row in self.tree.get_children():
             self.tree.delete(row)
         for i, f in enumerate(self.files, 1):
             self.tree.insert("", tk.END, values=(
-                i, os.path.basename(f["path"]),
-                f["table"], f["basin"], f["status"]))
+                i, f["basename"], f["route"]["action"], f["status"]))
         ready = sum(1 for f in self.files if f["status"] == "ready")
-        self.file_count_lbl.configure(text=f"{len(self.files)} files ({ready} ready)")
+        self.fcount.configure(text=f"{len(self.files)} files ({ready} ready)")
 
-    # ──────── Connection ────────
+    # ──────── Status ────────
 
     def _refresh_conn(self) -> None:
-        if SUPABASE_URL and SUPABASE_SERVICE_KEY:
-            self.conn_lbl.configure(text="✓ configured", foreground="green")
-        else:
-            self.conn_lbl.configure(
-                text="✗ copy .env.example → .env and fill in your Supabase keys",
-                foreground="red")
+        supa_ok = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
+        ftp_ok = bool(FTP_HOST and FTP_USER and FTP_PASS and FTP_REMOTE_DIR)
+        self.conn_lbl.configure(
+            text="✓" if supa_ok else "✗ no .env",
+            foreground="green" if supa_ok else "red")
+        self.ftp_lbl.configure(
+            text="✓" if ftp_ok else "✗ no .env",
+            foreground="green" if ftp_ok else "red")
 
-    def _test_conn(self) -> None:
-        if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
-            messagebox.showerror("Not configured",
-                "Set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env")
-            return
-        self._writelog("Testing Supabase connection…")
-        try:
-            r = requests.get(f"{SUPABASE_URL}/rest/v1/",
-                             headers=_headers(), timeout=10)
-            if r.status_code < 500:
-                self._writelog("  ✓ Connected")
-                self.conn_lbl.configure(text="✓ connected", foreground="green")
-            else:
-                self._writelog(f"  ❌ {r.status_code}: {r.text[:200]}")
-        except Exception as e:
-            self._writelog(f"  ❌ {e}")
+    def _test_all(self) -> None:
+        self._writelog("═══ Connection Test ═══")
+        supa_ok = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
+        ftp_ok = bool(FTP_HOST and FTP_USER and FTP_PASS and FTP_REMOTE_DIR)
+        if supa_ok:
+            try:
+                r = requests.get(f"{SUPABASE_URL}/rest/v1/",
+                                 headers=_supa_headers(), timeout=10)
+                self._writelog(f"  Supabase: {'✓' if r.status_code < 500 else '✗'} ({r.status_code})")
+            except Exception as e:
+                self._writelog(f"  Supabase: ✗ {e}")
+        else:
+            self._writelog("  Supabase: ✗ not configured")
+        if ftp_ok:
+            try:
+                ftp = FTP(FTP_HOST, timeout=10)
+                ftp.login(FTP_USER, FTP_PASS)
+                ftp.quit()
+                self._writelog("  FTP: ✓ connected")
+            except Exception as e:
+                self._writelog(f"  FTP: ✗ {e}")
+        else:
+            self._writelog("  FTP: ✗ not configured")
+        self._refresh_conn()
+        self._writelog("═══ Done ═══\n")
 
     # ──────── Log / progress ────────
 
@@ -441,129 +584,137 @@ class UploadTool:
         self.log.delete("1.0", tk.END)
         self.log.configure(state=tk.DISABLED)
 
-    def _set_busy(self, busy: bool) -> None:
-        self.upload_btn.configure(state=tk.DISABLED if busy else tk.NORMAL)
+    def _busy(self, busy: bool) -> None:
+        s = tk.DISABLED if busy else tk.NORMAL
+        self.update_btn.configure(state=s)
+        self.deploy_btn.configure(state=s)
         self.root.update_idletasks()
 
-    # ──────── Upload ────────
+    # ──────── 1. Update Files ────────
 
-    def _on_upload(self) -> None:
-        if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
-            messagebox.showerror("Not configured",
-                "Set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env")
-            return
+    def _on_update(self) -> None:
         ready = [f for f in self.files if f["status"] == "ready"]
         if not ready:
-            messagebox.showinfo("Nothing to upload",
-                "Drop or select GeoJSON files first.")
+            messagebox.showinfo("Nothing to do", "No files to update.")
             return
-
         self._clear_log()
-        self._set_busy(True)
+        self._busy(True)
         self.pbar["value"] = 0
-        t = threading.Thread(target=self._do_upload_all, args=(ready,),
-                             daemon=True)
+        t = threading.Thread(target=self._do_update, args=(ready,), daemon=True)
         t.start()
 
-    def _do_upload_all(self, ready: list[dict]) -> None:
-        self._gui_log(f"═══ Uploading {len(ready)} file(s) ═══\n")
+    def _do_update(self, ready: list[dict]) -> None:
+        self._gui_log(f"═══ Updating {len(ready)} file(s) ═══\n")
         tol = self.tol.get()
         batch_size = self.batch.get()
-        ok_count = 0
+        ok = 0
 
         for idx, f in enumerate(ready):
-            path = f["path"]
-            table = f["table"]
-            basin = f["basin"]
+            route = f["route"]
+            src = f["path"]
+            basename = f["basename"]
+            self._gui_log(f"[{idx + 1}/{len(ready)}] {basename}")
+            self._gui_prog(f"Processing {basename}…")
 
-            self._gui_log(f"[{idx + 1}/{len(ready)}] {os.path.basename(path)}")
-            self._gui_prog(f"Processing {os.path.basename(path)}…")
-
+            # Copy file to destination
+            dst_dir = route.get("dest_dir", GEOJSON_ROOT)
+            os.makedirs(dst_dir, exist_ok=True)
+            dst = os.path.join(dst_dir, basename)
             try:
-                with open(path, encoding="utf-8") as fp:
-                    geojson = json.load(fp)
+                shutil.copy2(src, dst)
+                self._gui_log(f"  ✓ Copied to {os.path.relpath(dst, PROJECT_ROOT)}")
             except Exception as e:
-                self._gui_log(f"  ❌ Read error: {e}")
-                self._update_status(f, "error (read)")
+                self._gui_log(f"  ❌ Copy failed: {e}")
+                self._set_status(f, "error")
                 continue
 
-            features = geojson.get("features", [])
-            if not features:
-                self._gui_log("  ❌ No features, skipping")
-                self._update_status(f, "empty")
-                continue
-            self._gui_log(f"  ✓ {len(features)} features")
-
-            # build rows
-            rows: list[dict] = []
-            for feat in features:
-                props = feat.get("properties", {})
-                geom = feat.get("geometry")
-                if not geom:
+            # If it's slope/LCM, also upload to Supabase
+            table = route.get("supabase_table")
+            basin = route.get("basin_code")
+            if table and basin:
+                self._gui_log(f"  Uploading {basin} to Supabase {table}…")
+                try:
+                    with open(src, encoding="utf-8") as fp:
+                        geojson = json.load(fp)
+                except Exception as e:
+                    self._gui_log(f"  ❌ Read error: {e}")
+                    self._set_status(f, "error")
                     continue
-                if table == "slope":
-                    rows.append({
-                        "basin_code": basin,
-                        "gridcode": props.get("gridcode", 0),
-                        "geom": round_coords(geom, 4),
-                    })
-                else:
-                    rows.append({
-                        "basin_code": basin,
-                        "lcm_class": props.get("LCM_CLASS"),
-                        "properties": props,
-                        "geom": round_coords(geom, 4),
-                    })
 
-            if not rows:
-                self._gui_log("  ❌ No valid geometries, skipping")
-                self._update_status(f, "error (no geom)")
-                continue
+                features = geojson.get("features", [])
+                if not features:
+                    self._gui_log("  ⚠ No features, skipping Supabase upload")
+                    self._set_status(f, "done (empty)")
+                    continue
 
-            # simplify
-            if tol > 0:
-                self._gui_log(f"  Simplifying (RDP {tol})…")
-                for i, row in enumerate(rows):
-                    simp = simplify_geometry(row["geom"], tol)
-                    row["geom_simplified"] = round_coords(simp, 4)
-                    self._gui_prog_overall(idx, len(ready), i + 1, len(rows))
+                rows: list[dict] = []
+                for feat in features:
+                    props = feat.get("properties", {})
+                    geom = feat.get("geometry")
+                    if not geom:
+                        continue
+                    if table == "slope":
+                        rows.append({
+                            "basin_code": basin,
+                            "gridcode": props.get("gridcode", 0),
+                            "geom": round_coords(geom, 4),
+                        })
+                    else:
+                        rows.append({
+                            "basin_code": basin,
+                            "lcm_class": props.get("LCM_CLASS"),
+                            "properties": props,
+                            "geom": round_coords(geom, 4),
+                        })
 
-            # delete existing
-            self._gui_log(f"  Clearing existing {basin} {table} data…")
-            for m in delete_basin(table, basin):
-                self._gui_log(m)
+                if not rows:
+                    self._gui_log("  ⚠ No valid geometries, skipping Supabase")
+                    self._set_status(f, "done (no geom)")
+                    continue
 
-            # insert
-            self._gui_log(f"  Inserting {len(rows)} rows (batch={batch_size})…")
+                # Simplify
+                if tol > 0:
+                    for i2, row in enumerate(rows):
+                        simp = simplify_geometry(row["geom"], tol)
+                        row["geom_simplified"] = round_coords(simp, 4)
+                        self._gui_prog_overall(idx, len(ready),
+                                               i2 + 1, len(rows))
 
-            def _on_progress(done: int, total: int) -> None:
-                self._gui_prog_overall(idx, len(ready), done, total)
+                # Delete + insert
+                for m in supa_delete(table, basin):
+                    self._gui_log(m)
+                for m in supa_insert(table, rows, batch_size,
+                                     lambda d, t: self._gui_prog_overall(
+                                         idx, len(ready), d, t)):
+                    self._gui_log(m)
 
-            errs = insert_batch(table, rows, batch_size, _on_progress)
-            for m in errs:
-                self._gui_log(m)
-            if any(m.startswith("  ❌") for m in errs):
-                self._update_status(f, "error")
-                continue
+                self._gui_log(f"  ✓ Supabase {table} updated for {basin}")
+            else:
+                self._gui_log(f"  — No Supabase upload needed")
 
-            # write back
-            out_dir = LCM_DIR if table == "lcm" else SLOPE_DIR
-            os.makedirs(out_dir, exist_ok=True)
-            suffix = "_LCM2025" if table == "lcm" else "_Slope"
-            out_path = os.path.join(out_dir, f"{basin}{suffix}.geojson")
-            with open(out_path, "w", encoding="utf-8") as fp:
-                json.dump(geojson, fp)
-            self._gui_log(f"  ✓ Written to {out_path}")
-            self._gui_log(f"  ✅ Done — {len(rows)} features\n")
-            self._update_status(f, "done")
-            ok_count += 1
+            self._set_status(f, "done")
+            ok += 1
 
         self._gui_prog("")
-        self._gui_log(
-            f"═══ Finished: {ok_count}/{len(ready)} uploaded ═══")
+        self._gui_log(f"\n═══ Done: {ok}/{len(ready)} files updated ═══")
         self._gui_busy(False)
 
-    # ──────── Thread-safe GUI updates ────────
+    # ──────── 2. Build & Deploy ────────
+
+    def _on_deploy(self) -> None:
+        self._clear_log()
+        self._busy(True)
+        self.pbar["value"] = 0
+        self._gui_prog("Building…")
+        t = threading.Thread(target=self._do_deploy, daemon=True)
+        t.start()
+
+    def _do_deploy(self) -> None:
+        build_and_deploy(self._gui_log)
+        self._gui_busy(False)
+        self._gui_prog("")
+
+    # ──────── Thread-safe helpers ────────
 
     def _gui_log(self, msg: str) -> None:
         self.root.after(0, self._writelog, msg)
@@ -571,25 +722,22 @@ class UploadTool:
     def _gui_prog(self, text: str) -> None:
         self.root.after(0, lambda: self.plbl.configure(text=text))
 
-    def _gui_prog_overall(self, file_idx: int, total_files: int,
-                          done: int, total_done: int) -> None:
-        pct = int((done / max(total_done, 1)) * 100)
+    def _gui_prog_overall(self, fi: int, tf: int, d: int, td: int) -> None:
+        pct = int((d / max(td, 1)) * 100)
         self.root.after(0, lambda: self.pbar.configure(value=pct))
         self.root.after(0, lambda: self.plbl.configure(
-            text=f"File {file_idx + 1}/{total_files} — {done}/{total_done}"))
+            text=f"File {fi + 1}/{tf} — {d}/{td}"))
 
     def _gui_busy(self, busy: bool) -> None:
-        self.root.after(0, lambda: self._set_busy(busy))
+        self.root.after(0, lambda: self._busy(busy))
 
-    def _update_status(self, f: dict, status: str) -> None:
-        f["status"] = status
-        self.root.after(0, self._refresh_list)
-
-    # ──────── Run ────────
+    def _set_status(self, f: dict, s: str) -> None:
+        f["status"] = s
+        self.root.after(0, self._refresh)
 
     def run(self) -> None:
         self.root.mainloop()
 
 
 if __name__ == "__main__":
-    UploadTool().run()
+    DeployTool().run()
