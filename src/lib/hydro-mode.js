@@ -533,93 +533,31 @@ Object.assign(APP, {
       if (this.state.hydroLayers[l]) { map.removeLayer(this.state.hydroLayers[l]); this.state.hydroLayers[l] = null; }
     });
 
-    const results = await Promise.allSettled([
+    /* Always fetch both datasets (cached after first visit), but only construct
+       L.geoJSON layers + addToMap if the respective toggle is ON.
+       Raw data is stored temporarily so lazy toggle-on can build the layer instantly. */
+    const [swResult, soResult] = await Promise.all([
       fetchWithCache('sw:' + code, swPath, { signal: APP._abortController.signal }),
       fetchWithCache('so:' + code, soPath, { signal: APP._abortController.signal }),
     ]);
 
-    /* Sub-watershed polygons — single L.geoJSON for both visual rendering and events.
-       Previously used a dual-layer approach (VectorTileLayer canvas + transparent overlay)
-       which caused z-order issues and blinking on hover. Reverted to plain L.geoJSON. */
-    if (results[0].status === 'fulfilled') {
-      this.state.hydroLayers[1] = L.geoJSON(results[0].value, {
-        style: () => ({ fillColor: '#d1d5db', fillOpacity: 0.3, color: '#000000', weight: 1.2, opacity: 0.8 }),
-        onEachFeature(feature, layer) {
-          layer.on('mouseover', function(e) {
-            if (layer._hiddenByIsolation) return;
-            const isSelected = (self.state.hydroSelectedZoneLayer === layer);
-            const fillOpa = isSelected && self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
-            e.target.setStyle({
-              fillColor: '#d1d5db',
-              fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
-              color: '#000000',
-              weight: 2.5,
-              opacity: 1,
-            });
-            const lbl = document.getElementById('map-hover-label');
-            if (lbl) {
-              const p = feature.properties;
-              lbl.innerHTML = `<span class="label-level">Sub-watershed</span>Zone ${p.gridcode || '?'}`;
-              lbl.classList.add('visible');
-              lbl.style.display = '';
-            }
-          });
-          layer.on('mouseout', function(e) {
-            if (layer._hiddenByIsolation) return;
-            const isSelected = (self.state.hydroSelectedZoneLayer === layer);
-            if (isSelected) {
-              const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
-              const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
-              e.target.setStyle({
-                fillColor: '#d1d5db',
-                fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
-                color: '#000000',
-                weight: 3,
-                opacity: outOpa,
-              });
-            } else {
-              e.target.setStyle({
-                fillColor: '#d1d5db',
-                fillOpacity: self.state.showSlope ? 0 : 0.3,
-                color: '#000000',
-                weight: 1.2,
-                opacity: 0.8,
-              });
-            }
-            self._hideHoverLabel();
-          });
-          layer.on('click', function(e) {
-            if (!layer._hiddenByIsolation) {
-              L.DomEvent.stopPropagation(e);
-            }
-            if (layer._hiddenByIsolation) return;
-            self._selectSubWatershed(feature, layer);
-          });
-        },
-      });
-      if (this.state.showSubWatersheds) {
-        this.state.hydroLayers[1].addTo(map);
-        this.state.hydroLayers[1].bringToFront();
-      }
+    this.state._cachedSW = swResult;
+    this.state._cachedSO = soResult;
+
+    if (this.state.showSubWatersheds && swResult) {
+      this.state.hydroLayers[1] = this._buildSWLayer(swResult);
+      this.state.hydroLayers[1].addTo(map);
+      this.state.hydroLayers[1].bringToFront();
       this._applyCustomColors();
-    } else {
+    } else if (this.state.showSubWatersheds && !swResult) {
       this._showToast('Sub-watershed data not available for this basin');
     }
 
-    /* Stream order lines — loaded but only added to map if toggled on */
-    if (results[1].status === 'fulfilled') {
-      this.state.hydroLayers[2] = L.geoJSON(results[1].value, {
-        style: (feature) => {
-          const order = feature.properties.grid_code || 1;
-          const weight = Math.max(2, Math.min(order * 1.2, 4.5));
-          return { color: '#0022ff', weight, opacity: 1 };
-        },
-      });
-      if (this.state.showStreamOrder) {
-        this.state.hydroLayers[2].addTo(map);
-        this.state.hydroLayers[2].bringToFront();
-      }
-    } else {
+    if (this.state.showStreamOrder && soResult) {
+      this.state.hydroLayers[2] = this._buildSOLayer(soResult);
+      this.state.hydroLayers[2].addTo(map);
+      this.state.hydroLayers[2].bringToFront();
+    } else if (this.state.showStreamOrder && !soResult) {
       this._showToast('Stream order data not available for this basin');
     }
 
@@ -821,40 +759,162 @@ Object.assign(APP, {
     };
   },
 
+  /* ── Sub-watershed / Stream order layer builders (shared by drill-in and lazy toggle) ── */
+
+  _buildSWLayer(geojson) {
+    const self = this;
+    return L.geoJSON(geojson, {
+      style: () => ({ fillColor: '#d1d5db', fillOpacity: 0.3, color: '#000000', weight: 1.2, opacity: 0.8 }),
+      onEachFeature(feature, layer) {
+        layer.on('mouseover', function(e) {
+          if (layer._hiddenByIsolation) return;
+          const isSelected = (self.state.hydroSelectedZoneLayer === layer);
+          const fillOpa = isSelected && self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
+          e.target.setStyle({
+            fillColor: '#d1d5db',
+            fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
+            color: '#000000',
+            weight: 2.5,
+            opacity: 1,
+          });
+          const lbl = document.getElementById('map-hover-label');
+          if (lbl) {
+            const p = feature.properties;
+            lbl.innerHTML = `<span class="label-level">Sub-watershed</span>Zone ${p.gridcode || '?'}`;
+            lbl.classList.add('visible');
+            lbl.style.display = '';
+          }
+        });
+        layer.on('mouseout', function(e) {
+          if (layer._hiddenByIsolation) return;
+          const isSelected = (self.state.hydroSelectedZoneLayer === layer);
+          if (isSelected) {
+            const fillOpa = self.state.selectedFillOpacity !== undefined ? self.state.selectedFillOpacity : 0.55;
+            const outOpa = self.state.selectedOutlineOpacity !== undefined ? self.state.selectedOutlineOpacity : 1.0;
+            e.target.setStyle({
+              fillColor: '#d1d5db',
+              fillOpacity: self.state.showSlope ? 0.15 : fillOpa,
+              color: '#000000',
+              weight: 3,
+              opacity: outOpa,
+            });
+          } else {
+            e.target.setStyle({
+              fillColor: '#d1d5db',
+              fillOpacity: self.state.showSlope ? 0 : 0.3,
+              color: '#000000',
+              weight: 1.2,
+              opacity: 0.8,
+            });
+          }
+          self._hideHoverLabel();
+        });
+        layer.on('click', function(e) {
+          if (!layer._hiddenByIsolation) {
+            L.DomEvent.stopPropagation(e);
+          }
+          if (layer._hiddenByIsolation) return;
+          self._selectSubWatershed(feature, layer);
+        });
+      },
+    });
+  },
+
+  _buildSOLayer(geojson) {
+    return L.geoJSON(geojson, {
+      style: (feature) => {
+        const order = feature.properties.grid_code || 1;
+        const weight = Math.max(2, Math.min(order * 1.2, 4.5));
+        return { color: '#0022ff', weight, opacity: 1 };
+      },
+    });
+  },
+
+  /* Lazy-load helpers — called when a toggle is turned ON after the basin was entered
+     with that toggle OFF. Uses cached raw data if available, otherwise fetches. */
+
+  async _lazyLoadSW() {
+    const code = this.state._basinCode;
+    const folder = this.state._basinFolder;
+    if (!code || !folder || !this.state.showSubWatersheds) return;
+    const data = this.state._cachedSW || await fetchWithCache(
+      'sw:' + code,
+      'geoJSON/Watersheds/' + encodeURIComponent(folder) + '/' + code + '_SW.topojson',
+      { signal: APP._abortController.signal }
+    );
+    if (!data || !this.state.showSubWatersheds) return;
+    if (this.state.hydroLayers[1]) return; /* already built by race */
+    this.state.hydroLayers[1] = this._buildSWLayer(data);
+    if (this.state.map) {
+      this.state.map.addLayer(this.state.hydroLayers[1]);
+      this.state.hydroLayers[1].bringToFront();
+    }
+    this._applyCustomColors();
+  },
+
+  async _lazyLoadSO() {
+    const code = this.state._basinCode;
+    const folder = this.state._basinFolder;
+    if (!code || !folder || !this.state.showStreamOrder) return;
+    const data = this.state._cachedSO || await fetchWithCache(
+      'so:' + code,
+      'geoJSON/Watersheds/' + encodeURIComponent(folder) + '/' + code + '_StreamOrder.topojson',
+      { signal: APP._abortController.signal }
+    );
+    if (!data || !this.state.showStreamOrder) return;
+    if (this.state.hydroLayers[2]) return;
+    this.state.hydroLayers[2] = this._buildSOLayer(data);
+    if (this.state.map) {
+      this.state.map.addLayer(this.state.hydroLayers[2]);
+      this.state.hydroLayers[2].bringToFront();
+    }
+    this._updateStreamOrderStyles();
+  },
+
   /* Toggle sub-watersheds overlay on/off */
   _toggleSubWatersheds() {
+    const wasOff = !this.state.showSubWatersheds;
     this.state.showSubWatersheds = !this.state.showSubWatersheds;
     useMapStore.setState({ showSubWatersheds: this.state.showSubWatersheds });
-    const sl = this.state.hydroLayers[1];
-    if (!sl) return;
 
     const ctrl = document.getElementById('sw-controls');
     if (ctrl) ctrl.style.display = this.state.showSubWatersheds ? 'block' : 'none';
 
     if (this.state.showSubWatersheds) {
-      this.state.map.addLayer(sl);
-      sl.bringToFront();
+      const sl = this.state.hydroLayers[1];
+      if (sl) {
+        this.state.map.addLayer(sl);
+        sl.bringToFront();
+      } else if (wasOff) {
+        this._lazyLoadSW();
+      }
     } else {
-      this.state.map.removeLayer(sl);
+      const sl = this.state.hydroLayers[1];
+      if (sl) this.state.map.removeLayer(sl);
     }
   },
 
   /* Toggle stream order overlay on/off */
   _toggleStreamOrder() {
+    const wasOff = !this.state.showStreamOrder;
     this.state.showStreamOrder = !this.state.showStreamOrder;
     useMapStore.setState({ showStreamOrder: this.state.showStreamOrder });
-    const sl = this.state.hydroLayers[2];
-    if (!sl) return;
 
     const ctrl = document.getElementById('so-controls');
     if (ctrl) ctrl.style.display = this.state.showStreamOrder ? 'block' : 'none';
 
     if (this.state.showStreamOrder) {
-      this.state.map.addLayer(sl);
-      sl.bringToFront();
-      this._updateStreamOrderStyles();
+      const sl = this.state.hydroLayers[2];
+      if (sl) {
+        this.state.map.addLayer(sl);
+        sl.bringToFront();
+        this._updateStreamOrderStyles();
+      } else if (wasOff) {
+        this._lazyLoadSO();
+      }
     } else {
-      this.state.map.removeLayer(sl);
+      const sl = this.state.hydroLayers[2];
+      if (sl) this.state.map.removeLayer(sl);
     }
   },
 
@@ -916,12 +976,23 @@ Object.assign(APP, {
     this.state.hydroSelectedZone = null;
     this.state.hydroSelectedZoneLayer = null;
     this.state.selectedPath = [];
-    APP.lcm.destroy();
+    this.state._cachedSW = null;
+    this.state._cachedSO = null;
+    /* Reset all basin-context overlays — Option 1: clean slate on drill-up */
     if (APP.state.showSlope) {
-      APP.slope.reapplyClip(); /* no basin selected → removeClip → full overview visible */
-    } else {
       APP.slope.hide();
+      APP.state.showSlope = false;
+      useMapStore.setState({ showSlope: false });
     }
+    if (APP.state.showLCM) {
+      APP.lcm.destroy();
+      APP.state.showLCM = false;
+      useMapStore.setState({ showLCM: false });
+    }
+    APP.state.showSubWatersheds = false;
+    useMapStore.setState({ showSubWatersheds: false });
+    APP.state.showStreamOrder = false;
+    useMapStore.setState({ showStreamOrder: false });
 
     /* Re-render basins interactively (no silhouette) */
     this._clearHydroLayers();
