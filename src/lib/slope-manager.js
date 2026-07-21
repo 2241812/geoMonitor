@@ -62,10 +62,12 @@ APP.slope = {
 
         this._showLoadProgress(85, 'Adding to layers…');
         await new Promise(r => setTimeout(r, 0));
-        if (this._layerFull && this._layerFull.addData) {
+        if (this._layerFull) {
+          this._layerFull.clearLayers();
           this._layerFull.addData(geojson);
         }
-        if (this._layerSimplified && this._layerSimplified.addData) {
+        if (this._layerSimplified) {
+          this._layerSimplified.clearLayers();
           this._layerSimplified.addData(simplifiedFC);
         }
 
