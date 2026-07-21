@@ -49,6 +49,7 @@ supabase/
 # PyInstaller intermediate build files
 scripts/build/
 scripts/*.spec
+*.bak.exe
 
 # AI agent instructions
 AGENTS.md
