@@ -48,7 +48,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "express": "^5.2.1",
-    "ftp-srv": "^4.6.3",
+    "ftpd": "^0.2.16",
     "globals": "^17.7.0",
     "oxlint": "^1.69.0",
     "pg": "^8.22.0",
