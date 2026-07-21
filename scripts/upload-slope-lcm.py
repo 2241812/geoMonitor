@@ -59,12 +59,15 @@ FTP_PASSIVE: bool = True
 # ─────────────────────────────────────────────
 #  .env loader
 # ─────────────────────────────────────────────
-def load_env(path: str) -> None:
+def load_env(path: str, log_cb: Callable | None = None) -> None:
     global SUPABASE_URL, SUPABASE_SERVICE_KEY, FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR, FTP_PORT, FTP_PASSIVE
     if not os.path.isfile(path):
+        if log_cb:
+            log_cb(f"  .env not found at {path}")
         return
     with open(path, encoding="utf-8") as f:
         for line in f:
+            raw = line
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
@@ -76,6 +79,8 @@ def load_env(path: str) -> None:
             elif k == "SUPABASE_SERVICE_KEY":
                 SUPABASE_SERVICE_KEY = v
             elif k == "FTP_HOST":
+                if log_cb:
+                    log_cb(f"  DEBUG: matched FTP_HOST -> repr={v!r}")
                 FTP_HOST = v
             elif k == "FTP_USER":
                 FTP_USER = v
@@ -559,7 +564,7 @@ class DeployTool:
         route = classify_file(path)
         # If .env dropped → load credentials immediately
         if route["action"] == "load credentials":
-            load_env(path)
+            load_env(path, log_cb=self._writelog)
             self._refresh_conn()
             self._writelog(f"✓ Loaded credentials from {path}")
         self.files.append({"path": path, "basename": os.path.basename(path),
