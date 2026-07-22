@@ -53,6 +53,8 @@ APP.slope = {
         fillOpacity: APP.state.slopeOpacity ?? 0.65, stroke: false, weight: 0,
       });
       const canvasRenderer = L.canvas({ pane: 'slopePane', padding: 0.5 });
+      canvasRenderer._onClick = function() {};
+      canvasRenderer._onMouseMove = function() {};
       this._layerSimplified = L.geoJSON(null, {
         style: styleFn, interactive: false,
         renderer: canvasRenderer,

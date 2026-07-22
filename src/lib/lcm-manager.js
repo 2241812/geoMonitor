@@ -183,6 +183,8 @@ APP.lcm = {
     await new Promise(r => setTimeout(r, 0));
 
     const canvasRenderer = L.canvas({ pane: PANE_NAME, padding: 0.5 });
+    canvasRenderer._onClick = function() {};
+    canvasRenderer._onMouseMove = function() {};
 
     this._layerSimplified = L.geoJSON(simplified, {
       style: styleFn,

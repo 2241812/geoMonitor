@@ -64,3 +64,11 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Disable hit-testing on heavy overlay panes to fix INP (Interaction to Next Paint) */
+.leaflet-pane.leaflet-slopePane-pane,
+.leaflet-pane.leaflet-lcmPane-pane,
+.leaflet-slopePane-pane canvas,
+.leaflet-lcmPane-pane canvas {
+  pointer-events: none !important;
+}

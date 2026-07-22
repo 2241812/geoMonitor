@@ -160,5 +160,6 @@ export function ensurePane(map, paneName, zIndex) {
     pane.style.willChange = 'transform';
     pane.style.transform = 'translateZ(0)';
     pane.style.backfaceVisibility = 'hidden';
+    pane.style.pointerEvents = 'none';
   }
 }
