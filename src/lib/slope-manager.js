@@ -1,3 +1,4 @@
+import L from 'leaflet';
 import { APP } from './app.js';
 import { useMapStore } from '../store/useMapStore.js';
 import { fetchSlopeFromSupabase } from './supabase-geo.js';
@@ -14,7 +15,7 @@ import {
 
 export const SLOPE_COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
 
-const LOD_ZOOM = 10;
+const LOD_ZOOM = 12;
 const SIMPLIFY_TOLERANCE = 0.0005;
 
 let _movePending = false;
@@ -50,24 +51,28 @@ APP.slope = {
   _basinsLoaded: {},
 
   async _loadBasin(code) {
-    if (this._basinsLoaded[code]) return this._basinsLoaded[code];
-    this._basinsLoaded[code] = (async () => {
-      this._showLoadProgress(0, `Fetching slope data for ${code}…`);
+    const quality = APP.state.slopeQuality || 'balanced';
+    const cacheKey = code + '::' + quality;
+    if (this._basinsLoaded[cacheKey]) return this._basinsLoaded[cacheKey];
+    this._basinsLoaded[cacheKey] = (async () => {
+      this._showLoadProgress(0, `Fetching slope data for ${code} (${quality})…`);
       try {
         const geojson = await fetchSlopeFromSupabase(code, (pct, msg) => {
           this._showLoadProgress(pct, msg);
-        });
+        }, quality);
 
         this._showLoadProgress(60, 'Building simplified layer…');
         await new Promise(r => setTimeout(r, 0));
         const simplifiedFeatures = [];
+        const tol = quality === 'fast' ? 0.0015 : (quality === 'full' ? 0 : SIMPLIFY_TOLERANCE);
         for (const f of geojson.features) {
-          if (f.properties?._simplified) {
-            // Already server-simplified — no need to re-run turf simplify
+          if (f.properties?._simplified && quality === 'balanced') {
+            simplifiedFeatures.push(f);
+          } else if (tol === 0) {
             simplifiedFeatures.push(f);
           } else {
             try {
-              simplifiedFeatures.push(simplify(f, { tolerance: SIMPLIFY_TOLERANCE, highQuality: true }));
+              simplifiedFeatures.push(simplify(f, { tolerance: tol, highQuality: true }));
             } catch (_) { simplifiedFeatures.push(f); }
           }
         }
@@ -88,11 +93,11 @@ APP.slope = {
         setTimeout(() => this._hideLoadProgress(), 600);
       } catch (e) {
         this._hideLoadProgress();
-        delete this._basinsLoaded[code];
+        delete this._basinsLoaded[cacheKey];
         throw e;
       }
     })();
-    return this._basinsLoaded[code];
+    return this._basinsLoaded[cacheKey];
   },
 
   async toggle() {
@@ -111,13 +116,14 @@ APP.slope = {
           fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
           fillOpacity: 0.65, stroke: false, weight: 0,
         });
+        const canvasRenderer = L.canvas({ pane: 'slopePane', padding: 0.5 });
         this._layerSimplified = L.geoJSON(null, {
           style: styleFn, interactive: false,
-          renderer: L.canvas({ pane: 'slopePane' }),
+          renderer: canvasRenderer,
         });
         this._layerFull = L.geoJSON(null, {
           style: styleFn, interactive: false,
-          renderer: L.canvas({ pane: 'slopePane' }),
+          renderer: canvasRenderer,
         });
         const z = map.getZoom();
         this._layer = z < LOD_ZOOM ? this._layerSimplified : this._layerFull;
@@ -203,10 +209,17 @@ APP.slope = {
     if (!feature || !feature.geometry) {
       pane.style.clipPath = '';
       this._clipFeature = null;
+      this._clipZoom = null;
+      return;
+    }
+
+    const zoom = map.getZoom();
+    if (this._clipFeature === feature && this._clipZoom === zoom && pane.style.clipPath) {
       return;
     }
 
     this._clipFeature = feature;
+    this._clipZoom = zoom;
 
     const rings = extractOuterRings(feature.geometry);
     if (!rings.length) {
@@ -227,6 +240,7 @@ APP.slope = {
     const pane = map.getPane('slopePane');
     if (pane) pane.style.clipPath = '';
     this._clipFeature = null;
+    this._clipZoom = null;
   },
 
   /**
@@ -308,6 +322,21 @@ APP.slope = {
     useMapStore.setState({ showSlope: false });
     const slopeCtrl = document.getElementById('slope-controls');
     if (slopeCtrl) slopeCtrl.style.display = 'none';
+  },
+
+  setQuality(quality) {
+    APP.state.slopeQuality = quality;
+    useMapStore.setState({ slopeQuality: quality });
+    const code = APP.state.hydroSelectedBasin?.code;
+    if (code && APP.state.showSlope) {
+      useMapStore.setState({ slopeLoading: true });
+      this._loadBasin(code).then(() => {
+        useMapStore.setState({ slopeLoading: false });
+        this.reapplyClip();
+      }).catch(() => {
+        useMapStore.setState({ slopeLoading: false });
+      });
+    }
   },
 
   _setOpacity(val) {

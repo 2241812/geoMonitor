@@ -508,10 +508,9 @@ Object.assign(APP, {
 
       await this._showHydroSubWatersheds(mapEntry.code, mapEntry.folder);
       this._updateBreadcrumb();
-      /* Clip the existing all-basins slope layer to the selected basin */
+      /* Clip the slope and LCM layers to the selected basin */
       APP.slope.reapplyClip();
       APP.lcm.reapplyClip();
-      this._loadBasinLCM(mapEntry.code);
     } finally {
       this.state._drilling = false;
     }

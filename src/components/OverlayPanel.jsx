@@ -303,6 +303,19 @@ export default function OverlayPanel() {
                   <option value="heat">Heat</option>
                 </select>
               </div>
+              <div className="overlay-color-row" style={{ marginTop: '6px' }}>
+                <label>Detail Quality</label>
+                <select
+                  defaultValue={APP.state.slopeQuality || 'balanced'}
+                  onChange={(e) => {
+                    APP.slope.setQuality(e.target.value);
+                  }}
+                >
+                  <option value="balanced">Balanced (Default)</option>
+                  <option value="full">Full Detail (Raw)</option>
+                  <option value="fast">High Performance</option>
+                </select>
+              </div>
             </div>
           </div>
 

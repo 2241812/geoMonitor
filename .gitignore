@@ -21,6 +21,7 @@ gis-drop/
 # Per-basin slope GeoJSON (large files, deployed via Vercel CLI directly)
 public/geoJSON/Watersheds/*_Slope.geojson
 public/geoJSON/*_Slope.geojson
+public/geoJSON/Slope/
 
 # Deploy GUI temp uploads
 geoJSONUpdater/uploads/
@@ -52,8 +53,10 @@ __pycache__/
 
 # PyInstaller intermediate build files
 scripts/build/
+build_pyi/
 scripts/*.spec
 *.bak.exe
+New folder/
 
 # AI agent instructions
 AGENTS.md

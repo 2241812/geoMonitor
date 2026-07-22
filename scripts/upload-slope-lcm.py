@@ -364,6 +364,19 @@ def build_project() -> list[str]:
     return msg
 
 
+def _connect_ftp() -> FTP | FTP_TLS:
+    if FTP_USE_TLS:
+        ftp = FTP_TLS()
+    else:
+        ftp = FTP()
+    ftp.connect(FTP_HOST, FTP_PORT, timeout=30)
+    ftp.set_pasv(FTP_PASSIVE)
+    ftp.login(FTP_USER, FTP_PASS)
+    if FTP_USE_TLS:
+        ftp.prot_p()
+    return ftp
+
+
 def ftp_upload(log_cb: Callable) -> list[str]:
     msg: list[str] = []
     if not all([FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR]):
@@ -377,15 +390,7 @@ def ftp_upload(log_cb: Callable) -> list[str]:
     msg.append(f"  Connecting to {FTP_HOST}:{FTP_PORT} (TLS={FTP_USE_TLS})…")
     log_cb(f"  Connecting to {FTP_HOST}:{FTP_PORT} (TLS={FTP_USE_TLS})…")
     try:
-        if FTP_USE_TLS:
-            ftp: FTP | FTP_TLS = FTP_TLS()
-        else:
-            ftp = FTP()
-        ftp.connect(FTP_HOST, FTP_PORT, timeout=30)
-        ftp.set_pasv(FTP_PASSIVE)
-        ftp.login(FTP_USER, FTP_PASS)
-        if FTP_USE_TLS:
-            ftp.prot_p()  # data channel encryption
+        main_ftp = _connect_ftp()
         log_cb("  ✓ Logged in")
         msg.append("  ✓ Logged in")
     except Exception as e:
@@ -394,50 +399,101 @@ def ftp_upload(log_cb: Callable) -> list[str]:
         return msg
 
     try:
-        ftp.cwd(FTP_REMOTE_DIR)
+        main_ftp.cwd(FTP_REMOTE_DIR)
     except Exception:
         try:
-            ftp.mkd(FTP_REMOTE_DIR)
-            ftp.cwd(FTP_REMOTE_DIR)
+            main_ftp.mkd(FTP_REMOTE_DIR)
+            main_ftp.cwd(FTP_REMOTE_DIR)
         except Exception as e:
-            ftp.quit()
+            main_ftp.quit()
             msg.append(f"  ❌ Cannot cd/mkdir {FTP_REMOTE_DIR}: {e}")
             return msg
 
-    # Count total files first for progress
-    total = sum(len(files) for _r, _d, files in os.walk(DIST_DIR))
-    uploaded = 0
+    # Filter files to upload
+    # Exclude tiles, .pmtiles, and raw local Slope/LCM GeoJSONs (since Slope & LCM are served via Supabase)
+    all_files = []
     for root, _dirs, files in os.walk(DIST_DIR):
+        rel_root = os.path.relpath(root, DIST_DIR).replace("\\", "/")
+        parts = rel_root.split("/")
+        if "tiles" in parts or "Slope" in parts or "LCM" in parts:
+            continue
         for f in files:
-            local = os.path.join(root, f)
-            rel = os.path.relpath(local, DIST_DIR)
-            # create subdirs on FTP
-            rdir = os.path.dirname(rel).replace("\\", "/")
-            if rdir and rdir != ".":
+            if f.endswith(".pmtiles") or f.endswith("_Slope.geojson"):
+                continue
+            all_files.append(os.path.join(root, f))
+
+    # Pre-create all remote directories first using main connection
+    created_dirs = set()
+    for local in all_files:
+        rel = os.path.relpath(local, DIST_DIR)
+        rdir = os.path.dirname(rel).replace("\\", "/")
+        if rdir and rdir != "." and rdir not in created_dirs:
+            main_ftp.cwd(FTP_REMOTE_DIR)
+            for part in rdir.split("/"):
                 try:
-                    ftp.cwd(rdir)
+                    main_ftp.cwd(part)
                 except Exception:
-                    for part in rdir.split("/"):
-                        try:
-                            ftp.cwd(part)
-                        except Exception:
-                            ftp.mkd(part)
-                            ftp.cwd(part)
-                    ftp.cwd(FTP_REMOTE_DIR)
+                    try:
+                        main_ftp.mkd(part)
+                        main_ftp.cwd(part)
+                    except Exception: pass
+            created_dirs.add(rdir)
+    main_ftp.quit()
+
+    total = len(all_files)
+    uploaded = 0
+    skipped = 0
+    lock = threading.Lock()
+
+    def _upload_single(local_path: str) -> bool:
+        nonlocal uploaded, skipped
+        rel = os.path.relpath(local_path, DIST_DIR)
+        rdir = os.path.dirname(rel).replace("\\", "/")
+        filename = os.path.basename(rel)
+        local_size = os.path.getsize(local_path)
+
+        try:
+            worker_ftp = _connect_ftp()
+            target_dir = (FTP_REMOTE_DIR + "/" + rdir) if (rdir and rdir != ".") else FTP_REMOTE_DIR
+            worker_ftp.cwd(target_dir)
+
+            # Smart Delta Check: Check remote file size; skip if unchanged
+            remote_size = None
             try:
-                with open(local, "rb") as fh:
-                    ftp.storbinary(f"STOR {os.path.basename(rel)}", fh)
+                remote_size = worker_ftp.size(filename)
+            except Exception:
+                remote_size = None
+
+            if remote_size is not None and remote_size == local_size:
+                worker_ftp.quit()
+                with lock:
+                    skipped += 1
+                    log_cb(f"  — ({uploaded + skipped}/{total}) {rel} (unchanged, skipped)")
+                return True
+
+            # Size changed or file is new -> upload
+            with open(local_path, "rb") as fh:
+                worker_ftp.storbinary(f"STOR {filename}", fh)
+            worker_ftp.quit()
+
+            with lock:
                 uploaded += 1
-                log_cb(f"  ✓ ({uploaded}/{total}) {rel}")
-            except Exception as e:
+                log_cb(f"  ✓ ({uploaded + skipped}/{total}) {rel}")
+            return True
+        except Exception as e:
+            with lock:
                 log_cb(f"  ⚠ {rel}: {e}")
                 msg.append(f"  ⚠ Failed to upload {rel}: {e}")
-            if rdir and rdir != ".":
-                ftp.cwd(FTP_REMOTE_DIR)
+            return False
 
-    ftp.quit()
-    log_cb(f"  ✓ Uploaded {uploaded}/{total} files to {FTP_REMOTE_DIR}")
-    msg.append(f"  ✓ Uploaded {uploaded} files to {FTP_REMOTE_DIR}")
+    # Upload in parallel with 6 worker threads
+    log_cb(f"  Syncing {total} files using 6 parallel streams (smart delta)…")
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        list(executor.map(_upload_single, all_files))
+
+    log_cb(f"  ✓ Sync complete: {uploaded} updated, {skipped} skipped ({total} total)")
+    msg.append(f"  ✓ Sync complete: {uploaded} updated, {skipped} skipped ({total} total)")
     return msg
 
 

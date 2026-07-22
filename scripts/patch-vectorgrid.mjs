@@ -96,6 +96,30 @@ tryPatch(join(DIST, 'Leaflet.VectorGrid.bundled.min.js'), OLD_CATCH_MIN, NEW_CAT
 tryPatch(join(DIST, 'Leaflet.VectorGrid.js'), OLD_CATCH_DEV, NEW_CATCH_DEV, 'Leaflet.VectorGrid.js (catch-all)');
 tryPatch(join(DIST, 'Leaflet.VectorGrid.min.js'), OLD_CATCH_MIN, NEW_CATCH_MIN, 'Leaflet.VectorGrid.min.js (catch-all)');
 
+// Phase 4: HTML response / corrupt PBF guard in _getVectorTilePromise
+console.log('\nPhase 4: HTML response / corrupt PBF guard');
+const SRC_PROTOBUF = join(__dirname, '..', 'node_modules', 'leaflet.vectorgrid', 'src', 'Leaflet.VectorGrid.Protobuf.js');
+const OLD_PBF_LOAD_SRC = 'var pbf = new Pbf( reader.result );\n// 						console.log(pbf);\n						return resolve(new VectorTile( pbf ));';
+const NEW_PBF_LOAD_SRC = `var v = new Uint8Array(reader.result);
+						if (!v || v.length < 5 || v[0] === 0x3c) { return resolve({ layers: {} }); }
+						try {
+							var pbf = new Pbf( reader.result );
+							return resolve(new VectorTile( pbf ));
+						} catch (_) { return resolve({ layers: {} }); }`;
+
+tryPatch(SRC_PROTOBUF, OLD_PBF_LOAD_SRC, NEW_PBF_LOAD_SRC, 'src/Leaflet.VectorGrid.Protobuf.js (HTML guard)');
+
+const BUNDLED_JS = join(DIST, 'Leaflet.VectorGrid.bundled.js');
+const OLD_PBF_LOAD_BUNDLED = 'var pbf = new index( reader.result );\n// 						console.log(pbf);\n						return resolve(new VectorTile( pbf ));';
+const NEW_PBF_LOAD_BUNDLED = `var v = new Uint8Array(reader.result);
+						if (!v || v.length < 5 || v[0] === 0x3c) { return resolve({ layers: {} }); }
+						try {
+							var pbf = new index( reader.result );
+							return resolve(new VectorTile( pbf ));
+						} catch (_) { return resolve({ layers: {} }); }`;
+
+tryPatch(BUNDLED_JS, OLD_PBF_LOAD_BUNDLED, NEW_PBF_LOAD_BUNDLED, 'Leaflet.VectorGrid.bundled.js (HTML guard)');
+
 if (alreadyPatchedCount > 0) {
   console.log(`\n${alreadyPatchedCount} file(s) were already up-to-date with the target pattern.`);
 }

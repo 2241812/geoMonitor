@@ -1,6 +1,7 @@
+import L from 'leaflet';
 import { APP } from './app.js';
 import { simplify } from '@turf/turf';
-import { invalidateLCMCache } from './supabase-geo.js';
+import { useMapStore } from '../store/useMapStore.js';
 import {
   extractOuterRings,
   buildClipPath,
@@ -30,7 +31,7 @@ const LCM_COLORS = {};
 LCM_CLASSES.forEach(c => { LCM_COLORS[c.name] = c.color; });
 
 const PANE_NAME = 'lcmPane';
-const LOD_ZOOM = 10;
+const LOD_ZOOM = 12;
 
 function _lcmOnMapMove() { APP.lcm.reapplyClip(); }
 
@@ -57,6 +58,7 @@ APP.lcm = {
   _clipFeature: null,
   _currentCode: null,
   _visibleClasses: null,
+  _geoJsonCache: {},
 
   getVisibleClasses() {
     if (!this._visibleClasses) {
@@ -83,7 +85,7 @@ APP.lcm = {
   },
 
   invalidateCache() {
-    invalidateLCMCache();
+    this._geoJsonCache = {};
   },
 
   hideAllClasses() {
@@ -112,7 +114,24 @@ APP.lcm = {
     apply(this._layerFull);
   },
 
-  async loadBasin(code, geojson) {
+  async _fetchBasinGeoJSON(code) {
+    if (!code) return null;
+    const c = code.toUpperCase();
+    if (this._geoJsonCache[c]) return this._geoJsonCache[c];
+    try {
+      const res = await fetch(`/geoJSON/LCM/${c}_LCM2025.geojson`);
+      if (res.ok) {
+        const json = await res.json();
+        this._geoJsonCache[c] = json;
+        return json;
+      }
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('Failed to fetch LCM GeoJSON for basin', c, e);
+    }
+    return null;
+  },
+
+  async loadBasin(code, geojsonOverride) {
     const map = APP.state.map;
     if (!map) return;
 
@@ -123,6 +142,13 @@ APP.lcm = {
 
     this._showLoadProgress(0, 'Processing geometry…');
     await new Promise(r => setTimeout(r, 0));
+
+    /* Use override GeoJSON if provided, otherwise fetch from local static file */
+    const geojson = geojsonOverride || await this._fetchBasinGeoJSON(code);
+    if (!geojson || !geojson.features || geojson.features.length === 0) {
+      this._hideLoadProgress();
+      return;
+    }
 
     this._ensurePane();
 
@@ -150,10 +176,12 @@ APP.lcm = {
     this._showLoadProgress(65, 'Building layers…');
     await new Promise(r => setTimeout(r, 0));
 
+    const canvasRenderer = L.canvas({ pane: PANE_NAME, padding: 0.5 });
+
     this._layerSimplified = L.geoJSON(simplified, {
       style: styleFn,
       interactive: false,
-      renderer: L.canvas({ pane: PANE_NAME }),
+      renderer: canvasRenderer,
       onEachFeature: (f, l) => { l.options.pane = PANE_NAME; },
     });
 
@@ -163,7 +191,7 @@ APP.lcm = {
     this._layerFull = L.geoJSON(geojson, {
       style: styleFn,
       interactive: false,
-      renderer: L.canvas({ pane: PANE_NAME }),
+      renderer: canvasRenderer,
       onEachFeature: (f, l) => { l.options.pane = PANE_NAME; },
     });
 
@@ -231,9 +259,18 @@ APP.lcm = {
     if (!feature || !feature.geometry) {
       pane.style.clipPath = '';
       this._clipFeature = null;
+      this._clipZoom = null;
       return;
     }
+
+    const zoom = map.getZoom();
+    if (this._clipFeature === feature && this._clipZoom === zoom && pane.style.clipPath) {
+      return;
+    }
+
     this._clipFeature = feature;
+    this._clipZoom = zoom;
+
     const rings = extractOuterRings(feature.geometry);
     if (!rings.length) { pane.style.clipPath = ''; return; }
     const clipPath = buildClipPath(map, rings);
@@ -246,6 +283,7 @@ APP.lcm = {
     const pane = map.getPane(PANE_NAME);
     if (pane) pane.style.clipPath = '';
     this._clipFeature = null;
+    this._clipZoom = null;
   },
 
   reapplyClip() {
@@ -300,6 +338,8 @@ APP.lcm = {
   },
 
   _setOpacity(val) {
+    APP.state.lcmOpacity = val;
+    useMapStore.setState({ lcmOpacity: val });
     const vis = this.getVisibleClasses();
     const apply = (layer) => {
       if (!layer || !layer.eachLayer) return;

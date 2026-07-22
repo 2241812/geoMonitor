@@ -935,6 +935,14 @@ export const APP = {
               <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
             </select>
           </div>
+          <div class="overlay-color-row" style="margin-top: 6px;">
+            <label>Detail Quality</label>
+            <select onchange="APP.slope.setQuality(this.value)">
+              <option value="balanced" ${(this.state.slopeQuality || 'balanced') === 'balanced' ? 'selected' : ''}>Balanced (Default)</option>
+              <option value="full" ${this.state.slopeQuality === 'full' ? 'selected' : ''}>Full Detail (Raw)</option>
+              <option value="fast" ${this.state.slopeQuality === 'fast' ? 'selected' : ''}>High Performance</option>
+            </select>
+          </div>
         </div>
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Land Cover (LCM)</span>

@@ -23,9 +23,9 @@ import vt from 'vt-pbf';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-const MAX_ZOOM = 14;
+const MAX_ZOOM = 16;
 const MIN_ZOOM = 6;
-const TILE_SIZE = 4096;
+const TILE_SIZE = 8192;
 const USE_RAW = process.argv.includes('--raw');
 
 const SRC_DIRS = USE_RAW
@@ -66,23 +66,37 @@ function u64(buf, val, off) {
   buf.writeUInt32LE(Number((v >> 32n) & 0xFFFFFFFFn), off + 4);
 }
 
-/** Load filtered GeoJSON files */
+/** Load full high-resolution GeoJSON files */
 async function loadGeoJSON(dirPath, dataset) {
-  const pat = USE_RAW ? /\.geojson$/i
-    : dataset === 'slope' ? /_Slope\.geojson$/i : /_LCM2025\.geojson$/i;
-
-  const files = (await readdir(dirPath)).filter(f => pat.test(f));
-  if (!files.length) throw new Error(`No files in ${dirPath}`);
-  console.log(`Reading ${files.length} files...`);
-  const feats = [];
-  for (const f of files) {
-    const fc = JSON.parse(readFileSync(resolve(dirPath, f), 'utf8'));
-    if (fc.type === 'FeatureCollection') feats.push(...fc.features);
-    else if (fc.type === 'Feature') feats.push(fc);
-    console.log(`  ${f}: ${fc.features ? fc.features.length : 1} features`);
+  if (dataset === 'slope') {
+    const slopeFile = resolve(ROOT, 'public/geoJSON/Slope.geojson');
+    console.log(`Reading high-resolution slope GeoJSON: ${slopeFile}`);
+    const fc = JSON.parse(readFileSync(slopeFile, 'utf8'));
+    console.log(`  Total slope features: ${fc.features ? fc.features.length : 0}`);
+    return fc;
+  } else {
+    const lcmDir = resolve(ROOT, 'public/geoJSON/LCM');
+    const files = (await readdir(lcmDir)).filter(f => /_LCM2025\.geojson$/i.test(f));
+    if (!files.length) throw new Error(`No LCM files found in ${lcmDir}`);
+    console.log(`Reading ${files.length} high-resolution LCM files...`);
+    const feats = [];
+    for (const f of files) {
+      const fc = JSON.parse(readFileSync(resolve(lcmDir, f), 'utf8'));
+      if (fc.type === 'FeatureCollection') feats.push(...fc.features);
+      else if (fc.type === 'Feature') feats.push(fc);
+      console.log(`  ${f}: ${fc.features ? fc.features.length : 1} features`);
+    }
+    console.log(`  Total LCM features: ${feats.length}`);
+    return { type: 'FeatureCollection', features: feats };
   }
-  console.log(`  Total: ${feats.length} features`);
-  return { type: 'FeatureCollection', features: feats };
+}
+
+function lng2tile(lng, zoom) {
+  return Math.floor((lng + 180) / 360 * Math.pow(2, zoom));
+}
+function lat2tile(lat, zoom) {
+  const rad = lat * Math.PI / 180;
+  return Math.floor((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, zoom));
 }
 
 /** Convert one dataset → PMTiles archive */
@@ -92,13 +106,18 @@ async function convertDataset(name, layerName, dirPath) {
   if (!gj) return false;
 
   console.log('Tiling via geojson-vt...');
-  const idx = geojsonvt(gj, { maxZoom: MAX_ZOOM, tolerance: 0, extent: TILE_SIZE, buffer: 64 });
+  const idx = geojsonvt(gj, { maxZoom: MAX_ZOOM, indexMaxZoom: MAX_ZOOM, tolerance: 0, extent: TILE_SIZE, buffer: 128 });
 
   const allTiles = [];
+  const minLng = 118.5, maxLng = 122.5, minLat = 15.5, maxLat = 19.0;
   for (let z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
-    const max = 1 << z;
-    for (let x = 0; x < max; x++) {
-      for (let y = 0; y < max; y++) {
+    const minX = Math.max(0, lng2tile(minLng, z));
+    const maxX = Math.min((1 << z) - 1, lng2tile(maxLng, z));
+    const minY = Math.max(0, lat2tile(maxLat, z));
+    const maxY = Math.min((1 << z) - 1, lat2tile(minLat, z));
+
+    for (let x = minX; x <= maxX; x++) {
+      for (let y = minY; y <= maxY; y++) {
         const t = idx.getTile(z, x, y);
         if (t && t.features && t.features.length) {
           try { allTiles.push({ z, x, y, data: Buffer.from(vt.fromGeojsonVt({ [layerName]: t }, { version: 2, extent: TILE_SIZE })) }); }
@@ -262,42 +281,34 @@ async function convertDataset(name, layerName, dirPath) {
   /* Header */
   const h = Buffer.alloc(5120, 0);
   h.write('PMTiles', 0);
-  h.writeUInt16LE(3, 7);
+  h.writeUInt8(3, 7);           /* spec_version = 3 */
   u64(h, 5120, 8);              /* root_dir_offset */
   u64(h, rootDirLen, 16);       /* root_dir_length */
-  u64(h, metaOff, 24);          /* metadata_offset (root_dir comes first, then leaf dir, then metadata) */
+  u64(h, metaOff, 24);          /* metadata_offset */
   u64(h, metaLen, 32);          /* metadata_length */
-
-  if (useLeaf) {
-    u64(h, leafOff, 40);        /* leaf_dir_offset */
-    u64(h, leafDirLen, 48);     /* leaf_dir_length */
-  } else {
-    u64(h, 0n, 40);             /* leaf_dir_offset */
-    u64(h, 0n, 48);             /* leaf_dir_length */
-  }
-
+  u64(h, leafOff, 40);          /* leaf_dir_offset */
+  u64(h, leafDirLen, 48);       /* leaf_dir_length */
   u64(h, tileOff, 56);          /* tile_data_offset */
   u64(h, tileDataBuf.length, 64); /* tile_data_length */
   u64(h, allTiles.length, 72);  /* num_addressed_tiles */
 
-  /* num_tile_entries: root dir entry count */
   const rootEntryCount = useLeaf ? 1 : allTiles.length;
-  h.writeUInt8(Math.min(rootEntryCount, 255), 80);
-  h.writeUInt8(useLeaf ? 0 : allTiles.length, 81);  /* num_tile_contents: 0 when leaf dirs used */
+  u64(h, rootEntryCount, 80);   /* num_tile_entries (8 bytes) */
+  u64(h, useLeaf ? 0 : allTiles.length, 88); /* num_tile_contents (8 bytes) */
 
-  h.writeUInt8(0, 82);  /* clustered */
-  h.writeUInt8(0, 83);  /* internal compression = none */
-  h.writeUInt8(0, 84);  /* tile compression = none */
-  h.writeUInt8(1, 85);  /* tile_type = MVT */
-  h.writeUInt8(MIN_ZOOM, 86);
-  h.writeUInt8(MAX_ZOOM, 87);
-  h.writeInt32LE(Math.round(119.5 * 1e7), 88);   /* min_lon */
-  h.writeInt32LE(Math.round(16.0 * 1e7), 92);    /* min_lat */
-  h.writeInt32LE(Math.round(121.5 * 1e7), 96);   /* max_lon */
-  h.writeInt32LE(Math.round(18.5 * 1e7), 100);   /* max_lat */
-  h.writeUInt8(8, 104);             /* center_zoom */
-  h.writeInt32LE(Math.round(120.5 * 1e7), 105);  /* center_lon */
-  h.writeInt32LE(Math.round(17.2 * 1e7), 109);   /* center_lat */
+  h.writeUInt8(0, 96);          /* clustered */
+  h.writeUInt8(1, 97);          /* internal_compression = 1 (None) */
+  h.writeUInt8(1, 98);          /* tile_compression = 1 (None) */
+  h.writeUInt8(1, 99);          /* tile_type = 1 (MVT) */
+  h.writeUInt8(MIN_ZOOM, 100);  /* min_zoom */
+  h.writeUInt8(MAX_ZOOM, 101);  /* max_zoom */
+  h.writeInt32LE(Math.round(118.5 * 1e7), 102);   /* min_lon */
+  h.writeInt32LE(Math.round(15.5 * 1e7), 106);   /* min_lat */
+  h.writeInt32LE(Math.round(122.5 * 1e7), 110);   /* max_lon */
+  h.writeInt32LE(Math.round(19.0 * 1e7), 114);   /* max_lat */
+  h.writeUInt8(8, 118);                            /* center_zoom */
+  h.writeInt32LE(Math.round(120.5 * 1e7), 119);   /* center_lon */
+  h.writeInt32LE(Math.round(17.2 * 1e7), 123);   /* center_lat */
 
   const parts = [h, rootDir];
   if (leafDir) parts.push(leafDir);

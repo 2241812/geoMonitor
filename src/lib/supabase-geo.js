@@ -24,11 +24,11 @@ function _idbKey(basinCode, classes) {
 }
 
 /* ── Slope cache helpers ── */
-function _slopeCacheKey(basinCode) {
-  return 'slope:' + basinCode;
+function _slopeCacheKey(basinCode, quality = 'balanced') {
+  return 'slope:' + basinCode + '::' + quality;
 }
-function _slopeIdbKey(basinCode) {
-  return CACHE_VERSION + ':slope:' + basinCode;
+function _slopeIdbKey(basinCode, quality = 'balanced') {
+  return CACHE_VERSION + ':slope:' + basinCode + '::' + quality;
 }
 
 function getClient() {
@@ -184,38 +184,37 @@ export async function submitDataRequest(payload) {
 
 /* ── Slope fetch ── */
 
-function _buildSlopeFeatures(rows) {
+function _buildSlopeFeatures(rows, forceFull = false) {
   return rows.map(row => ({
     type: 'Feature',
     properties: {
       gridcode: row.gridcode,
-      _simplified: !!row.geom_simplified,
+      _simplified: forceFull ? false : !!row.geom_simplified,
     },
-    geometry: row.geom_simplified || row.geom,
+    geometry: forceFull ? row.geom : (row.geom_simplified || row.geom),
   }));
 }
 
-export async function fetchSlopeFromSupabase(basinCode, onProgress) {
-  const key = _slopeCacheKey(basinCode);
+export async function fetchSlopeFromSupabase(basinCode, onProgress, quality = 'balanced') {
+  const key = _slopeCacheKey(basinCode, quality);
   if (_cachedBasinSlope[key]) {
     if (onProgress) onProgress(100, `${basinCode} slope loaded from cache`);
     return _cachedBasinSlope[key];
   }
-  const idbKey = _slopeIdbKey(basinCode);
+  const idbKey = _slopeIdbKey(basinCode, quality);
   const cached = await cacheGet(idbKey);
   if (cached) {
     _cachedBasinSlope[key] = cached;
     if (onProgress) onProgress(100, `${basinCode} slope loaded from cache`);
     return cached;
   }
-  if (onProgress) onProgress(0, `Fetching ${basinCode} slope…`);
+  if (onProgress) onProgress(0, `Fetching ${basinCode} slope (${quality})…`);
   const supabase = getClient();
 
-  /* Try selecting geom_simplified (server-simplified geometry). If the column
-     doesn't exist yet (older DB), fall back to raw geom + client-side simplify. */
+  const selectCols = quality === 'full' ? 'gridcode, geom' : 'gridcode, geom, geom_simplified';
   let { data, error } = await supabase
     .from('slope')
-    .select('gridcode, geom, geom_simplified')
+    .select(selectCols)
     .eq('basin_code', basinCode);
 
   if (error && error.message && error.message.includes('geom_simplified')) {
@@ -231,7 +230,7 @@ export async function fetchSlopeFromSupabase(basinCode, onProgress) {
   if (error) throw new Error('Supabase slope query failed: ' + error.message);
   if (!data || data.length === 0) throw new Error('No slope data for basin: ' + basinCode);
   if (onProgress) onProgress(90, `Rebuilding GeoJSON (${data.length} features)…`);
-  const geojson = { type: 'FeatureCollection', features: _buildSlopeFeatures(data) };
+  const geojson = { type: 'FeatureCollection', features: _buildSlopeFeatures(data, quality === 'full') };
   _cachedBasinSlope[key] = geojson;
   cacheSet(idbKey, geojson);
   return geojson;

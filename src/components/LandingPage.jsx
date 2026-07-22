@@ -413,7 +413,7 @@ export default function LandingPage() {
     <div className="basin-lightbox-bg" onClick={closeModal}></div>
     <div className="basin-lightbox-content">
       <div className="modal-split-top">
-        <img src={activeBasin?.image || ""} alt={activeBasin?.name || ""} />
+        <img src={activeBasin?.image || null} alt={activeBasin?.name || ""} />
         <div className="modal-split-top-overlay"></div>
         <h3 className="modal-basin-title">{activeBasin?.name}</h3>
       </div>

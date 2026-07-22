@@ -72,34 +72,42 @@ export function buildClipPath(map, rings) {
  * @param {Object} context - the `this` context for bindng
  */
 export function bindOverlayEvents(map, handlers, context) {
-  map.off('move', handlers.onMapMove);
-  map.off('moveend', handlers.onMapMove);
-  map.off('zoomanim', handlers.onMapMove);
-  map.off('zoomend', handlers.onMapMove);
-  map.off('zoomstart', handlers.onZoomStart);
-  map.off('zoomend', handlers.onZoomEnd);
-  map.off('zoomend', handlers.onZoomSwap);
-
-  map.on('move', handlers.onMapMove);
-  map.on('moveend', handlers.onMapMove);
-  map.on('zoomanim', handlers.onMapMove);
-  map.on('zoomend', handlers.onMapMove);
-  map.on('zoomstart', handlers.onZoomStart);
-  map.on('zoomend', handlers.onZoomEnd);
-  map.on('zoomend', handlers.onZoomSwap, context);
+  if (!map || !handlers) return;
+  if (handlers.onMapMove) {
+    map.off('move', handlers.onMapMove);
+    map.off('moveend', handlers.onMapMove);
+    map.off('zoomanim', handlers.onMapMove);
+    map.off('zoomend', handlers.onMapMove);
+    map.on('zoomend', handlers.onMapMove);
+  }
+  if (handlers.onZoomStart) {
+    map.off('zoomstart', handlers.onZoomStart);
+    map.on('zoomstart', handlers.onZoomStart);
+  }
+  if (handlers.onZoomEnd) {
+    map.off('zoomend', handlers.onZoomEnd);
+    map.on('zoomend', handlers.onZoomEnd);
+  }
+  if (handlers.onZoomSwap) {
+    map.off('zoomend', handlers.onZoomSwap);
+    map.on('zoomend', handlers.onZoomSwap, context);
+  }
 }
 
 /**
  * Unbind standard overlay events from a Leaflet map.
  */
 export function unbindOverlayEvents(map, handlers, context) {
-  map.off('move', handlers.onMapMove);
-  map.off('moveend', handlers.onMapMove);
-  map.off('zoomanim', handlers.onMapMove);
-  map.off('zoomend', handlers.onMapMove);
-  map.off('zoomstart', handlers.onZoomStart);
-  map.off('zoomend', handlers.onZoomEnd);
-  map.off('zoomend', handlers.onZoomSwap, context);
+  if (!map || !handlers) return;
+  if (handlers.onMapMove) {
+    map.off('move', handlers.onMapMove);
+    map.off('moveend', handlers.onMapMove);
+    map.off('zoomanim', handlers.onMapMove);
+    map.off('zoomend', handlers.onMapMove);
+  }
+  if (handlers.onZoomStart) map.off('zoomstart', handlers.onZoomStart);
+  if (handlers.onZoomEnd) map.off('zoomend', handlers.onZoomEnd);
+  if (handlers.onZoomSwap) map.off('zoomend', handlers.onZoomSwap, context);
 }
 
 /* ── Load progress bar ── */
@@ -149,5 +157,8 @@ export function ensurePane(map, paneName, zIndex) {
     const pane = map.getPane(paneName);
     pane.style.zIndex = String(zIndex);
     pane.style.transition = 'opacity 0.15s ease-out';
+    pane.style.willChange = 'transform';
+    pane.style.transform = 'translateZ(0)';
+    pane.style.backfaceVisibility = 'hidden';
   }
 }
