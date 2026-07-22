@@ -50,6 +50,29 @@ APP.slope = {
   _toggling: false,
   _basinsLoaded: {},
 
+  _ensureLayers() {
+    const map = APP.state.map;
+    if (!map) return;
+    this._ensurePane();
+    if (!this._layerSimplified || !this._layerFull) {
+      const styleFn = (f) => ({
+        fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
+        fillOpacity: APP.state.slopeOpacity ?? 0.65, stroke: false, weight: 0,
+      });
+      const canvasRenderer = L.canvas({ pane: 'slopePane', padding: 0.5 });
+      this._layerSimplified = L.geoJSON(null, {
+        style: styleFn, interactive: false,
+        renderer: canvasRenderer,
+      });
+      this._layerFull = L.geoJSON(null, {
+        style: styleFn, interactive: false,
+        renderer: canvasRenderer,
+      });
+      const z = map.getZoom();
+      this._layer = z < LOD_ZOOM ? this._layerSimplified : this._layerFull;
+    }
+  },
+
   async _loadBasin(code) {
     const quality = APP.state.slopeQuality || 'balanced';
     const cacheKey = code + '::' + quality;
@@ -57,22 +80,24 @@ APP.slope = {
     this._basinsLoaded[cacheKey] = (async () => {
       this._showLoadProgress(0, `Fetching slope data for ${code} (${quality})…`);
       try {
+        this._ensureLayers();
+
         const geojson = await fetchSlopeFromSupabase(code, (pct, msg) => {
           this._showLoadProgress(pct, msg);
         }, quality);
 
-        this._showLoadProgress(60, 'Processing quality tier…');
+        this._showLoadProgress(60, `Processing ${quality} quality tier…`);
         await new Promise(r => setTimeout(r, 0));
         
         let simplifiedFC = geojson;
         let fullFC = geojson;
 
         if (quality === 'fast') {
-          // High performance: aggressive simplification (tolerance = 0.003) for all zoom levels
+          // High Speed: heavy simplification (tolerance = 0.0035) for maximum performance
           const fastFeatures = [];
           for (const f of geojson.features) {
             try {
-              fastFeatures.push(simplify(f, { tolerance: 0.003, highQuality: true }));
+              fastFeatures.push(simplify(f, { tolerance: 0.0035, highQuality: true }));
             } catch (_) { fastFeatures.push(f); }
           }
           const fastGeoJSON = { type: 'FeatureCollection', features: fastFeatures };
@@ -92,7 +117,7 @@ APP.slope = {
           }
           simplifiedFC = { type: 'FeatureCollection', features: simpFeatures };
         } else {
-          // Full detail (raw): 100% raw geometry for all zoom levels
+          // Full Detail (raw): 100% raw geometry for all zoom levels (0 tolerance)
           simplifiedFC = geojson;
           fullFC = geojson;
         }
@@ -106,6 +131,11 @@ APP.slope = {
         if (this._layerSimplified) {
           this._layerSimplified.clearLayers();
           this._layerSimplified.addData(simplifiedFC);
+        }
+
+        const map = APP.state.map;
+        if (map && this._layer && map.hasLayer(this._layer)) {
+          this.reapplyClip();
         }
 
         this._showLoadProgress(100, 'Done');
@@ -128,24 +158,9 @@ APP.slope = {
       const map = APP.state.map;
       if (!map) return;
 
-      if (APP.state.showSlope && !this._layer) {
+      if (APP.state.showSlope) {
+        this._ensureLayers();
         useMapStore.setState({ slopeLoading: false });
-        this._ensurePane();
-        const styleFn = (f) => ({
-          fillColor: SLOPE_COLORS[f.properties.gridcode] || '#cccccc',
-          fillOpacity: 0.65, stroke: false, weight: 0,
-        });
-        const canvasRenderer = L.canvas({ pane: 'slopePane', padding: 0.5 });
-        this._layerSimplified = L.geoJSON(null, {
-          style: styleFn, interactive: false,
-          renderer: canvasRenderer,
-        });
-        this._layerFull = L.geoJSON(null, {
-          style: styleFn, interactive: false,
-          renderer: canvasRenderer,
-        });
-        const z = map.getZoom();
-        this._layer = z < LOD_ZOOM ? this._layerSimplified : this._layerFull;
       }
 
       if (!this._layer) {

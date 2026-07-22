@@ -208,43 +208,63 @@ export default function OverlayPanel() {
             <div className="toggle-row">
               <span>Slope</span>
               {slopeLoading && <span className="overlay-spinner" />}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <select
-                  className="slope-quality-select-inline"
-                  defaultValue={APP.state.slopeQuality || 'balanced'}
-                  onChange={(e) => APP.slope.setQuality(e.target.value)}
-                  style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff' }}
-                >
-                  <option value="balanced">Balanced</option>
-                  <option value="full">Full Detail</option>
-                  <option value="fast">High Speed</option>
-                </select>
-                <label className="toggle-switch" style={{ opacity: slopeLoading ? 0.5 : 1 }}>
-                  <input
-                    type="checkbox"
-                    checked={showSlope}
-                    disabled={slopeLoading}
-                    onChange={() => {
-                      if (slopeLoading) return;
-                      if (!showSlope && isLevel0 && !APP.slope._layer) {
-                        useMapStore.setState({ slopeConfirmPending: true });
-                      } else {
-                        APP.slope.toggle();
-                      }
-                    }}
-                  />
-                  <span className="toggle-knob"></span>
-                </label>
-              </div>
+              <label className="toggle-switch" style={{ opacity: slopeLoading ? 0.5 : 1 }}>
+                <input
+                  type="checkbox"
+                  checked={showSlope}
+                  disabled={slopeLoading}
+                  onChange={() => {
+                    if (slopeLoading) return;
+                    if (!showSlope && !APP.slope._layer) {
+                      useMapStore.setState({ slopeConfirmPending: true });
+                    } else {
+                      APP.slope.toggle();
+                    }
+                  }}
+                />
+                <span className="toggle-knob"></span>
+              </label>
             </div>
 
-            {/* Level 0 Confirmation Card */}
+            {/* Slope Quality Selection & Confirmation Card */}
             {slopeConfirmPending && (
-              <div className="overlay-confirm-card">
-                <div className="overlay-confirm-text">
-                  The slope overlay is a large dataset. It will be fetched and processed, which may take a few moments.
+              <div className="overlay-confirm-card" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px', marginTop: '8px' }}>
+                <div style={{ fontWeight: 600, fontSize: '13px', color: '#1e293b', marginBottom: '6px' }}>
+                  Select Slope Quality Tier Before Fetching:
                 </div>
-                <div className="overlay-confirm-actions">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', marginBottom: '10px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="slope-quality-prompt"
+                      value="balanced"
+                      defaultChecked={(APP.state.slopeQuality || 'balanced') === 'balanced'}
+                      onChange={(e) => APP.slope.setQuality(e.target.value)}
+                    />
+                    <span><strong>Balanced</strong> (Default — Fast & Crisp)</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="slope-quality-prompt"
+                      value="full"
+                      defaultChecked={APP.state.slopeQuality === 'full'}
+                      onChange={(e) => APP.slope.setQuality(e.target.value)}
+                    />
+                    <span><strong>Full Detail</strong> (Raw 100% Geometry)</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="slope-quality-prompt"
+                      value="fast"
+                      defaultChecked={APP.state.slopeQuality === 'fast'}
+                      onChange={(e) => APP.slope.setQuality(e.target.value)}
+                    />
+                    <span><strong>High Speed</strong> (Max Performance, 60 FPS)</span>
+                  </label>
+                </div>
+                <div className="overlay-confirm-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                   <button
                     className="overlay-confirm-btn overlay-confirm-cancel"
                     onClick={() => useMapStore.setState({ slopeConfirmPending: false })}
@@ -255,10 +275,10 @@ export default function OverlayPanel() {
                     className="overlay-confirm-btn overlay-confirm-apply"
                     onClick={() => {
                       useMapStore.setState({ slopeConfirmPending: false });
-                      APP.slope.toggle();
+                      if (!showSlope) APP.slope.toggle();
                     }}
                   >
-                    Apply &amp; Fetch
+                    Apply &amp; Fetch Slope
                   </button>
                 </div>
               </div>
@@ -314,6 +334,14 @@ export default function OverlayPanel() {
                   <option value="terrain">Terrain</option>
                   <option value="heat">Heat</option>
                 </select>
+              </div>
+              <div style={{ marginTop: '6px', textAlign: 'right' }}>
+                <button
+                  style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer' }}
+                  onClick={() => useMapStore.setState({ slopeConfirmPending: true })}
+                >
+                  Change Quality Tier ({APP.state.slopeQuality || 'balanced'})
+                </button>
               </div>
             </div>
           </div>
