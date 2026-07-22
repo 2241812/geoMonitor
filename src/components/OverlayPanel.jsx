@@ -208,22 +208,34 @@ export default function OverlayPanel() {
             <div className="toggle-row">
               <span>Slope</span>
               {slopeLoading && <span className="overlay-spinner" />}
-              <label className="toggle-switch" style={{ opacity: slopeLoading ? 0.5 : 1 }}>
-                <input
-                  type="checkbox"
-                  checked={showSlope}
-                  disabled={slopeLoading}
-                  onChange={() => {
-                    if (slopeLoading) return;
-                    if (!showSlope && isLevel0 && !APP.slope._layer) {
-                      useMapStore.setState({ slopeConfirmPending: true });
-                    } else {
-                      APP.slope.toggle();
-                    }
-                  }}
-                />
-                <span className="toggle-knob"></span>
-              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <select
+                  className="slope-quality-select-inline"
+                  defaultValue={APP.state.slopeQuality || 'balanced'}
+                  onChange={(e) => APP.slope.setQuality(e.target.value)}
+                  style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff' }}
+                >
+                  <option value="balanced">Balanced</option>
+                  <option value="full">Full Detail</option>
+                  <option value="fast">High Speed</option>
+                </select>
+                <label className="toggle-switch" style={{ opacity: slopeLoading ? 0.5 : 1 }}>
+                  <input
+                    type="checkbox"
+                    checked={showSlope}
+                    disabled={slopeLoading}
+                    onChange={() => {
+                      if (slopeLoading) return;
+                      if (!showSlope && isLevel0 && !APP.slope._layer) {
+                        useMapStore.setState({ slopeConfirmPending: true });
+                      } else {
+                        APP.slope.toggle();
+                      }
+                    }}
+                  />
+                  <span className="toggle-knob"></span>
+                </label>
+              </div>
             </div>
 
             {/* Level 0 Confirmation Card */}
@@ -301,19 +313,6 @@ export default function OverlayPanel() {
                   <option value="default">Default</option>
                   <option value="terrain">Terrain</option>
                   <option value="heat">Heat</option>
-                </select>
-              </div>
-              <div className="overlay-color-row" style={{ marginTop: '6px' }}>
-                <label>Detail Quality</label>
-                <select
-                  defaultValue={APP.state.slopeQuality || 'balanced'}
-                  onChange={(e) => {
-                    APP.slope.setQuality(e.target.value);
-                  }}
-                >
-                  <option value="balanced">Balanced (Default)</option>
-                  <option value="full">Full Detail (Raw)</option>
-                  <option value="fast">High Performance</option>
                 </select>
               </div>
             </div>

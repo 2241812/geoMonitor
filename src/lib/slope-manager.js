@@ -61,28 +61,47 @@ APP.slope = {
           this._showLoadProgress(pct, msg);
         }, quality);
 
-        this._showLoadProgress(60, 'Building simplified layer…');
+        this._showLoadProgress(60, 'Processing quality tier…');
         await new Promise(r => setTimeout(r, 0));
-        const simplifiedFeatures = [];
-        const tol = quality === 'fast' ? 0.0015 : (quality === 'full' ? 0 : SIMPLIFY_TOLERANCE);
-        for (const f of geojson.features) {
-          if (f.properties?._simplified && quality === 'balanced') {
-            simplifiedFeatures.push(f);
-          } else if (tol === 0) {
-            simplifiedFeatures.push(f);
-          } else {
+        
+        let simplifiedFC = geojson;
+        let fullFC = geojson;
+
+        if (quality === 'fast') {
+          // High performance: aggressive simplification (tolerance = 0.003) for all zoom levels
+          const fastFeatures = [];
+          for (const f of geojson.features) {
             try {
-              simplifiedFeatures.push(simplify(f, { tolerance: tol, highQuality: true }));
-            } catch (_) { simplifiedFeatures.push(f); }
+              fastFeatures.push(simplify(f, { tolerance: 0.003, highQuality: true }));
+            } catch (_) { fastFeatures.push(f); }
           }
+          const fastGeoJSON = { type: 'FeatureCollection', features: fastFeatures };
+          simplifiedFC = fastGeoJSON;
+          fullFC = fastGeoJSON;
+        } else if (quality === 'balanced') {
+          // Balanced: server-simplified for low zoom, full for high zoom
+          const simpFeatures = [];
+          for (const f of geojson.features) {
+            if (f.properties?._simplified) {
+              simpFeatures.push(f);
+            } else {
+              try {
+                simpFeatures.push(simplify(f, { tolerance: 0.0008, highQuality: true }));
+              } catch (_) { simpFeatures.push(f); }
+            }
+          }
+          simplifiedFC = { type: 'FeatureCollection', features: simpFeatures };
+        } else {
+          // Full detail (raw): 100% raw geometry for all zoom levels
+          simplifiedFC = geojson;
+          fullFC = geojson;
         }
-        const simplifiedFC = { type: 'FeatureCollection', features: simplifiedFeatures };
 
         this._showLoadProgress(85, 'Adding to layers…');
         await new Promise(r => setTimeout(r, 0));
         if (this._layerFull) {
           this._layerFull.clearLayers();
-          this._layerFull.addData(geojson);
+          this._layerFull.addData(fullFC);
         }
         if (this._layerSimplified) {
           this._layerSimplified.clearLayers();

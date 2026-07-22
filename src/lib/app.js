@@ -913,10 +913,17 @@ export const APP = {
         </div>
         <div class="toggle-row" style="margin-top: 12px;">
           <span>Slope</span>
-          <label class="toggle-switch">
-            <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
-            <span class="toggle-knob"></span>
-          </label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <select class="slope-quality-select-inline" onchange="APP.slope.setQuality(this.value)" style="font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid #ccc;background:#fff;">
+              <option value="balanced" ${(this.state.slopeQuality || 'balanced') === 'balanced' ? 'selected' : ''}>Balanced</option>
+              <option value="full" ${this.state.slopeQuality === 'full' ? 'selected' : ''}>Full Detail</option>
+              <option value="fast" ${this.state.slopeQuality === 'fast' ? 'selected' : ''}>High Speed</option>
+            </select>
+            <label class="toggle-switch">
+              <input type="checkbox" ${this.state.showSlope ? 'checked' : ''} onchange="APP.slope.toggle()">
+              <span class="toggle-knob"></span>
+            </label>
+          </div>
         </div>
         <div id="slope-load-progress" class="slope-load-progress" style="margin-top: 6px; display: none;">
           <div class="slope-load-bar"><div class="slope-load-fill"></div></div>
@@ -933,14 +940,6 @@ export const APP = {
               <option value="default" ${this.state.slopeColorScheme === 'default' ? 'selected' : ''}>Default</option>
               <option value="terrain" ${this.state.slopeColorScheme === 'terrain' ? 'selected' : ''}>Terrain</option>
               <option value="heat" ${this.state.slopeColorScheme === 'heat' ? 'selected' : ''}>Heat</option>
-            </select>
-          </div>
-          <div class="overlay-color-row" style="margin-top: 6px;">
-            <label>Detail Quality</label>
-            <select onchange="APP.slope.setQuality(this.value)">
-              <option value="balanced" ${(this.state.slopeQuality || 'balanced') === 'balanced' ? 'selected' : ''}>Balanced (Default)</option>
-              <option value="full" ${this.state.slopeQuality === 'full' ? 'selected' : ''}>Full Detail (Raw)</option>
-              <option value="fast" ${this.state.slopeQuality === 'fast' ? 'selected' : ''}>High Performance</option>
             </select>
           </div>
         </div>
