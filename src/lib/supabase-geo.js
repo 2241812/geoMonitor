@@ -256,3 +256,17 @@ export function invalidateLCMCache(basinCode) {
     cacheDelete(_idbKey('ALL', null));
   }
 }
+
+export async function fetchAvailableLCMClasses(basinCode) {
+  if (!basinCode) return null;
+  try {
+    const { data, error } = await supabase
+      .from('lcm')
+      .select('lcm_class')
+      .eq('basin_code', basinCode.toUpperCase());
+    if (error || !data) return null;
+    return Array.from(new Set(data.map(r => r.lcm_class).filter(Boolean)));
+  } catch (_) {
+    return null;
+  }
+}

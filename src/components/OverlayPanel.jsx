@@ -21,6 +21,7 @@ export default function OverlayPanel() {
   const slopeLoading = useMapStore((s) => s.slopeLoading);
   const lcmLoading = useMapStore((s) => s.lcmLoading);
   const slopeConfirmPending = useMapStore((s) => s.slopeConfirmPending);
+  const availableLCMClasses = useMapStore((s) => s.availableLCMClasses);
   const viewMode = useMapStore((s) => s.viewMode);
   const currentLevel = useMapStore((s) => s.currentLevel);
   const isLevel0 = hydroDrillLevel === 0;
@@ -392,17 +393,23 @@ export default function OverlayPanel() {
                       <a href="#" onClick={(e) => { e.preventDefault(); APP._lcmHideAll(); }} style={{ fontSize: '11px', cursor: 'pointer' }}>None</a>
                     </span>
                   </div>
-                  {LCM_CLASSES.map((c) => (
-                    <label key={c.name} className="lcm-class-row">
-                      <input
-                        type="checkbox"
-                        checked={APP.lcm.isClassVisible(c.name)}
-                        onChange={() => APP._toggleLCMClass(c.name)}
-                      />
-                      <span className="lcm-class-swatch" style={{ background: c.color }}></span>
-                      <span className="lcm-class-label">{c.name}</span>
-                    </label>
-                  ))}
+                  {LCM_CLASSES.map((c) => {
+                    const isAvailable = !availableLCMClasses || availableLCMClasses.includes(c.name);
+                    return (
+                      <label key={c.name} className="lcm-class-row" style={{ opacity: isAvailable ? 1 : 0.45, cursor: isAvailable ? 'pointer' : 'not-allowed' }}>
+                        <input
+                          type="checkbox"
+                          disabled={!isAvailable}
+                          checked={isAvailable && APP.lcm.isClassVisible(c.name)}
+                          onChange={() => isAvailable && APP._toggleLCMClass(c.name)}
+                        />
+                        <span className="lcm-class-swatch" style={{ background: c.color, filter: isAvailable ? 'none' : 'grayscale(60%)' }}></span>
+                        <span className="lcm-class-label">
+                          {c.name} {!isAvailable && <em style={{ fontSize: '10px', color: '#64748b', marginLeft: '4px' }}>(N/A in basin)</em>}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
                 <div className="overlay-confirm-actions" style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                   <button

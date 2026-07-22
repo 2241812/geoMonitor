@@ -15,30 +15,23 @@ import {
 
 export const SLOPE_COLORS = { 1: '#50A823', 2: '#8BD100', 3: '#FFFF00', 4: '#FF9A36', 5: '#FF4A4A' };
 
-const LOD_ZOOM = 12;
+const LOD_ZOOM = 14;
 const SIMPLIFY_TOLERANCE = 0.0005;
 
-let _movePending = false;
-function _onMapMove() {
-  if (_movePending) return;
-  _movePending = true;
-  requestAnimationFrame(() => {
-    _movePending = false;
-    APP.slope.reapplyClip();
-  });
-}
 function _onZoomStart() {
   const map = APP.state.map;
   if (!map || !APP.state.showSlope) return;
   const pane = map.getPane('slopePane');
-  if (pane) { pane.style.willChange = 'transform'; pane.style.opacity = '0'; }
+  if (pane) { pane.style.willChange = 'transform'; }
 }
 function _onZoomEnd() {
   const map = APP.state.map;
   if (!map || !APP.state.showSlope) return;
   const pane = map.getPane('slopePane');
-  if (pane) { pane.style.opacity = ''; pane.style.willChange = ''; }
-  APP.slope.reapplyClip();
+  if (pane) { pane.style.willChange = ''; }
+  requestAnimationFrame(() => {
+    APP.slope.reapplyClip();
+  });
 }
 
 APP.slope = {
@@ -218,7 +211,6 @@ APP.slope = {
 
   _bindMapEvents(map) {
     bindOverlayEvents(map, {
-      onMapMove: _onMapMove,
       onZoomStart: _onZoomStart,
       onZoomEnd: _onZoomEnd,
       onZoomSwap: this._onZoomSwap,
@@ -227,7 +219,6 @@ APP.slope = {
 
   _unbindMapEvents(map) {
     unbindOverlayEvents(map, {
-      onMapMove: _onMapMove,
       onZoomStart: _onZoomStart,
       onZoomEnd: _onZoomEnd,
       onZoomSwap: this._onZoomSwap,

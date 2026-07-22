@@ -26,6 +26,7 @@ export const useMapStore = create((set, _get) => ({
   lcmLoading: false,
   slopeConfirmPending: false,
   lcmConfirmPending: false,
+  availableLCMClasses: null, // null = all classes available, or Array of class names present in selected basin
   hydroShowBoundary: false,
 
   // ═══════════ DATA & LAYERS (References) ═══════════

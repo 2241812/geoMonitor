@@ -150,6 +150,12 @@ APP.lcm = {
       return;
     }
 
+    const availableSet = new Set();
+    for (const f of geojson.features) {
+      if (f.properties?.LCM_CLASS) availableSet.add(f.properties.LCM_CLASS);
+    }
+    useMapStore.setState({ availableLCMClasses: Array.from(availableSet) });
+
     this._ensurePane();
 
     const vis = this.getVisibleClasses();
@@ -335,6 +341,7 @@ APP.lcm = {
     this._clipFeature = null;
     this._currentCode = null;
     this.removeClip();
+    useMapStore.setState({ availableLCMClasses: null });
   },
 
   _setOpacity(val) {
