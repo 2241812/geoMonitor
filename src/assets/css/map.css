@@ -283,9 +283,9 @@ body.panel-open .map-back-btn {
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-.region-dot   { background: #059669; }
-.province-dot { background: #2563eb; }
-.muni-dot     { background: #d97706; }
+.region-dot   { background: #1e293b; }
+.province-dot { background: #334155; }
+.muni-dot     { background: #475569; }
 .watershed-dot { background: #0ea5e9; }
 
 /* =============================================

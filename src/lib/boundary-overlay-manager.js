@@ -6,8 +6,8 @@ Object.assign(APP, {
       fillOpacity: 0,
       outlineOpacity: 0.9,
       fillColor: '#d1d5db',
-      outlineColor: '#1e293b',
-      outlineWeight: 2.5,
+      outlineColor: null, /* resolved dynamically from config.colors */
+      outlineWeight: null, /* resolved dynamically from config.colors */
     },
 
     _getDefaults() {

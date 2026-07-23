@@ -516,7 +516,7 @@ Object.assign(APP, {
         color: cfg.stroke,
         weight: cfg.weight,
         opacity: 0.9,
-        fillOpacity: 0.25,
+        fillOpacity: level === 0 ? 0.15 : 0,
         dashArray: null
       });
       if (leafletLayer.getTooltip && leafletLayer.getTooltip()) {
@@ -626,9 +626,9 @@ Object.assign(APP, {
       this.state.rawData[cacheKey] = data;
     }
     const styleMap = {
-      region: { color: '#1f2937', weight: 2.5, fillOpacity: 0, opacity: 0.85 },
-      province: { color: '#374151', weight: 2, fillOpacity: 0, opacity: 0.85 },
-      municipality: { color: '#4b5563', weight: 1.5, fillOpacity: 0, opacity: 0.75 },
+      region: { color: this.config.colors[0].stroke, weight: this.config.colors[0].weight, fillOpacity: 0, opacity: 0.85 },
+      province: { color: this.config.colors[1].stroke, weight: this.config.colors[1].weight, fillOpacity: 0, opacity: 0.85 },
+      municipality: { color: this.config.colors[2].stroke, weight: this.config.colors[2].weight, fillOpacity: 0, opacity: 0.75 },
     };
     this.state.adminLayers[type] = L.geoJSON(data, {
       style: styleMap[type],
