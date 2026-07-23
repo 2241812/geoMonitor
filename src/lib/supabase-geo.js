@@ -6,8 +6,8 @@ let _client = null;
 const CACHE_VERSION = 'v1';
 const CONCURRENCY = 4;
 
-const SUPABASE_URL = 'https://micsfokodqqqgwtlctca.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pY3Nmb2tvZHFxcWd3dGxjdGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NjExNjgsImV4cCI6MjA5ODUzNzE2OH0.zTrxYk4-QJ-nsM_SlcqiA1IR7XpZXpFmjCN2xBQgTY4';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://micsfokodqqqgwtlctca.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pY3Nmb2tvZHFxcWd3dGxjdGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NjExNjgsImV4cCI6MjA5ODUzNzE2OH0.zTrxYk4-QJ-nsM_SlcqiA1IR7XpZXpFmjCN2xBQgTY4';
 const BASIN_CODES = ['ABR','ABU','AGN','AMB','ARI','BUD','CAB','MLG','NAG','SIF','SMR','UCH','UMT','ZUM'];
 const BASIN_FEATURE_COUNTS = { ABR: 20366, ABU: 6220, AGN: 5000, AMB: 5875, ARI: 2481, BUD: 2277, CAB: 784, MLG: 3000, NAG: 3160, SIF: 2705, SMR: 1400, UCH: 19868, UMT: 4000, ZUM: 1221 };
 
@@ -238,8 +238,10 @@ export async function fetchSlopeFromSupabase(basinCode, onProgress, quality = 'b
 
 export function invalidateSlopeCache(basinCode) {
   if (basinCode) {
-    delete _cachedBasinSlope[_slopeCacheKey(basinCode)];
-    cacheDelete(_slopeIdbKey(basinCode));
+    ['fast', 'balanced', 'full'].forEach(quality => {
+      delete _cachedBasinSlope[_slopeCacheKey(basinCode, quality)];
+      cacheDelete(_slopeIdbKey(basinCode, quality));
+    });
   } else {
     _cachedBasinSlope = {};
     cacheDelete(_slopeIdbKey('ALL'));
@@ -248,8 +250,12 @@ export function invalidateSlopeCache(basinCode) {
 
 export function invalidateLCMCache(basinCode) {
   if (basinCode) {
-    delete _cachedBasinLCM[basinCode];
-    cacheDelete(_idbKey(basinCode, null));
+    for (const key of Object.keys(_cachedBasinLCM)) {
+      if (key === basinCode || key.startsWith(basinCode + '::')) {
+        delete _cachedBasinLCM[key];
+        cacheDelete(CACHE_VERSION + ':lcm:' + key);
+      }
+    }
   } else {
     _cachedAllLCM = null;
     _cachedBasinLCM = {};
@@ -260,6 +266,7 @@ export function invalidateLCMCache(basinCode) {
 export async function fetchAvailableLCMClasses(basinCode) {
   if (!basinCode) return null;
   try {
+    const supabase = getClient();
     const { data, error } = await supabase
       .from('lcm')
       .select('lcm_class')

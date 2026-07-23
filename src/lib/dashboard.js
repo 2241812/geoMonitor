@@ -2,7 +2,7 @@ import { APP } from './app.js';
 import { submitDataRequest } from './supabase-geo.js';
 import emailjs from '@emailjs/browser';
 
-emailjs.init('230ECLuWvZ-VBUOvq');
+emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '230ECLuWvZ-VBUOvq');
 /**
  * dashboard.js
  * The floating info panel and detail rendering methods.

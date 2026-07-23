@@ -1,4 +1,4 @@
-﻿import L from 'leaflet';
+import L from 'leaflet';
 import { APP } from './app.js';
 window.L = L;
 import './config.js';
@@ -19,6 +19,10 @@ window.APP = APP;
 
 window.decodeGeo = function(data) {
   if (data && data.type === 'Topology') {
+    if (!window.topojson) {
+      console.error('topojson client library is not loaded');
+      return { type: 'FeatureCollection', features: [] };
+    }
     const key = Object.keys(data.objects)[0];
     return window.topojson.feature(data, data.objects[key]);
   }

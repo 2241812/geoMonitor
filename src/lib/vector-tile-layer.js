@@ -21,14 +21,13 @@ import L from 'leaflet';
  * L.geoJSON for click/hover events.
  */
 
-const _tileCache = new Map();  // key = "z/x/y" → features[]
-
 export const VectorTileLayer = L.GridLayer.extend({
   initialize: function (data, options) {
     this._featureData = data;
     this._styleFn = options.style || function () { return {}; };
     this._workerReady = false;
     this._pendingTiles = new Map();  // reqId → { canvas, ctx, tileKey, done }
+    this._tileCache = new Map();     // key = "z/x/y" → features[]
     this._reqId = 0;
     this._indexId = 'vt_' + Math.random().toString(36).slice(2, 9);
     this._tileSize = 512;
@@ -43,10 +42,11 @@ export const VectorTileLayer = L.GridLayer.extend({
 
     this._worker.onmessage = (e) => {
       const msg = e.data;
+      if (msg.indexId !== this._indexId) return;
 
       if (msg.type === 'ready') {
         this._workerReady = true;
-        if (this._map) this.redraw();
+        this.redraw();
         return;
       }
 
@@ -54,7 +54,7 @@ export const VectorTileLayer = L.GridLayer.extend({
         // Cache the tile features
         const tileKey = msg.z + '/' + msg.x + '/' + msg.y;
         if (msg.features) {
-          _tileCache.set(tileKey, msg.features);
+          this._tileCache.set(tileKey, msg.features);
         }
 
         // Resolve any pending createTile for this tile coordinate
@@ -85,7 +85,7 @@ export const VectorTileLayer = L.GridLayer.extend({
     const tileKey = coords.z + '/' + coords.x + '/' + coords.y;
 
     // Check cache first
-    const cached = _tileCache.get(tileKey);
+    const cached = this._tileCache.get(tileKey);
     if (cached) {
       this._renderTileToCanvas(ctx, cached, tileSize.x);
       done(null, canvas);
@@ -127,6 +127,7 @@ export const VectorTileLayer = L.GridLayer.extend({
     const geom = feature.geometry;
     if (!geom) return;
 
+    ctx.save();
     ctx.beginPath();
     for (const ring of geom) {
       for (let i = 0; i < ring.length; i++) {
@@ -142,15 +143,14 @@ export const VectorTileLayer = L.GridLayer.extend({
       ctx.fillStyle = style.fillColor;
       ctx.globalAlpha = style.fillOpacity != null ? style.fillOpacity : 0.15;
       ctx.fill();
-      ctx.globalAlpha = 1;
     }
     if (style.color && style.weight > 0) {
       ctx.strokeStyle = style.color;
       ctx.lineWidth = style.weight || 1;
       ctx.globalAlpha = style.opacity != null ? style.opacity : 0.9;
       ctx.stroke();
-      ctx.globalAlpha = 1;
     }
+    ctx.restore();
   },
 
   /* Replace the style getter and re-render */
@@ -160,7 +160,7 @@ export const VectorTileLayer = L.GridLayer.extend({
 
   /* Invalidate tile cache and redraw all visible tiles */
   redraw: function () {
-    _tileCache.clear();
+    this._tileCache.clear();
     if (this._map) {
       this._map._panes.tilePane.childNodes.forEach(function (child) {
         if (child.tagName === 'CANVAS') {

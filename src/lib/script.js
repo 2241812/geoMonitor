@@ -188,8 +188,6 @@
     });
   });
 
-})();
-
   /* ── Basin Card Lightbox ── */
   document.addEventListener('DOMContentLoaded', function () {
     var basinCards = document.querySelectorAll('.basin-card');
@@ -232,17 +230,10 @@
     if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
     if (lightboxBg) lightboxBg.addEventListener('click', closeLightbox);
 
-    // Close on any scroll attempt
-    window.addEventListener('wheel', function() {
-      closeLightbox();
-    }, { passive: true });
-
-    window.addEventListener('touchmove', function() {
-      closeLightbox();
-    }, { passive: true });
-
     // Close on Escape key
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeLightbox();
     });
   });
+
+})();

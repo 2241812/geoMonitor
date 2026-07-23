@@ -39,6 +39,13 @@ export const useMapStore = create((set, _get) => ({
 
   boundaryOverlayStyle: null,
 
+  // ═══════════ STYLING STATE ═══════════
+  fillOpacity: 0.35,
+  outlineOpacity: 0.8,
+  slopeOpacity: 0.65,
+  lcmOpacity: 0.65,
+  streamOrderOpacity: 0.8,
+
   // ═══════════ ACTIONS ═══════════
   setViewMode: (mode) => set({ viewMode: mode, hydroDrillLevel: 0, currentLevel: 0, selectedPath: [] }),
   setActiveBasemap: (basemap) => set({ activeBasemap: basemap }),
@@ -57,6 +64,13 @@ export const useMapStore = create((set, _get) => ({
   selectZone: (zoneInfo) => set({ hydroSelectedZone: zoneInfo }),
   deselectZone: () => set({ hydroSelectedZone: null }),
   toggleStreamOrder: () => set((state) => ({ showStreamOrder: !state.showStreamOrder })),
+
+  // Opacity & Style Actions
+  setFillOpacity: (fillOpacity) => set({ fillOpacity }),
+  setOutlineOpacity: (outlineOpacity) => set({ outlineOpacity }),
+  setSlopeOpacity: (slopeOpacity) => set({ slopeOpacity }),
+  setLcmOpacity: (lcmOpacity) => set({ lcmOpacity }),
+  setStreamOrderOpacity: (streamOrderOpacity) => set({ streamOrderOpacity }),
 
   // UI State
   setDrilling: (isDrilling) => set({ _drilling: isDrilling }),

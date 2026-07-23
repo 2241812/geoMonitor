@@ -18,44 +18,48 @@ function setLoadingText(msg) {
 }
 
 export async function initLayers() {
-  const src = APP._src();
-  const isWatersheds = APP.state.viewMode === 'watersheds';
+  try {
+    const src = APP._src();
+    const isWatersheds = APP.state.viewMode === 'watersheds';
 
-  setLoadingText('Loading administrative boundaries…');
+    setLoadingText('Loading administrative boundaries…');
 
-  /* Fetch level 0 and 1 GeoJSON in parallel */
-  const [geo0, geo1] = await Promise.all([
-    fetchWithCache('boundary:' + src.activeSource + ':0', src.geoJSON[0], { signal: APP._abortController.signal }),
-    fetchWithCache('boundary:' + src.activeSource + ':1', src.geoJSON[1], { signal: APP._abortController.signal }),
-  ]);
-  if (geo0) APP.state.rawData[0] = geo0;
-  if (geo1) APP.state.rawData[1] = geo1;
+    /* Fetch level 0 and 1 GeoJSON in parallel */
+    const [geo0, geo1] = await Promise.all([
+      fetchWithCache('boundary:' + src.activeSource + ':0', src.geoJSON[0], { signal: APP._abortController.signal }),
+      fetchWithCache('boundary:' + src.activeSource + ':1', src.geoJSON[1], { signal: APP._abortController.signal }),
+    ]);
+    if (geo0) APP.state.rawData[0] = geo0;
+    if (geo1) APP.state.rawData[1] = geo1;
 
-  if (!isWatersheds) {
-    await APP._showLevel(0, null, null);
-    APP.state.currentLevel = 0;
+    if (!isWatersheds) {
+      await APP._showLevel(0, null, null);
+      APP.state.currentLevel = 0;
 
-    /* Prefetch deeper levels in parallel (maxLevel=2 for NAMRIA, 1 for CAD) */
-    if (src.maxLevel >= 2) {
-      setLoadingText('Loading municipality boundaries…');
-      await Promise.allSettled(
-        Array.from({ length: src.maxLevel - 1 }, (_, i) => i + 2)
-          .filter(lvl => src.geoJSON[lvl])
-          .map(lvl => APP._prefetchLevel(lvl))
-      );
+      /* Prefetch deeper levels in parallel (maxLevel=2 for NAMRIA, 1 for CAD) */
+      if (src.maxLevel >= 2) {
+        setLoadingText('Loading municipality boundaries…');
+        await Promise.allSettled(
+          Array.from({ length: src.maxLevel - 1 }, (_, i) => i + 2)
+            .filter(lvl => src.geoJSON[lvl])
+            .map(lvl => APP._prefetchLevel(lvl))
+        );
+      }
+
+      APP._updateBreadcrumb();
+
+      if (geo0 && geo0.features && geo0.features[0]) {
+        APP.openPanel(geo0.features[0], 0);
+      }
     }
-
-    APP._updateBreadcrumb();
-
-    if (geo0 && geo0.features && geo0.features[0]) {
-      APP.openPanel(geo0.features[0], 0);
-    }
+  } catch (err) {
+    console.error('Failed to initialize map layers:', err);
+  } finally {
+    /* Hide loading overlay once all critical data is ready */
+    setLoadingText('Ready');
+    const loading = document.getElementById('loading-overlay');
+    if (loading) loading.classList.add('hidden');
   }
-
-  /* Hide loading overlay once all critical data is ready */
-  setLoadingText('Ready');
-  const loading = document.getElementById('loading-overlay');
-  if (loading) loading.classList.add('hidden');
 }
 
 window.initLayers = initLayers;

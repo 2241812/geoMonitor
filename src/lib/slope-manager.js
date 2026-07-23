@@ -297,7 +297,9 @@ APP.slope = {
       }
 
       const code = APP.state.hydroSelectedBasin?.code;
-      if (code && !this._basinsLoaded[code]) {
+      const quality = APP.state.slopeQuality || 'balanced';
+      const cacheKey = code ? code + '::' + quality : null;
+      if (cacheKey && !this._basinsLoaded[cacheKey]) {
         this._loadBasin(code).catch(e => {
           if (import.meta.env.DEV) console.error('Slope load error:', e);
         });

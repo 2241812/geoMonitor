@@ -492,50 +492,10 @@ export const APP = {
   },
 
   _updateBreadcrumb() {
-    const bc = document.getElementById('map-breadcrumb');
-    if (!bc) return;
-
-    let html = '';
-
-    /* ── Hydro mode breadcrumb ── */
-    if (this.state.viewMode === 'watersheds') {
-      const atRoot = this.state.selectedPath.length === 0;
-      html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP._hydroDrillUp(0)">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-        Basins
-      </button>`;
-
-      this.state.selectedPath.forEach((item, idx) => {
-        const isLast = idx === this.state.selectedPath.length - 1;
-        const shortName = idx === 0
-          ? item.name.replace(/ River Watershed$/, '').replace(/ River$/, '')
-          : item.name;
-        html += `<span class="breadcrumb-sep">›</span>`;
-        const onclick = isLast ? '' : `onclick="APP._hydroDrillUp(${idx + 1})"`;
-        html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" ${onclick}>${this._escHtml(shortName)}</button>`;
-      });
-
-      bc.innerHTML = html;
-      return; /* No outline toggles in hydro mode */
-    }
-
-    /* Breadcrumb trail (both modes) — mode toggles moved to BottomBar.jsx */
-    const atRoot = this.state.selectedPath.length === 0;
-
-    /* Root: "CAR" */
-    html += `<button class="breadcrumb-item ${atRoot ? 'active' : 'clickable'}" onclick="APP.drillUp(0)">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      CAR
-    </button>`;
-
-    this.state.selectedPath.forEach((item, idx) => {
-      if (item.level === 0) return; /* Skip level 0, root handles it */
-      const isLast = idx === this.state.selectedPath.length - 1;
-      html += `<span class="breadcrumb-sep">›</span>`;
-      html += `<button class="breadcrumb-item ${isLast ? 'active' : 'clickable'}" onclick="APP.drillUp(${item.level})">${this._escHtml(item.name)}</button>`;
+    useMapStore.setState({ 
+      selectedPath: [...(this.state.selectedPath || [])],
+      viewMode: this.state.viewMode
     });
-
-    bc.innerHTML = html;
   },
 
   _toastTimer: null,

@@ -78,6 +78,7 @@ export function bindOverlayEvents(map, handlers, context) {
     map.off('moveend', handlers.onMapMove);
     map.off('zoomanim', handlers.onMapMove);
     map.off('zoomend', handlers.onMapMove);
+    map.on('moveend', handlers.onMapMove);
     map.on('zoomend', handlers.onMapMove);
   }
   if (handlers.onZoomStart) {

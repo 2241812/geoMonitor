@@ -1,5 +1,6 @@
 import { useMapStore } from '../store/useMapStore';
 import APP from '../lib/index.js';
+import Breadcrumb from './Breadcrumb.jsx';
 import '../assets/css/bottom-bar.css';
 
 /**
@@ -7,19 +8,10 @@ import '../assets/css/bottom-bar.css';
  *
  * Three visual groups (separated by spacing, no labels):
  *   VIEW:      [Watersheds|Boundaries]
- *   SOURCE:    [NAMRIA|CAD]
- *   NAVIGATION: breadcrumb container (filled by APP._updateBreadcrumb) + reset button
+ *   NAVIGATION: Breadcrumb component + reset button
  *
  * Reads UI state from Zustand store, calls APP methods for map actions.
- * Follows the pattern: React renders UI, Zustand holds state, APP manages Leaflet.
- *
- * IMPORTANT: #map-breadcrumb must remain an empty container — the legacy
- * APP._updateBreadcrumb() fills it via innerHTML. If React placed children
- * inside it, the next React reconciliation would crash with removeChild errors.
- * The reset button is a sibling, not a child, matching the original inline layout.
  */
-
-/* ── Component ── */
 export default function BottomBar() {
   const viewMode = useMapStore((s) => s.viewMode);
   const setViewModeStore = useMapStore((s) => s.setViewMode);
@@ -57,8 +49,7 @@ export default function BottomBar() {
       </div>
 
       {/* ── NAVIGATION group ── */}
-      {/* Breadcrumb is an empty container — APP._updateBreadcrumb fills it via innerHTML */}
-      <div className="map-breadcrumb" id="map-breadcrumb" />
+      <Breadcrumb />
 
       <button
         className="map-reset-btn"
