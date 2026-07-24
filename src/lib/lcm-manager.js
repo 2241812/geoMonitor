@@ -119,7 +119,10 @@ APP.lcm = {
     const c = code.toUpperCase();
     if (this._geoJsonCache[c]) return this._geoJsonCache[c];
     try {
-      const res = await fetch(`/geoJSON/LCM/${c}_LCM2025.geojson`);
+      let res = await fetch(`/geoJSON/LCM/${c}_LCM2025.geojson`);
+      if (!res.ok) {
+        res = await fetch(`/geoJSON/LCM/${c}_LCM.geojson`);
+      }
       if (res.ok) {
         const json = await res.json();
         this._geoJsonCache[c] = json;
