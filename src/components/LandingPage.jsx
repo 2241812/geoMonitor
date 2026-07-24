@@ -1,27 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { initLandingPageScripts } from "../lib/script.js";
 import '../assets/css/style.css';
 
 const BASINS_DATA = [
-  { id: 1, name: "Agno River Watershed", image: "assets/images/basin-1.jpg", desc: "Originates in Benguet and serves as the fifth largest river system in the Philippines. It supplies extensive irrigation for Pangasinan and supports three major hydroelectric plants.", area: "580,000.31 HA", outflow: "Lingayen Gulf", provinces: "Benguet, Ifugao, Mountain Province" },
-  { id: 2, name: "Upper Chico River", image: "assets/images/basin-2.jpg", desc: "Known as the 'River of Life' for the Kalinga people, this vast river spans multiple provinces before merging with the Cagayan River. It provides essential irrigation for regional farmlands and supports numerous mini-hydro plants.", area: "449,726.45 HA", outflow: "Cagayan River", provinces: "Kalinga, Mountain Province" },
-  { id: 3, name: "Abra River Watershed", image: "assets/images/basin-3.jpg", desc: "Originating from Mount Data, it features deep gorges and wide valleys before emptying into the West Philippine Sea. As one of the five largest river systems in the country, it provides crucial irrigation for Ilocos Sur and Abra.", area: "491,347.87 HA", outflow: "West Philippine Sea", provinces: "Abra, Apayao, Benguet, Kalinga, Mountain Province" },
-  { id: 4, name: "Abulog River Watershed", image: "assets/images/basin-4.jpg", desc: "Characterized by pristine forest cover, this wide river channel flows from the Apayao mountains down to the Babuyan Channel. It serves as a critical source of irrigation and sustains aquatic biodiversity in northern Cagayan.", area: "278,655.72 HA", outflow: "Babuyan Channel", provinces: "Abra, Apayao" },
-  { id: 5, name: "Amburayan River", image: "assets/images/basin-5.jpg", desc: "Flowing from Benguet to the West Philippine Sea, it serves as a natural boundary between Ilocos Sur and La Union. The basin provides crucial irrigation for lowland agriculture and supports freshwater ecosystems.", area: "400,000.00 HA", outflow: "South China Sea", provinces: "Benguet, La Union" },
-  { id: 6, name: "Aringay River", image: "assets/images/basin-6.jpg", desc: "Originating from Benguet, this watershed plays a vital role in sustaining local agricultural livelihoods. Upstream conservation efforts are critical for mitigating downstream flooding before it exits at the Luzon Sea.", area: "41,348.51 HA", outflow: "Lingayen Gulf", provinces: "Benguet" },
-  { id: 7, name: "Naguilian River", image: "assets/images/basin-7.jpg", desc: "With headwaters in Benguet, this scenic system irrigates La Union before exiting into the Luzon Sea. It acts as an integral socio-economic driver by supporting both agriculture and local tourism.", area: "53,935.83 HA", outflow: "West Philippine Sea", provinces: "Benguet, La Union" },
-  { id: 8, name: "Upper Magat River", image: "assets/images/basin-8.jpg", desc: "Originating from the mountainous terrain of Ifugao, this basin feeds directly into the massive Magat Dam. It is critically important for generating hydroelectric power and irrigating vast tracts of the Cagayan Valley.", area: "292,803.49 HA", outflow: "Cagayan River", provinces: "Ifugao, Isabela" },
-  { id: 9, name: "Siffu River", image: "assets/images/basin-9.jpg", desc: "Channeling vital water resources from Eastern Ifugao into the plains of Isabela, this river forms a cornerstone of the regional agricultural economy. It sustains extensive rice terraces and critical lowland farming communities.", area: "98,973.37 HA", outflow: "Cagayan River", provinces: "Ifugao, Isabela" },
-  { id: 10, name: "Mallig River", image: "assets/images/basin-10.jpg", desc: "Flowing through the rolling terrains of the Cordilleras, this river merges with regional networks to support Isabela's agricultural zones. It is essential for maintaining soil fertility and crop yields in adjacent downstream provinces.", area: "93,821.17 HA", outflow: "Cagayan River", provinces: "Mountain Province, Isabela" },
-  { id: 11, name: "Cabicungan River", image: "assets/images/basin-11.jpg", desc: "Situated in Apayao, this watershed features relatively pristine forest cover and high regional biodiversity. It acts as a lifeline for northern communities by irrigating farmlands before exiting towards the Babuyan Channel.", area: "26,820.76 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
-  { id: 12, name: "Zumigui-Ziwanan River", image: "assets/images/basin-12.jpg", desc: "Characterized by its remote, rugged terrain, this basin provides essential water routing for neighboring agricultural plains. Its rich ecological profile sustains indigenous flora and fauna throughout Apayao.", area: "80,112.38 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
-  { id: 13, name: "Santa Maria River", image: "assets/images/basin-13.jpg", desc: "Draining the western ridges of the Cordillera, it channels localized headwaters directly into the coastal networks of the West Philippine Sea. The watershed supports local aquaculture and highlights the need for upstream forest protection.", area: "28,917.82 HA", outflow: "West Philippine Sea", provinces: "Ilocos Sur" },
-  { id: 14, name: "Bued River Watershed", image: "assets/images/basin-1.jpg", desc: "Famous for running parallel to the historic Kennon Road, this river gathers from the high altitudes of Benguet. It manages critical runoff through steep transit corridors, requiring constant monitoring down to the Lingayen Gulf.", area: "57,632.96 HA", outflow: "Lingayen Gulf", provinces: "Benguet, Pangasinan" }
+  { id: 1, name: "Agno River Watershed", image: "/assets/images/basin-1.jpg", desc: "Originates in Benguet and serves as the fifth largest river system in the Philippines. It supplies extensive irrigation for Pangasinan and supports three major hydroelectric plants.", area: "580,000.31 HA", outflow: "Lingayen Gulf", provinces: "Benguet, Ifugao, Mountain Province" },
+  { id: 2, name: "Upper Chico River", image: "/assets/images/basin-2.jpg", desc: "Known as the 'River of Life' for the Kalinga people, this vast river spans multiple provinces before merging with the Cagayan River. It provides essential irrigation for regional farmlands and supports numerous mini-hydro plants.", area: "449,726.45 HA", outflow: "Cagayan River", provinces: "Kalinga, Mountain Province" },
+  { id: 3, name: "Abra River Watershed", image: "/assets/images/basin-3.jpg", desc: "Originating from Mount Data, it features deep gorges and wide valleys before emptying into the West Philippine Sea. As one of the five largest river systems in the country, it provides crucial irrigation for Ilocos Sur and Abra.", area: "491,347.87 HA", outflow: "West Philippine Sea", provinces: "Abra, Apayao, Benguet, Kalinga, Mountain Province" },
+  { id: 4, name: "Abulog River Watershed", image: "/assets/images/basin-4.jpg", desc: "Characterized by pristine forest cover, this wide river channel flows from the Apayao mountains down to the Babuyan Channel. It serves as a critical source of irrigation and sustains aquatic biodiversity in northern Cagayan.", area: "278,655.72 HA", outflow: "Babuyan Channel", provinces: "Abra, Apayao" },
+  { id: 5, name: "Amburayan River", image: "/assets/images/basin-5.jpg", desc: "Flowing from Benguet to the West Philippine Sea, it serves as a natural boundary between Ilocos Sur and La Union. The basin provides crucial irrigation for lowland agriculture and supports freshwater ecosystems.", area: "400,000.00 HA", outflow: "South China Sea", provinces: "Benguet, La Union" },
+  { id: 6, name: "Aringay River", image: "/assets/images/basin-6.jpg", desc: "Originating from Benguet, this watershed plays a vital role in sustaining local agricultural livelihoods. Upstream conservation efforts are critical for mitigating downstream flooding before it exits at the Luzon Sea.", area: "41,348.51 HA", outflow: "Lingayen Gulf", provinces: "Benguet" },
+  { id: 7, name: "Naguilian River", image: "/assets/images/basin-7.jpg", desc: "With headwaters in Benguet, this scenic system irrigates La Union before exiting into the Luzon Sea. It acts as an integral socio-economic driver by supporting both agriculture and local tourism.", area: "53,935.83 HA", outflow: "West Philippine Sea", provinces: "Benguet, La Union" },
+  { id: 8, name: "Upper Magat River", image: "/assets/images/basin-8.jpg", desc: "Originating from the mountainous terrain of Ifugao, this basin feeds directly into the massive Magat Dam. It is critically important for generating hydroelectric power and irrigating vast tracts of the Cagayan Valley.", area: "292,803.49 HA", outflow: "Cagayan River", provinces: "Ifugao, Isabela" },
+  { id: 9, name: "Siffu River", image: "/assets/images/basin-9.jpg", desc: "Channeling vital water resources from Eastern Ifugao into the plains of Isabela, this river forms a cornerstone of the regional agricultural economy. It sustains extensive rice terraces and critical lowland farming communities.", area: "98,973.37 HA", outflow: "Cagayan River", provinces: "Ifugao, Isabela" },
+  { id: 10, name: "Mallig River", image: "/assets/images/basin-10.jpg", desc: "Flowing through the rolling terrains of the Cordilleras, this river merges with regional networks to support Isabela's agricultural zones. It is essential for maintaining soil fertility and crop yields in adjacent downstream provinces.", area: "93,821.17 HA", outflow: "Cagayan River", provinces: "Mountain Province, Isabela" },
+  { id: 11, name: "Cabicungan River", image: "/assets/images/basin-11.jpg", desc: "Situated in Apayao, this watershed features relatively pristine forest cover and high regional biodiversity. It acts as a lifeline for northern communities by irrigating farmlands before exiting towards the Babuyan Channel.", area: "26,820.76 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
+  { id: 12, name: "Zumigui-Ziwanan River", image: "/assets/images/basin-12.jpg", desc: "Characterized by its remote, rugged terrain, this basin provides essential water routing for neighboring agricultural plains. Its rich ecological profile sustains indigenous flora and fauna throughout Apayao.", area: "80,112.38 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
+  { id: 13, name: "Santa Maria River", image: "/assets/images/basin-13.jpg", desc: "Draining the western ridges of the Cordillera, it channels localized headwaters directly into the coastal networks of the West Philippine Sea. The watershed supports local aquaculture and highlights the need for upstream forest protection.", area: "28,917.82 HA", outflow: "West Philippine Sea", provinces: "Ilocos Sur" },
+  { id: 14, name: "Bued River Watershed", image: "/assets/images/basin-1.jpg", desc: "Famous for running parallel to the historic Kennon Road, this river gathers from the high altitudes of Benguet. It manages critical runoff through steep transit corridors, requiring constant monitoring down to the Lingayen Gulf.", area: "57,632.96 HA", outflow: "Lingayen Gulf", provinces: "Benguet, Pangasinan" }
 ];
 
 export default function LandingPage() {
   const [activeBasin, setActiveBasin] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMoreBasins, setShowMoreBasins] = useState(false);
 
   useEffect(() => {
@@ -53,12 +53,13 @@ export default function LandingPage() {
     if (e) e.preventDefault();
     setActiveBasin(null);
   };
+
   useEffect(() => {
     document.title = "GeoCradle | Cordillera Watershed Portal";
-    if(window.initLenis) window.initLenis();
-    if(window.initLandingPageScripts) {
-      setTimeout(window.initLandingPageScripts, 100);
-    }
+    const cleanup = initLandingPageScripts();
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   return (<>
@@ -68,7 +69,7 @@ export default function LandingPage() {
     
     <header className="header" id="site-header">
       <div className="logo-group">
-        <img src="assets/img/denr-logo.svg" alt="DENR" className="logo" />
+        <img src="/assets/img/denr-logo.svg" alt="DENR" className="logo" />
         <div className="brand-text">
           <span className="brand-subtitle">Republic of the Philippines</span>
           <span className="brand-title">Department of Environment and Natural Resources</span>
@@ -80,14 +81,14 @@ export default function LandingPage() {
           <span className="brand-subtitle">In collaboration with</span>
           <span className="collab-title">Saint Louis University</span>
         </div>
-        <img src="assets/img/slu-logo.png" alt="SLU" className="slu-logo" />
+        <img src="/assets/img/slu-logo.png" alt="SLU" className="slu-logo" />
       </div>
     </header>
 
     
     <section className="hero" id="hero">
       <div className="hero-bg">
-        <img src="assets/images/20220506_111217.jpg" alt="Cordillera Landscape" />
+        <img src="/assets/images/20220506_111217.jpg" alt="Cordillera Landscape" />
       </div>
       <div className="hero-overlay"></div>
 
@@ -168,7 +169,7 @@ export default function LandingPage() {
         
         <div className="stats-right scale-in">
           <div className="map-preview">
-            <img src="assets/images/watershedmap.png" alt="CAR Watershed Map Preview" />
+            <img src="/assets/images/watershedmap.png" alt="CAR Watershed Map Preview" />
             <div className="map-preview-overlay"></div>
             <div className="map-preview-badge">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -200,7 +201,7 @@ export default function LandingPage() {
 
         <div className="info-image-wrap scale-in">
           <div className="image-glow"></div>
-          <img src="assets/images/banaue.jpg" alt="Ambuklao Dam — a vital watershed infrastructure in Benguet" className="info-image" />
+          <img src="/assets/images/banaue.jpg" alt="Ambuklao Dam — a vital watershed infrastructure in Benguet" className="info-image" />
           <div className="image-float-badge">
             <div className="float-badge-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
@@ -310,7 +311,7 @@ export default function LandingPage() {
     
     <section className="cta-section" id="dashboard-section">
       <div className="cta-bg">
-        <img src="assets/images/Outcrop_along_the_riverside_of_the_Dalupirip_section_of_the_Agno_River,_Lower_Agno_Watershed_Forest_Reserve,_Itogon,_Benguet,_Philippines.jpg" alt="Agno River Outcrop" />
+        <img src="/assets/images/Outcrop_along_the_riverside_of_the_Dalupirip_section_of_the_Agno_River,_Lower_Agno_Watershed_Forest_Reserve,_Itogon,_Benguet,_Philippines.jpg" alt="Agno River Outcrop" />
       </div>
       <div className="cta-overlay"></div>
 
@@ -344,7 +345,7 @@ export default function LandingPage() {
       <div className="footer-inner">
         <div className="footer-brand">
           <div className="footer-logo-group">
-            <img src="assets/img/denr-logo.svg" alt="DENR" className="footer-logo" />
+            <img src="/assets/img/denr-logo.svg" alt="DENR" className="footer-logo" />
             <span className="footer-brand-name">DENR CAR</span>
           </div>
           <p className="footer-address">
@@ -400,8 +401,8 @@ export default function LandingPage() {
           &copy; 2026 DENR-CAR &amp; SLU Computer Science. All rights reserved.
         </p>
         <div className="footer-logos">
-          <img src="assets/img/denr-logo.svg" alt="DENR" className="footer-small-logo" />
-          <img src="assets/img/slu-logo.png" alt="SLU" className="footer-small-logo" />
+          <img src="/assets/img/denr-logo.svg" alt="DENR" className="footer-small-logo" />
+          <img src="/assets/img/slu-logo.png" alt="SLU" className="footer-small-logo" />
         </div>
       </div>
     </footer>
