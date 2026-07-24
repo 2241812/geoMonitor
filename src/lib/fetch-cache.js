@@ -13,7 +13,7 @@ import { cacheGet, cacheSet, cacheDelete as idbDelete } from './db-cache.js';
 
 const _cache = new Map();
 const _inflight = new Map();
-const IDB_PREFIX = 'fetch:';
+const IDB_PREFIX = 'fetch:v3:';
 
 /**
  * @param {string} key   — unique cache key (e.g. 'watershed', 'boundary:namria:0')
