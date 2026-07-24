@@ -126,18 +126,6 @@
         "benguet:tuba"
       ]
     },
-    "Mallig River Watershed": {
-      "provinces": [
-        "kalinga",
-        "mountain-province"
-      ],
-      "municipalities": [
-        "kalinga:tabuk",
-        "kalinga:tanudan",
-        "mountain-province:natonin",
-        "mountain-province:paracelis"
-      ]
-    },
     "Naguilian River Watershed": {
       "provinces": [
         "benguet"
@@ -150,7 +138,7 @@
         "benguet:tublay"
       ]
     },
-    "Siffu River Watershed": {
+    "Siffu-Mallig River Watershed": {
       "provinces": [
         "ifugao",
         "kalinga",
@@ -161,6 +149,7 @@
         "ifugao:alfonso-lista",
         "ifugao:banaue",
         "ifugao:mayoyao",
+        "kalinga:tabuk",
         "kalinga:tanudan",
         "mountain-province:barlig",
         "mountain-province:natonin",
@@ -386,18 +375,6 @@
         "benguet:tuba"
       ]
     },
-    "Mallig River Watershed": {
-      "provinces": [
-        "kalinga",
-        "mountain-province"
-      ],
-      "municipalities": [
-        "kalinga:tabuk-city",
-        "kalinga:tanudan",
-        "mountain-province:natonin",
-        "mountain-province:paracelis"
-      ]
-    },
     "Naguilian River Watershed": {
       "provinces": [
         "benguet"
@@ -411,7 +388,7 @@
         "benguet:tublay"
       ]
     },
-    "Siffu River Watershed": {
+    "Siffu-Mallig River Watershed": {
       "provinces": [
         "ifugao",
         "ifugao-vs-mt-province",
@@ -423,6 +400,7 @@
         "ifugao:aguinaldo",
         "ifugao:alfonso-lista",
         "ifugao:mayoyao",
+        "kalinga:tabuk-city",
         "kalinga:tanudan",
         "mountain-province:barlig",
         "mountain-province:natonin",

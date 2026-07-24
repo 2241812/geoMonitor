@@ -2510,7 +2510,7 @@
       "benguet:tuba"
     ]
   },
-  "MLG:56": {
+  "SFM:56": {
     "namria_provinces": [
       "kalinga"
     ],
@@ -2524,7 +2524,7 @@
       "kalinga:tabuk-city"
     ]
   },
-  "MLG:57": {
+  "SFM:57": {
     "namria_provinces": [
       "kalinga"
     ],
@@ -2540,7 +2540,7 @@
       "kalinga:tanudan"
     ]
   },
-  "MLG:245": {
+  "SFM:245": {
     "namria_provinces": [
       "kalinga"
     ],
@@ -2554,7 +2554,7 @@
       "kalinga:tabuk-city"
     ]
   },
-  "MLG:244": {
+  "SFM:244": {
     "namria_provinces": [
       "kalinga",
       "mountain-province"
@@ -2574,7 +2574,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:68": {
+  "SFM:68": {
     "namria_provinces": [
       "kalinga"
     ],
@@ -2584,7 +2584,7 @@
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "MLG:69": {
+  "SFM:69": {
     "namria_provinces": [
       "kalinga",
       "mountain-province"
@@ -2602,7 +2602,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:67": {
+  "SFM:67": {
     "namria_provinces": [
       "kalinga",
       "mountain-province"
@@ -2619,7 +2619,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:66": {
+  "SFM:66": {
     "namria_provinces": [],
     "namria_municipalities": [
       "mountain-province:paracelis"
@@ -2627,7 +2627,7 @@
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "MLG:243": {
+  "SFM:243": {
     "namria_provinces": [
       "kalinga"
     ],
@@ -2641,13 +2641,13 @@
       "kalinga:tabuk-city"
     ]
   },
-  "MLG:64": {
+  "SFM:64": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "MLG:70": {
+  "SFM:70": {
     "namria_provinces": [
       "kalinga",
       "mountain-province"
@@ -2669,7 +2669,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:65": {
+  "SFM:65": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -2683,7 +2683,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:71": {
+  "SFM:71": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -2697,7 +2697,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:73": {
+  "SFM:73": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -2711,19 +2711,19 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:63": {
+  "SFM:63": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "MLG:75": {
+  "SFM:75": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "MLG:72": {
+  "SFM:72": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -2737,13 +2737,13 @@
       "mountain-province:paracelis"
     ]
   },
-  "MLG:76": {
+  "SFM:76": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "MLG:237": {
+  "SFM:237": {
     "namria_provinces": [
       "kalinga",
       "mountain-province"
@@ -2761,7 +2761,7 @@
       "mountain-province:natonin"
     ]
   },
-  "MLG:58": {
+  "SFM:58": {
     "namria_provinces": [
       "kalinga"
     ],
@@ -2776,7 +2776,7 @@
       "kalinga:tanudan"
     ]
   },
-  "MLG:62": {
+  "SFM:62": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
@@ -2999,7 +2999,7 @@
       "benguet:baguio-city"
     ]
   },
-  "SIF:69": {
+  "SFM:69": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -3013,7 +3013,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:67": {
+  "SFM:67": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -3027,7 +3027,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:237": {
+  "SFM:237": {
     "namria_provinces": [
       "ifugao",
       "kalinga",
@@ -3055,7 +3055,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:70": {
+  "SFM:70": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -3071,7 +3071,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:65": {
+  "SFM:65": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -3085,7 +3085,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:71": {
+  "SFM:71": {
     "namria_provinces": [
       "mountain-province"
     ],
@@ -3100,7 +3100,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:73": {
+  "SFM:73": {
     "namria_provinces": [
       "ifugao",
       "mountain-province"
@@ -3116,19 +3116,19 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:63": {
+  "SFM:63": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "SIF:75": {
+  "SFM:75": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "SIF:72": {
+  "SFM:72": {
     "namria_provinces": [
       "ifugao",
       "mountain-province"
@@ -3151,7 +3151,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:74": {
+  "SFM:74": {
     "namria_provinces": [
       "ifugao",
       "mountain-province"
@@ -3169,13 +3169,13 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:76": {
+  "SFM:76": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "SIF:77": {
+  "SFM:77": {
     "namria_provinces": [
       "ifugao"
     ],
@@ -3189,7 +3189,7 @@
       "ifugao:alfonso-lista"
     ]
   },
-  "SIF:93": {
+  "SFM:93": {
     "namria_provinces": [
       "ifugao"
     ],
@@ -3207,7 +3207,7 @@
       "mountain-province:barlig"
     ]
   },
-  "SIF:236": {
+  "SFM:236": {
     "namria_provinces": [
       "ifugao",
       "mountain-province"
@@ -3230,7 +3230,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:58": {
+  "SFM:58": {
     "namria_provinces": [
       "kalinga",
       "mountain-province"
@@ -3250,7 +3250,7 @@
       "mountain-province:natonin"
     ]
   },
-  "SIF:81": {
+  "SFM:81": {
     "namria_provinces": [
       "ifugao"
     ],
@@ -3268,7 +3268,7 @@
       "mountain-province:paracelis"
     ]
   },
-  "SIF:84": {
+  "SFM:84": {
     "namria_provinces": [
       "ifugao"
     ],
@@ -3282,19 +3282,19 @@
       "ifugao:alfonso-lista"
     ]
   },
-  "SIF:85": {
+  "SFM:85": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "SIF:62": {
+  "SFM:62": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],
     "cad_municipalities": []
   },
-  "SIF:82": {
+  "SFM:82": {
     "namria_provinces": [
       "ifugao"
     ],
@@ -3308,7 +3308,7 @@
       "ifugao:aguinaldo"
     ]
   },
-  "SIF:87": {
+  "SFM:87": {
     "namria_provinces": [],
     "namria_municipalities": [],
     "cad_provinces": [],

@@ -12,12 +12,11 @@ const BASINS_DATA = [
   { id: 6, name: "Aringay River", image: "/assets/images/basin-6.jpg", desc: "Originating from Benguet, this watershed plays a vital role in sustaining local agricultural livelihoods. Upstream conservation efforts are critical for mitigating downstream flooding before it exits at the Luzon Sea.", area: "41,348.51 HA", outflow: "Lingayen Gulf", provinces: "Benguet" },
   { id: 7, name: "Naguilian River", image: "/assets/images/basin-7.jpg", desc: "With headwaters in Benguet, this scenic system irrigates La Union before exiting into the Luzon Sea. It acts as an integral socio-economic driver by supporting both agriculture and local tourism.", area: "53,935.83 HA", outflow: "West Philippine Sea", provinces: "Benguet, La Union" },
   { id: 8, name: "Upper Magat River", image: "/assets/images/basin-8.jpg", desc: "Originating from the mountainous terrain of Ifugao, this basin feeds directly into the massive Magat Dam. It is critically important for generating hydroelectric power and irrigating vast tracts of the Cagayan Valley.", area: "292,803.49 HA", outflow: "Cagayan River", provinces: "Ifugao, Isabela" },
-  { id: 9, name: "Siffu River", image: "/assets/images/basin-9.jpg", desc: "Channeling vital water resources from Eastern Ifugao into the plains of Isabela, this river forms a cornerstone of the regional agricultural economy. It sustains extensive rice terraces and critical lowland farming communities.", area: "98,973.37 HA", outflow: "Cagayan River", provinces: "Ifugao, Isabela" },
-  { id: 10, name: "Mallig River", image: "/assets/images/basin-10.jpg", desc: "Flowing through the rolling terrains of the Cordilleras, this river merges with regional networks to support Isabela's agricultural zones. It is essential for maintaining soil fertility and crop yields in adjacent downstream provinces.", area: "93,821.17 HA", outflow: "Cagayan River", provinces: "Mountain Province, Isabela" },
-  { id: 11, name: "Cabicungan River", image: "/assets/images/basin-11.jpg", desc: "Situated in Apayao, this watershed features relatively pristine forest cover and high regional biodiversity. It acts as a lifeline for northern communities by irrigating farmlands before exiting towards the Babuyan Channel.", area: "26,820.76 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
-  { id: 12, name: "Zumigui-Ziwanan River", image: "/assets/images/basin-12.jpg", desc: "Characterized by its remote, rugged terrain, this basin provides essential water routing for neighboring agricultural plains. Its rich ecological profile sustains indigenous flora and fauna throughout Apayao.", area: "80,112.38 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
-  { id: 13, name: "Santa Maria River", image: "/assets/images/basin-13.jpg", desc: "Draining the western ridges of the Cordillera, it channels localized headwaters directly into the coastal networks of the West Philippine Sea. The watershed supports local aquaculture and highlights the need for upstream forest protection.", area: "28,917.82 HA", outflow: "West Philippine Sea", provinces: "Ilocos Sur" },
-  { id: 14, name: "Bued River Watershed", image: "/assets/images/basin-1.jpg", desc: "Famous for running parallel to the historic Kennon Road, this river gathers from the high altitudes of Benguet. It manages critical runoff through steep transit corridors, requiring constant monitoring down to the Lingayen Gulf.", area: "57,632.96 HA", outflow: "Lingayen Gulf", provinces: "Benguet, Pangasinan" }
+  { id: 9, name: "Siffu-Mallig River Watershed", image: "/assets/images/basin-9.jpg", desc: "Forming a critical hydrological nexus in Eastern Ifugao, Mountain Province, and Isabela, this unified watershed drains into the Cagayan River, supporting extensive regional farmlands and community irrigation.", area: "192,820.00 HA", outflow: "Cagayan River", provinces: "Ifugao, Mountain Province, Isabela" },
+  { id: 10, name: "Cabicungan River", image: "/assets/images/basin-11.jpg", desc: "Situated in Apayao, this watershed features relatively pristine forest cover and high regional biodiversity. It acts as a lifeline for northern communities by irrigating farmlands before exiting towards the Babuyan Channel.", area: "26,820.76 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
+  { id: 11, name: "Zumigui-Ziwanan River", image: "/assets/images/basin-12.jpg", desc: "Characterized by its remote, rugged terrain, this basin provides essential water routing for neighboring agricultural plains. Its rich ecological profile sustains indigenous flora and fauna throughout Apayao.", area: "80,112.38 HA", outflow: "Babuyan Channel", provinces: "Apayao, Cagayan" },
+  { id: 12, name: "Santa Maria River", image: "/assets/images/basin-13.jpg", desc: "Draining the western ridges of the Cordillera, it channels localized headwaters directly into the coastal networks of the West Philippine Sea. The watershed supports local aquaculture and highlights the need for upstream forest protection.", area: "28,917.82 HA", outflow: "West Philippine Sea", provinces: "Ilocos Sur" },
+  { id: 13, name: "Bued River Watershed", image: "/assets/images/basin-1.jpg", desc: "Famous for running parallel to the historic Kennon Road, this river gathers from the high altitudes of Benguet. It manages critical runoff through steep transit corridors, requiring constant monitoring down to the Lingayen Gulf.", area: "57,632.96 HA", outflow: "Lingayen Gulf", provinces: "Benguet, Pangasinan" }
 ];
 
 export default function LandingPage() {
@@ -156,7 +155,7 @@ export default function LandingPage() {
               <span className="stat-desc">Partnering with local government units for on-ground conservation.</span>
             </div>
             <div className="stat-item fade-in-up delay-1">
-              <span className="stat-number" data-target="14">0</span>
+              <span className="stat-number" data-target="13">0</span>
               <span className="stat-label">River Basins</span>
               <span className="stat-desc">Monitoring the crucial hydrological lifelines of Northern Luzon.</span>
             </div>
@@ -207,7 +206,7 @@ export default function LandingPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
             </div>
             <div className="float-badge-text">
-              <span className="float-badge-number">14</span>
+              <span className="float-badge-number">13</span>
               <span className="float-badge-label">River Basins</span>
             </div>
           </div>
@@ -301,7 +300,7 @@ export default function LandingPage() {
               setShowMoreBasins(true);
             }
           }}>
-            <span>{showMoreBasins ? "View Less" : "View All 14 Basins"}</span>
+            <span>{showMoreBasins ? "View Less" : "View All 13 Basins"}</span>
             <svg className="view-all-icon" style={{ transform: showMoreBasins ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>

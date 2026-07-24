@@ -55,10 +55,9 @@ Object.assign(APP, {
       "Bayogao River Watershed": "South China Sea",
       "Bued River Watershed": "Lingayen Gulf",
       "Cabicungan River Watershed": "Babuyan Channel",
-      "Mallig River Watershed": "Cagayan River",
       "Naguilian River Watershed": "West Philippine Sea",
       "Santa Maria River Watershed": "West Philippine Sea",
-      "Siffu River Watershed": "Cagayan River",
+      "Siffu-Mallig River Watershed": "Cagayan River",
       "Upper Chico River Watershed": "Cagayan River",
       "Upper Magat River Watershed": "Cagayan River",
       "Zumigui-Ziwanan River Watershed": "Babuyan Channel"
@@ -67,8 +66,7 @@ Object.assign(APP, {
     watershedDescriptions: {
       "Upper Chico River Watershed": "The Upper Chico River Watershed is a major headwater system for the Chico River, flowing through the Cordillera mountains and primarily draining into the Cagayan River Basin. It plays a critical role in supporting local agriculture and the region's indigenous communities.",
       "Upper Magat River Watershed": "This watershed forms the upper reaches of the Magat River, a vital tributary of the Cagayan River. It is characterized by steep mountainous terrain and is essential for supplying water to the Magat Dam, which supports large-scale irrigation and hydroelectric power generation.",
-      "Siffu River Watershed": "The Siffu River Watershed spans the eastern slopes of the Cordillera Central, eventually draining into the Magat River. It serves as an important agricultural water source for the surrounding lowland communities.",
-      "Mallig River Watershed": "A significant sub-basin of the Cagayan River system, the Mallig River Watershed covers portions of Kalinga and Mountain Province, delivering vital surface water to the agricultural plains below.",
+      "Siffu-Mallig River Watershed": "The Siffu-Mallig River Watershed forms a critical hydrological nexus across Eastern Ifugao, Mountain Province, and Isabela. It drains into the Cagayan River, supplying vital surface water for extensive agricultural farmlands and local irrigation networks.",
       "Zumigui-Ziwanan River Watershed": "Also known as the Pamplona or Manucotae watershed, this river system primarily drains northward towards the Babuyan Channel. It features dense forest cover and is critical for maintaining the region's hydrological balance.",
       "Abra River Watershed": "The Abra River Watershed is the largest river basin in the Ilocos Region, originating from the slopes of Mount Data in the Cordillera Central. It carves a deep valley westward before emptying into the West Philippine Sea.",
       "Naguilian River Watershed": "The Naguilian River Watershed flows westward from the mountains of Benguet, directly draining into the West Philippine Sea. It is a smaller but essential basin supporting local municipalities along the La Union coast.",
@@ -92,28 +90,27 @@ Object.assign(APP, {
       "Aringay River Watershed": { folder: "Aringay River", code: "ARI" },
       "Bued River Watershed": { folder: "Bued River", code: "BUD" },
       "Cabicungan River Watershed": { folder: "Cabicungan River", code: "CAB" },
-      "Mallig River Watershed": { folder: "Mallig River", code: "MLG" },
       "Naguilian River Watershed": { folder: "Naguilian River", code: "NAG" },
-      "Siffu River Watershed": { folder: "Siffu River", code: "SIF" },
+      "Siffu-Mallig River Watershed": { folder: "Siffu-Mallig River", code: "SFM" },
       "Santa Maria River Watershed": { folder: "Santa Maria River (Silag)", code: "SMR" },
       "Upper Chico River Watershed": { folder: "Upper Chico Riverbasin", code: "UCH" },
       "Upper Magat River Watershed": { folder: "Upper Magat River", code: "UMT" },
       "Zumigui-Ziwanan River Watershed": { folder: "Zumigui-Ziwanan River", code: "ZUM" },
     },
 
-    /* 14-color palette — one per basin, indexed by _hydroBasinIndex() */
+    /* 13-color palette — one per basin, indexed by _hydroBasinIndex() */
     hydroLevelColors: [
       '#e11d48', '#0891b2', '#7c3aed', '#d97706',
       '#059669', '#2563eb', '#db2777', '#0d9488',
       '#ca8a04', '#4f46e5', '#ea580c', '#16a34a',
-      '#9333ea', '#0284c7',
+      '#9333ea',
     ],
 
     /* Basin picker groups (by outflow destination) */
     hydroBasinGroups: [
       { title: 'Cagayan River Basin', basins: [
         'Upper Chico River Watershed', 'Upper Magat River Watershed',
-        'Siffu River Watershed', 'Mallig River Watershed', 'Zumigui-Ziwanan River Watershed',
+        'Siffu-Mallig River Watershed', 'Zumigui-Ziwanan River Watershed',
       ]},
       { title: 'West Philippine Sea', basins: [
         'Abra River Watershed', 'Bayogao River Watershed',
